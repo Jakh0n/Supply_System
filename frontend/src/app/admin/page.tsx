@@ -170,40 +170,38 @@ const AdminDashboard: React.FC = () => {
 					</div>
 
 					{/* Quick actions */}
-					<div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6'>
+					<div className='grid grid-cols-1 md:grid-cols-3 gap-6'>
 						<Link href='/admin/users'>
-							<Card className='cursor-pointer hover:shadow-md transition-shadow h-full'>
+							<Card className='hover:shadow-md transition-shadow cursor-pointer'>
 								<CardHeader>
 									<CardTitle className='flex items-center'>
-										<Users className='h-5 w-5 mr-2 text-blue-600' />
+										<Users className='h-5 w-5 mr-2' />
 										Manage Users
 									</CardTitle>
 									<CardDescription>
-										Add, edit, or remove users from the system
+										Create and manage system users
 									</CardDescription>
 								</CardHeader>
 							</Card>
 						</Link>
-
 						<Link href='/admin/products'>
-							<Card className='cursor-pointer hover:shadow-md transition-shadow h-full'>
+							<Card className='hover:shadow-md transition-shadow cursor-pointer'>
 								<CardHeader>
 									<CardTitle className='flex items-center'>
-										<Package className='h-5 w-5 mr-2 text-green-600' />
+										<Package className='h-5 w-5 mr-2' />
 										Manage Products
 									</CardTitle>
 									<CardDescription>
-										Add new products or update existing inventory
+										Add and manage product inventory
 									</CardDescription>
 								</CardHeader>
 							</Card>
 						</Link>
-
 						<Link href='/admin/orders'>
-							<Card className='cursor-pointer hover:shadow-md transition-shadow h-full'>
+							<Card className='hover:shadow-md transition-shadow cursor-pointer'>
 								<CardHeader>
 									<CardTitle className='flex items-center'>
-										<ShoppingCart className='h-5 w-5 mr-2 text-purple-600' />
+										<ShoppingCart className='h-5 w-5 mr-2' />
 										Manage Orders
 									</CardTitle>
 									<CardDescription>
