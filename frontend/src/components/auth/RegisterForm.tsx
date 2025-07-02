@@ -10,13 +10,6 @@ import {
 } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import {
-	Select,
-	SelectContent,
-	SelectItem,
-	SelectTrigger,
-	SelectValue,
-} from '@/components/ui/select'
 import { useAuth } from '@/contexts/AuthContext'
 import { RegisterData } from '@/types'
 import { AlertCircle, Eye, EyeOff, Package } from 'lucide-react'
@@ -27,7 +20,6 @@ import React, { useState } from 'react'
 interface RegisterFormData {
 	username: string
 	password: string
-	branch: string
 }
 
 const RegisterForm: React.FC = () => {
@@ -36,22 +28,12 @@ const RegisterForm: React.FC = () => {
 	const [formData, setFormData] = useState<RegisterFormData>({
 		username: '',
 		password: '',
-		branch: '',
 	})
 	const [confirmPassword, setConfirmPassword] = useState('')
 	const [loading, setLoading] = useState(false)
 	const [error, setError] = useState('')
 	const [showPassword, setShowPassword] = useState(false)
 	const [showConfirmPassword, setShowConfirmPassword] = useState(false)
-
-	const branches = [
-		'Main Branch',
-		'Downtown Branch',
-		'North Branch',
-		'South Branch',
-		'East Branch',
-		'West Branch',
-	]
 
 	const handleSubmit = async (e: React.FormEvent) => {
 		e.preventDefault()
@@ -61,12 +43,6 @@ const RegisterForm: React.FC = () => {
 		// Validation
 		if (!formData.username.trim()) {
 			setError('Username is required')
-			setLoading(false)
-			return
-		}
-
-		if (!formData.branch) {
-			setError('Branch is required')
 			setLoading(false)
 			return
 		}
@@ -95,7 +71,7 @@ const RegisterForm: React.FC = () => {
 				username: formData.username.trim(),
 				password: formData.password,
 				position: 'worker', // Always register as worker
-				branch: formData.branch,
+				// branch will be assigned later by admin
 			}
 
 			await register(registerData)
@@ -126,13 +102,6 @@ const RegisterForm: React.FC = () => {
 
 	const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
 		const { name, value } = e.target
-		setFormData(prev => ({
-			...prev,
-			[name]: value,
-		}))
-	}
-
-	const handleSelectChange = (name: string, value: string) => {
 		setFormData(prev => ({
 			...prev,
 			[name]: value,
@@ -187,26 +156,6 @@ const RegisterForm: React.FC = () => {
 										placeholder='Enter your username (letters, numbers, _ only)'
 										className='mt-1'
 									/>
-								</div>
-
-								<div>
-									<Label htmlFor='branch'>Branch *</Label>
-									<Select
-										value={formData.branch}
-										onValueChange={value => handleSelectChange('branch', value)}
-										required
-									>
-										<SelectTrigger className='mt-1'>
-											<SelectValue placeholder='Select your branch' />
-										</SelectTrigger>
-										<SelectContent>
-											{branches.map(branch => (
-												<SelectItem key={branch} value={branch}>
-													{branch}
-												</SelectItem>
-											))}
-										</SelectContent>
-									</Select>
 								</div>
 
 								<div>

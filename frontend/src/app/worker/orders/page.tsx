@@ -41,6 +41,7 @@ import {
 	CheckCircle,
 	Clock,
 	Eye,
+	FileText,
 	MoreHorizontal,
 	Package,
 	Plus,
@@ -60,14 +61,6 @@ const formatDate = (dateString: string): string => {
 		month: 'short',
 		day: 'numeric',
 	})
-}
-
-// Helper function to format currency
-const formatKRW = (amount: number): string => {
-	return new Intl.NumberFormat('ko-KR', {
-		style: 'currency',
-		currency: 'KRW',
-	}).format(amount)
 }
 
 // Status display configuration
@@ -173,13 +166,6 @@ const MyOrders: React.FC = () => {
 
 	const getTotalQuantity = (order: Order): number => {
 		return order.items.reduce((total, item) => total + item.quantity, 0)
-	}
-
-	const getTotalValue = (order: Order): number => {
-		return order.items.reduce(
-			(total, item) => total + item.quantity * item.product.price,
-			0
-		)
 	}
 
 	if (loading && orders.length === 0) {
@@ -329,9 +315,6 @@ const MyOrders: React.FC = () => {
 														Items
 													</th>
 													<th className='text-left py-3 px-4 font-medium bg-gray-50'>
-														Total Value
-													</th>
-													<th className='text-left py-3 px-4 font-medium bg-gray-50'>
 														Status
 													</th>
 													<th className='text-left py-3 px-4 font-medium bg-gray-50'>
@@ -351,8 +334,11 @@ const MyOrders: React.FC = () => {
 															className='border-b hover:bg-gray-50 transition-colors'
 														>
 															<td className='py-3 px-4'>
-																<div className='font-mono text-sm font-medium'>
-																	{order.orderNumber}
+																<div className='flex items-center'>
+																	<FileText className='h-4 w-4 text-gray-400 mr-2' />
+																	<div className='font-mono text-sm font-medium'>
+																		{order.orderNumber}
+																	</div>
 																</div>
 															</td>
 															<td className='py-3 px-4 text-sm text-gray-600'>
@@ -366,9 +352,6 @@ const MyOrders: React.FC = () => {
 																		{getTotalQuantity(order)} total)
 																	</span>
 																</div>
-															</td>
-															<td className='py-3 px-4 text-sm font-medium text-gray-900'>
-																{formatKRW(getTotalValue(order))}
 															</td>
 															<td className='py-3 px-4'>
 																<span
@@ -581,12 +564,6 @@ const MyOrders: React.FC = () => {
 														<p className='font-medium text-sm'>
 															{item.quantity} {item.product.unit}
 														</p>
-														<p className='text-xs text-gray-500'>
-															{formatKRW(item.product.price)} each
-														</p>
-														<p className='text-xs font-medium text-gray-900'>
-															{formatKRW(item.quantity * item.product.price)}
-														</p>
 													</div>
 												</div>
 											))}
@@ -595,16 +572,20 @@ const MyOrders: React.FC = () => {
 
 									{/* Order Summary */}
 									<div className='border-t pt-4'>
-										<div className='flex justify-between items-center text-sm'>
-											<span className='text-gray-500'>Total Items:</span>
+										<div className='flex justify-between items-center'>
+											<span className='text-sm text-gray-600'>
+												Total Items:
+											</span>
 											<span className='font-medium'>
-												{getTotalQuantity(selectedOrder)}
+												{getTotalQuantity(selectedOrder)} items
 											</span>
 										</div>
-										<div className='flex justify-between items-center text-base font-medium mt-2'>
-											<span>Total Value:</span>
-											<span className='text-lg'>
-												{formatKRW(getTotalValue(selectedOrder))}
+										<div className='flex justify-between items-center mt-2'>
+											<span className='text-sm text-gray-600'>
+												Number of Products:
+											</span>
+											<span className='font-medium'>
+												{selectedOrder.items.length}
 											</span>
 										</div>
 									</div>

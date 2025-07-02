@@ -10,6 +10,14 @@ import {
 	CardHeader,
 	CardTitle,
 } from '@/components/ui/card'
+import {
+	Dialog,
+	DialogContent,
+	DialogDescription,
+	DialogFooter,
+	DialogHeader,
+	DialogTitle,
+} from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import {
@@ -20,12 +28,13 @@ import {
 	SelectValue,
 } from '@/components/ui/select'
 import { useAuth } from '@/contexts/AuthContext'
-import { ordersApi, productsApi } from '@/lib/api'
+import { branchesApi, ordersApi, productsApi } from '@/lib/api'
 import { Product, ProductCategory } from '@/types'
 import {
 	AlertCircle,
 	Calendar,
 	Check,
+	CheckCircle,
 	Minus,
 	Package,
 	Plus,
@@ -37,14 +46,6 @@ import {
 import { useRouter } from 'next/navigation'
 import React, { useCallback, useEffect, useState } from 'react'
 import { toast } from 'sonner'
-
-// Helper function to format currency
-const formatKRW = (amount: number): string => {
-	return new Intl.NumberFormat('ko-KR', {
-		style: 'currency',
-		currency: 'KRW',
-	}).format(amount)
-}
 
 // Helper function to get tomorrow's date
 const getTomorrowDate = (): string => {
@@ -60,12 +61,23 @@ interface OrderItem {
 	notes?: string
 }
 
+// Branch interface
+interface Branch {
+	name: string
+	activeWorkers: number
+	totalOrders: number
+	pendingOrders: number
+}
+
 const NewOrder: React.FC = () => {
 	const { user } = useAuth()
 	const router = useRouter()
 	const [products, setProducts] = useState<Product[]>([])
 	const [filteredProducts, setFilteredProducts] = useState<Product[]>([])
+	const [branches, setBranches] = useState<Branch[]>([])
+	const [selectedBranch, setSelectedBranch] = useState<string>('')
 	const [loading, setLoading] = useState(true)
+	const [branchesLoading, setBranchesLoading] = useState(true)
 	const [error, setError] = useState('')
 	const [searchTerm, setSearchTerm] = useState('')
 	const [categoryFilter, setCategoryFilter] = useState<ProductCategory | 'all'>(
@@ -75,6 +87,29 @@ const NewOrder: React.FC = () => {
 	const [requestedDate, setRequestedDate] = useState(getTomorrowDate())
 	const [orderNotes, setOrderNotes] = useState('')
 	const [submitting, setSubmitting] = useState(false)
+	const [showSuggestionsModal, setShowSuggestionsModal] = useState(false)
+	const [suggestedProducts, setSuggestedProducts] = useState<Product[]>([])
+	const [modalSearchTerm, setModalSearchTerm] = useState('')
+
+	// Fetch branches
+	const fetchBranches = useCallback(async () => {
+		try {
+			setBranchesLoading(true)
+			const response = await branchesApi.getBranchNames()
+			setBranches(response.branches || [])
+
+			// Set default branch to user's assigned branch if they have one
+			if (user?.branch) {
+				setSelectedBranch(user.branch)
+			}
+		} catch (err) {
+			console.error('Failed to fetch branches:', err)
+			setBranches([]) // No fallback branches - use empty array
+			toast.error('Failed to load branches. Please try again.')
+		} finally {
+			setBranchesLoading(false)
+		}
+	}, [user?.branch])
 
 	// Fetch products
 	const fetchProducts = useCallback(async () => {
@@ -92,8 +127,9 @@ const NewOrder: React.FC = () => {
 	}, [])
 
 	useEffect(() => {
+		fetchBranches()
 		fetchProducts()
-	}, [fetchProducts])
+	}, [fetchBranches, fetchProducts])
 
 	// Filter products based on search and category
 	useEffect(() => {
@@ -173,25 +209,25 @@ const NewOrder: React.FC = () => {
 		setOrderItems([])
 		setRequestedDate(getTomorrowDate())
 		setOrderNotes('')
+		setSelectedBranch(user?.branch || '')
 		toast.success('Order cleared')
 	}
 
-	// Calculate total items and value
-	const getTotalItems = () => {
-		return orderItems.reduce((total, item) => total + item.quantity, 0)
+	// Get suggested products (products not yet added to order)
+	const getSuggestedProducts = () => {
+		const addedProductIds = orderItems.map(item => item.product._id)
+		return products.filter(product => !addedProductIds.includes(product._id))
 	}
 
-	const getTotalValue = () => {
-		return orderItems.reduce(
-			(total, item) => total + item.quantity * item.product.price,
-			0
-		)
-	}
-
-	// Submit order
-	const handleSubmitOrder = async () => {
+	// Handle showing suggestions modal
+	const handleShowSuggestions = () => {
 		if (orderItems.length === 0) {
 			toast.error('Please add at least one item to your order')
+			return
+		}
+
+		if (!selectedBranch) {
+			toast.error('Please select a branch for this order')
 			return
 		}
 
@@ -200,11 +236,21 @@ const NewOrder: React.FC = () => {
 			return
 		}
 
+		const suggestions = getSuggestedProducts()
+		setSuggestedProducts(suggestions)
+		setModalSearchTerm('')
+		setShowSuggestionsModal(true)
+	}
+
+	// Submit order directly (called from modal or when skipping suggestions)
+	const submitOrderDirectly = async () => {
 		try {
 			setSubmitting(true)
+			setShowSuggestionsModal(false)
 
 			const orderData = {
 				requestedDate,
+				branch: selectedBranch,
 				items: orderItems.map(item => ({
 					product: item.product._id,
 					quantity: item.quantity,
@@ -215,6 +261,7 @@ const NewOrder: React.FC = () => {
 
 			console.log('=== FRONTEND ORDER SUBMISSION DEBUG ===')
 			console.log('Order data being sent:', JSON.stringify(orderData, null, 2))
+			console.log('Selected branch:', selectedBranch)
 			console.log('Order items:', orderItems)
 			console.log('Requested date:', requestedDate)
 			console.log('Order notes:', orderNotes)
@@ -268,6 +315,11 @@ const NewOrder: React.FC = () => {
 		}
 	}
 
+	// Submit order (show suggestions first)
+	const handleSubmitOrder = async () => {
+		handleShowSuggestions()
+	}
+
 	// Get category label
 	const getCategoryLabel = (category: string) => {
 		const categories = {
@@ -307,7 +359,7 @@ const NewOrder: React.FC = () => {
 								Create New Order
 							</h1>
 							<p className='mt-2 text-gray-600'>
-								Submit a new supply request for {user?.branch}
+								Submit a new supply request for any branch
 							</p>
 						</div>
 						<div className='flex gap-2'>
@@ -388,7 +440,7 @@ const NewOrder: React.FC = () => {
 										</Select>
 									</div>
 
-									{/* Products Grid */}
+									{/* Products Table */}
 									{filteredProducts.length === 0 ? (
 										<div className='text-center py-12'>
 											<Package className='h-16 w-16 text-gray-400 mx-auto mb-4' />
@@ -402,45 +454,75 @@ const NewOrder: React.FC = () => {
 											</p>
 										</div>
 									) : (
-										<div className='grid grid-cols-1 sm:grid-cols-2 gap-4 max-h-96 overflow-y-auto'>
-											{filteredProducts.map(product => (
-												<div
-													key={product._id}
-													className='border rounded-lg p-4 hover:shadow-md transition-shadow'
-												>
-													<div className='flex items-start justify-between'>
-														<div className='flex-1'>
-															<h3 className='font-medium text-gray-900 mb-1'>
-																{product.name}
-															</h3>
-															<p className='text-sm text-gray-500 mb-2'>
-																{getCategoryLabel(product.category)} •{' '}
-																{product.unit}
-															</p>
-															{product.description && (
-																<p className='text-sm text-gray-600 mb-2'>
-																	{product.description}
-																</p>
-															)}
-															{product.supplier && (
-																<p className='text-xs text-gray-500 mb-2'>
-																	Supplier: {product.supplier}
-																</p>
-															)}
-															<p className='text-sm font-medium text-gray-900'>
-																{formatKRW(product.price)} per {product.unit}
-															</p>
-														</div>
-														<Button
-															size='sm'
-															onClick={() => addProductToOrder(product)}
-															className='ml-2'
+										<div className='overflow-x-auto max-h-96 overflow-y-auto border rounded-lg'>
+											<table className='w-full table-fixed'>
+												<thead className='bg-gray-50 sticky top-0'>
+													<tr className='border-b'>
+														<th className='text-left p-3 font-medium text-gray-700 w-1/2'>
+															Product
+														</th>
+														<th className='text-left p-3 font-medium text-gray-700 w-1/4'>
+															Category
+														</th>
+														<th className='text-left p-3 font-medium text-gray-700 w-1/6'>
+															Unit
+														</th>
+														<th className='text-right p-3 font-medium text-gray-700 w-1/6'>
+															Action
+														</th>
+													</tr>
+												</thead>
+												<tbody>
+													{filteredProducts.map(product => (
+														<tr
+															key={product._id}
+															className='border-b hover:bg-gray-50 transition-colors'
 														>
-															<Plus className='h-4 w-4' />
-														</Button>
-													</div>
-												</div>
-											))}
+															<td className='p-3'>
+																<div className='flex items-start'>
+																	<Package className='h-4 w-4 text-gray-400 mr-3 flex-shrink-0 mt-0.5' />
+																	<div className='min-w-0 flex-1'>
+																		<p className='font-medium text-sm text-gray-900 mb-1 truncate'>
+																			{product.name}
+																		</p>
+																		{product.description && (
+																			<div className='group relative'>
+																				<p className='text-xs text-gray-500 line-clamp-2 leading-relaxed'>
+																					{product.description}
+																				</p>
+																				{product.description.length > 80 && (
+																					<div className='absolute left-0 top-full mt-1 hidden group-hover:block z-10 bg-gray-900 text-white text-xs p-2 rounded-md shadow-lg max-w-xs'>
+																						{product.description}
+																						<div className='absolute -top-1 left-4 w-2 h-2 bg-gray-900 rotate-45'></div>
+																					</div>
+																				)}
+																			</div>
+																		)}
+																	</div>
+																</div>
+															</td>
+															<td className='p-3'>
+																<span className='inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800 truncate'>
+																	{getCategoryLabel(product.category)}
+																</span>
+															</td>
+															<td className='p-3 text-sm text-gray-600 font-medium truncate'>
+																{product.unit}
+															</td>
+															<td className='p-3 text-right'>
+																<Button
+																	size='sm'
+																	onClick={() => addProductToOrder(product)}
+																	className='bg-green-600 hover:bg-green-700 text-white whitespace-nowrap'
+																>
+																	<Plus className='h-4 w-4 mr-1' />
+																	Add
+																</Button>
+															</td>
+														</tr>
+													))}
+												</tbody>
+											</table>
 										</div>
 									)}
 								</CardContent>
@@ -449,15 +531,62 @@ const NewOrder: React.FC = () => {
 
 						{/* Order Summary */}
 						<div>
-							<Card className='sticky top-6'>
-								<CardHeader>
-									<CardTitle>Order Summary</CardTitle>
-									<CardDescription>Review your order details</CardDescription>
+							<Card className='sticky top-6 shadow-lg border-2'>
+								<CardHeader className='bg-gradient-to-r from-blue-50 to-indigo-50 border-b'>
+									<CardTitle className='flex items-center text-lg'>
+										<ShoppingCart className='h-5 w-5 mr-2 text-blue-600' />
+										Order Summary
+									</CardTitle>
+									<CardDescription className='text-sm'>
+										Review your order details before submitting
+									</CardDescription>
 								</CardHeader>
-								<CardContent className='space-y-4'>
+								<CardContent className='space-y-6 p-6'>
+									{/* Branch Selection */}
+									<div className='space-y-2'>
+										<Label
+											htmlFor='branch-select'
+											className='text-sm font-semibold text-gray-700 flex items-center'
+										>
+											<Package className='h-4 w-4 mr-2 text-gray-500' />
+											Delivery Branch
+										</Label>
+										<Select
+											value={selectedBranch}
+											onValueChange={setSelectedBranch}
+											disabled={branchesLoading}
+										>
+											<SelectTrigger className='h-11 border-2 focus:border-blue-500'>
+												<SelectValue
+													placeholder={
+														branchesLoading
+															? 'Loading branches...'
+															: 'Select delivery branch'
+													}
+												/>
+											</SelectTrigger>
+											<SelectContent>
+												{branches.map(branch => (
+													<SelectItem key={branch.name} value={branch.name}>
+														<div className='flex items-center'>
+															<div className='w-2 h-2 bg-green-500 rounded-full mr-2'></div>
+															{branch.name}
+														</div>
+													</SelectItem>
+												))}
+											</SelectContent>
+										</Select>
+									</div>
+
 									{/* Order Date */}
-									<div>
-										<Label htmlFor='requested-date'>Requested Date</Label>
+									<div className='space-y-2'>
+										<Label
+											htmlFor='requested-date'
+											className='text-sm font-semibold text-gray-700 flex items-center'
+										>
+											<Calendar className='h-4 w-4 mr-2 text-gray-500' />
+											Requested Delivery Date
+										</Label>
 										<div className='relative'>
 											<Calendar className='absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4' />
 											<Input
@@ -466,36 +595,56 @@ const NewOrder: React.FC = () => {
 												value={requestedDate}
 												onChange={e => setRequestedDate(e.target.value)}
 												min={getTomorrowDate()}
-												className='pl-10'
+												className='pl-10 h-11 border-2 focus:border-blue-500'
 											/>
 										</div>
+										<p className='text-xs text-gray-500 mt-1'>
+											Orders must be placed at least 1 day in advance
+										</p>
 									</div>
 
 									{/* Order Items */}
-									<div>
-										<Label className='text-sm font-medium'>
-											Items ({orderItems.length})
-										</Label>
+									<div className='space-y-3'>
+										<div className='flex items-center justify-between'>
+											<Label className='text-sm font-semibold text-gray-700 flex items-center'>
+												<ShoppingCart className='h-4 w-4 mr-2 text-gray-500' />
+												Order Items
+											</Label>
+											<div className='flex items-center space-x-2'>
+												<span className='bg-blue-100 text-blue-800 text-xs font-medium px-2.5 py-1 rounded-full'>
+													{orderItems.length}{' '}
+													{orderItems.length === 1 ? 'item' : 'items'}
+												</span>
+											</div>
+										</div>
+
 										{orderItems.length === 0 ? (
-											<div className='text-center py-8 text-gray-500'>
-												<ShoppingCart className='h-12 w-12 mx-auto mb-2 text-gray-400' />
-												<p className='text-sm'>No items added yet</p>
+											<div className='text-center py-8 text-gray-500 bg-gray-50 rounded-lg border-2 border-dashed border-gray-200'>
+												<ShoppingCart className='h-12 w-12 mx-auto mb-3 text-gray-300' />
+												<p className='text-sm font-medium text-gray-600 mb-1'>
+													No items added yet
+												</p>
+												<p className='text-xs text-gray-500'>
+													Start by selecting products from the table
+												</p>
 											</div>
 										) : (
-											<div className='space-y-3 max-h-64 overflow-y-auto'>
+											<div className='space-y-3 max-h-72 overflow-y-auto bg-gray-50 rounded-lg p-3 border'>
 												{orderItems.map(item => (
 													<div
 														key={item.product._id}
-														className='border rounded-lg p-3 space-y-2'
+														className='bg-white border rounded-lg p-4 space-y-3 shadow-sm hover:shadow-md transition-shadow'
 													>
 														<div className='flex items-start justify-between'>
-															<div className='flex-1'>
-																<p className='font-medium text-sm'>
-																	{item.product.name}
-																</p>
-																<p className='text-xs text-gray-500'>
-																	{formatKRW(item.product.price)} per{' '}
-																	{item.product.unit}
+															<div className='flex-1 min-w-0'>
+																<div className='flex items-center mb-2'>
+																	<Package className='h-4 w-4 text-gray-400 mr-2 flex-shrink-0' />
+																	<p className='font-semibold text-sm text-gray-900 truncate'>
+																		{item.product.name}
+																	</p>
+																</div>
+																<p className='text-xs text-gray-500 ml-6'>
+																	{item.product.category} • {item.product.unit}
 																</p>
 															</div>
 															<Button
@@ -504,48 +653,59 @@ const NewOrder: React.FC = () => {
 																onClick={() =>
 																	removeItemFromOrder(item.product._id)
 																}
-																className='text-red-600 hover:text-red-700 p-1'
+																className='text-red-500 hover:text-red-700 hover:bg-red-50 p-2 h-8 w-8'
+																title='Remove item'
 															>
 																<Trash2 className='h-4 w-4' />
 															</Button>
 														</div>
 
 														{/* Quantity controls */}
-														<div className='flex items-center space-x-2'>
-															<Button
-																variant='outline'
-																size='sm'
-																onClick={() =>
-																	updateItemQuantity(
-																		item.product._id,
-																		item.quantity - 1
-																	)
-																}
-																disabled={item.quantity <= 1}
-															>
-																<Minus className='h-3 w-3' />
-															</Button>
-															<span className='text-sm font-medium w-8 text-center'>
-																{item.quantity}
+														<div className='flex items-center justify-between bg-gray-50 rounded-lg p-2'>
+															<span className='text-sm font-medium text-gray-700'>
+																Quantity:
 															</span>
-															<Button
-																variant='outline'
-																size='sm'
-																onClick={() =>
-																	updateItemQuantity(
-																		item.product._id,
-																		item.quantity + 1
-																	)
-																}
-															>
-																<Plus className='h-3 w-3' />
-															</Button>
+															<div className='flex items-center space-x-3'>
+																<Button
+																	variant='outline'
+																	size='sm'
+																	onClick={() =>
+																		updateItemQuantity(
+																			item.product._id,
+																			item.quantity - 1
+																		)
+																	}
+																	disabled={item.quantity <= 1}
+																	className='h-8 w-8 p-0 rounded-full'
+																>
+																	<Minus className='h-3 w-3' />
+																</Button>
+																<span className='text-sm font-bold text-gray-900 min-w-[2rem] text-center bg-white px-3 py-1 rounded-md border'>
+																	{item.quantity}
+																</span>
+																<Button
+																	variant='outline'
+																	size='sm'
+																	onClick={() =>
+																		updateItemQuantity(
+																			item.product._id,
+																			item.quantity + 1
+																		)
+																	}
+																	className='h-8 w-8 p-0 rounded-full'
+																>
+																	<Plus className='h-3 w-3' />
+																</Button>
+															</div>
 														</div>
 
 														{/* Item notes */}
-														<div>
+														<div className='space-y-1'>
+															<Label className='text-xs font-medium text-gray-600'>
+																Special Instructions (Optional)
+															</Label>
 															<Input
-																placeholder='Item notes (optional)'
+																placeholder='e.g., urgent, specific brand, etc.'
 																value={item.notes || ''}
 																onChange={e =>
 																	updateItemNotes(
@@ -553,15 +713,18 @@ const NewOrder: React.FC = () => {
 																		e.target.value
 																	)
 																}
-																className='text-sm'
+																className='text-sm h-9 border-gray-200 focus:border-blue-400'
 															/>
 														</div>
 
 														{/* Item total */}
-														<div className='text-right'>
-															<p className='text-sm font-medium'>
-																{formatKRW(item.quantity * item.product.price)}
-															</p>
+														<div className='flex justify-between items-center pt-2 border-t border-gray-100'>
+															<span className='text-xs text-gray-500'>
+																Total:
+															</span>
+															<span className='text-sm font-bold text-gray-900 bg-blue-50 px-2 py-1 rounded'>
+																{item.quantity} {item.product.unit}
+															</span>
 														</div>
 													</div>
 												))}
@@ -584,45 +747,204 @@ const NewOrder: React.FC = () => {
 										/>
 									</div>
 
-									{/* Order Totals */}
-									{orderItems.length > 0 && (
-										<div className='border-t pt-4 space-y-2'>
-											<div className='flex justify-between text-sm'>
-												<span>Total Items:</span>
-												<span className='font-medium'>{getTotalItems()}</span>
-											</div>
-											<div className='flex justify-between text-base font-medium'>
-												<span>Total Value:</span>
-												<span className='text-lg'>
-													{formatKRW(getTotalValue())}
-												</span>
-											</div>
-										</div>
-									)}
-
 									{/* Submit Button */}
-									<Button
-										onClick={handleSubmitOrder}
-										disabled={orderItems.length === 0 || submitting}
-										className='w-full'
-									>
-										{submitting ? (
-											<>
-												<div className='animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2'></div>
-												Creating Order...
-											</>
-										) : (
-											<>
-												<Check className='h-4 w-4 mr-2' />
-												Create Order
-											</>
-										)}
-									</Button>
+									<div className='pt-4 border-t border-gray-200'>
+										<Button
+											onClick={handleSubmitOrder}
+											disabled={
+												!selectedBranch ||
+												!requestedDate ||
+												orderItems.length === 0 ||
+												submitting
+											}
+											className='w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-semibold py-3 px-6 rounded-lg shadow-lg hover:shadow-xl transition-all duration-300 disabled:from-gray-400 disabled:to-gray-500 disabled:shadow-none'
+										>
+											{submitting ? (
+												<div className='flex items-center justify-center space-x-2'>
+													<div className='animate-spin rounded-full h-4 w-4 border-b-2 border-white'></div>
+													<span>Submitting Order...</span>
+												</div>
+											) : (
+												<div className='flex items-center justify-center space-x-2'>
+													<Check className='h-5 w-5' />
+													<span>Submit Order Request</span>
+												</div>
+											)}
+										</Button>
+
+										{/* Helper text */}
+										<div className='mt-3 text-center'>
+											{!selectedBranch ||
+											!requestedDate ||
+											orderItems.length === 0 ? (
+												<p className='text-xs text-gray-500 flex items-center justify-center space-x-1'>
+													<AlertCircle className='h-3 w-3' />
+													<span>
+														{!selectedBranch
+															? 'Please select a delivery branch'
+															: !requestedDate
+															? 'Please select a delivery date'
+															: 'Please add at least one item to continue'}
+													</span>
+												</p>
+											) : (
+												<p className='text-xs text-green-600 flex items-center justify-center space-x-1'>
+													<CheckCircle className='h-3 w-3' />
+													<span>Ready to submit your order</span>
+												</p>
+											)}
+										</div>
+									</div>
 								</CardContent>
 							</Card>
 						</div>
 					</div>
 				</div>
+
+				{/* Suggestions Modal */}
+				<Dialog
+					open={showSuggestionsModal}
+					onOpenChange={setShowSuggestionsModal}
+				>
+					<DialogContent className='max-w-4xl max-h-[80vh] overflow-hidden flex flex-col'>
+						<DialogHeader>
+							<DialogTitle className='flex items-center'>
+								<Package className='h-5 w-5 mr-2 text-blue-600' />
+								Any items you might have forgotten?
+							</DialogTitle>
+							<DialogDescription>
+								Here are some products you haven&apos;t added yet. Add any items
+								you might have forgotten before submitting your order.
+							</DialogDescription>
+						</DialogHeader>
+
+						<div className='flex-1 overflow-hidden flex flex-col space-y-4'>
+							{/* Search for suggested products */}
+							<div className='relative'>
+								<Search className='absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4' />
+								<Input
+									placeholder='Search suggested products...'
+									value={modalSearchTerm}
+									onChange={e => setModalSearchTerm(e.target.value)}
+									className='pl-10'
+								/>
+							</div>
+
+							{/* Suggested Products List */}
+							<div className='flex-1 overflow-y-auto border rounded-lg'>
+								{(() => {
+									const filteredSuggestions = suggestedProducts.filter(
+										product =>
+											product.name
+												.toLowerCase()
+												.includes(modalSearchTerm.toLowerCase()) ||
+											product.description
+												?.toLowerCase()
+												.includes(modalSearchTerm.toLowerCase())
+									)
+
+									if (filteredSuggestions.length === 0) {
+										return (
+											<div className='text-center py-8'>
+												<Package className='h-12 w-12 text-gray-400 mx-auto mb-3' />
+												<p className='text-gray-500'>
+													{modalSearchTerm
+														? 'No matching products found'
+														: 'All available products have been added to your order!'}
+												</p>
+											</div>
+										)
+									}
+
+									return (
+										<div className='space-y-2 p-4'>
+											{filteredSuggestions.slice(0, 10).map(product => (
+												<div
+													key={product._id}
+													className='flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50 transition-colors'
+												>
+													<div className='flex items-center flex-1 min-w-0'>
+														<Package className='h-4 w-4 text-gray-400 mr-3 flex-shrink-0' />
+														<div className='min-w-0 flex-1'>
+															<p className='font-medium text-sm text-gray-900 truncate'>
+																{product.name}
+															</p>
+															<div className='flex items-center space-x-2 mt-1'>
+																<span className='inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800'>
+																	{getCategoryLabel(product.category)}
+																</span>
+																<span className='text-xs text-gray-500'>
+																	{product.unit}
+																</span>
+															</div>
+															{product.description && (
+																<p className='text-xs text-gray-500 mt-1 line-clamp-1'>
+																	{product.description}
+																</p>
+															)}
+														</div>
+													</div>
+													<Button
+														size='sm'
+														onClick={() => {
+															addProductToOrder(product)
+															// Remove from suggestions after adding
+															setSuggestedProducts(prev =>
+																prev.filter(p => p._id !== product._id)
+															)
+														}}
+														className='bg-green-600 hover:bg-green-700 text-white ml-3'
+													>
+														<Plus className='h-4 w-4 mr-1' />
+														Add
+													</Button>
+												</div>
+											))}
+											{filteredSuggestions.length > 10 && (
+												<p className='text-xs text-gray-500 text-center py-2'>
+													Showing first 10 results. Use search to find more
+													specific items.
+												</p>
+											)}
+										</div>
+									)
+								})()}
+							</div>
+						</div>
+
+						<DialogFooter className='flex items-center justify-between'>
+							<p className='text-sm text-gray-500'>
+								{orderItems.length} {orderItems.length === 1 ? 'item' : 'items'}{' '}
+								in your order
+							</p>
+							<div className='flex space-x-2'>
+								<Button
+									variant='outline'
+									onClick={() => setShowSuggestionsModal(false)}
+								>
+									Continue Shopping
+								</Button>
+								<Button
+									onClick={submitOrderDirectly}
+									disabled={submitting}
+									className='bg-blue-600 hover:bg-blue-700'
+								>
+									{submitting ? (
+										<div className='flex items-center space-x-2'>
+											<div className='animate-spin rounded-full h-4 w-4 border-b-2 border-white'></div>
+											<span>Submitting...</span>
+										</div>
+									) : (
+										<div className='flex items-center space-x-2'>
+											<Check className='h-4 w-4' />
+											<span>Submit Order</span>
+										</div>
+									)}
+								</Button>
+							</div>
+						</DialogFooter>
+					</DialogContent>
+				</Dialog>
 			</DashboardLayout>
 		</ProtectedRoute>
 	)

@@ -64,7 +64,7 @@ const formatDate = (dateString: string): string => {
 	})
 }
 
-const UsersManagement: React.FC = () => {
+const UsersManagement = () => {
 	const [users, setUsers] = useState<User[]>([])
 	const [loading, setLoading] = useState(true)
 	const [error, setError] = useState('')
@@ -319,9 +319,15 @@ const UsersManagement: React.FC = () => {
 												<SelectValue placeholder='Select position' />
 											</SelectTrigger>
 											<SelectContent>
-												<SelectItem value='worker'>Worker</SelectItem>
-												<SelectItem value='editor'>Editor</SelectItem>
-												<SelectItem value='admin'>Admin</SelectItem>
+												<SelectItem key='worker' value='worker'>
+													Worker
+												</SelectItem>
+												<SelectItem key='editor' value='editor'>
+													Editor
+												</SelectItem>
+												<SelectItem key='admin' value='admin'>
+													Admin
+												</SelectItem>
 											</SelectContent>
 										</Select>
 									</div>
@@ -403,10 +409,18 @@ const UsersManagement: React.FC = () => {
 											<SelectValue placeholder='All positions' />
 										</SelectTrigger>
 										<SelectContent>
-											<SelectItem value='all'>All Positions</SelectItem>
-											<SelectItem value='admin'>Admin</SelectItem>
-											<SelectItem value='editor'>Editor</SelectItem>
-											<SelectItem value='worker'>Worker</SelectItem>
+											<SelectItem key='all-positions' value='all'>
+												All Positions
+											</SelectItem>
+											<SelectItem key='admin-filter' value='admin'>
+												Admin
+											</SelectItem>
+											<SelectItem key='editor-filter' value='editor'>
+												Editor
+											</SelectItem>
+											<SelectItem key='worker-filter' value='worker'>
+												Worker
+											</SelectItem>
 										</SelectContent>
 									</Select>
 								</div>
@@ -424,9 +438,15 @@ const UsersManagement: React.FC = () => {
 											<SelectValue placeholder='All statuses' />
 										</SelectTrigger>
 										<SelectContent>
-											<SelectItem value='all'>All Status</SelectItem>
-											<SelectItem value='true'>Active Only</SelectItem>
-											<SelectItem value='false'>Inactive Only</SelectItem>
+											<SelectItem key='all-status' value='all'>
+												All Status
+											</SelectItem>
+											<SelectItem key='active-only' value='true'>
+												Active Only
+											</SelectItem>
+											<SelectItem key='inactive-only' value='false'>
+												Inactive Only
+											</SelectItem>
 										</SelectContent>
 									</Select>
 								</div>
@@ -466,9 +486,6 @@ const UsersManagement: React.FC = () => {
 													</th>
 													<th className='text-left py-3 px-4 font-medium bg-gray-50'>
 														Position
-													</th>
-													<th className='text-left py-3 px-4 font-medium bg-gray-50'>
-														Branch
 													</th>
 													<th className='text-left py-3 px-4 font-medium bg-gray-50'>
 														Status
@@ -522,17 +539,6 @@ const UsersManagement: React.FC = () => {
 															</span>
 														</td>
 														<td className='py-3 px-4'>
-															{user.branch ? (
-																<span className='text-sm text-gray-600'>
-																	{user.branch}
-																</span>
-															) : (
-																<span className='text-sm text-gray-400 italic'>
-																	N/A
-																</span>
-															)}
-														</td>
-														<td className='py-3 px-4'>
 															<span
 																className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
 																	user.isActive
@@ -561,12 +567,14 @@ const UsersManagement: React.FC = () => {
 																<DropdownMenuContent align='end'>
 																	<DropdownMenuLabel>Actions</DropdownMenuLabel>
 																	<DropdownMenuItem
+																		key={`edit-${user.id}`}
 																		onClick={() => openEditDialog(user)}
 																	>
 																		<Edit className='h-4 w-4 mr-2' />
 																		Edit
 																	</DropdownMenuItem>
 																	<DropdownMenuItem
+																		key={`toggle-${user.id}`}
 																		onClick={() => handleToggleStatus(user)}
 																	>
 																		{user.isActive ? (
@@ -583,6 +591,7 @@ const UsersManagement: React.FC = () => {
 																	</DropdownMenuItem>
 																	<DropdownMenuSeparator />
 																	<DropdownMenuItem
+																		key={`delete-${user.id}`}
 																		onClick={() => handleDeleteUser(user)}
 																		className='text-red-600'
 																	>
@@ -654,9 +663,15 @@ const UsersManagement: React.FC = () => {
 											<SelectValue placeholder='Select position' />
 										</SelectTrigger>
 										<SelectContent>
-											<SelectItem value='worker'>Worker</SelectItem>
-											<SelectItem value='editor'>Editor</SelectItem>
-											<SelectItem value='admin'>Admin</SelectItem>
+											<SelectItem key='worker-edit' value='worker'>
+												Worker
+											</SelectItem>
+											<SelectItem key='editor-edit' value='editor'>
+												Editor
+											</SelectItem>
+											<SelectItem key='admin-edit' value='admin'>
+												Admin
+											</SelectItem>
 										</SelectContent>
 									</Select>
 								</div>

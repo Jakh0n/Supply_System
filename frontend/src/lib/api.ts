@@ -261,4 +261,77 @@ export const usersApi = {
 	},
 }
 
+// Branches API
+export const branchesApi = {
+	getBranches: async (): Promise<{
+		branches: Array<{
+			name: string
+			activeWorkers: number
+			totalOrders: number
+			pendingOrders: number
+		}>
+	}> => {
+		const response = await api.get('/branches')
+		return response.data
+	},
+
+	getBranchNames: async (): Promise<{
+		branches: Array<{
+			name: string
+			activeWorkers: number
+			totalOrders: number
+			pendingOrders: number
+		}>
+	}> => {
+		const response = await api.get('/branches/names')
+		return response.data
+	},
+
+	getBranch: async (
+		name: string
+	): Promise<{
+		branch: {
+			name: string
+			activeWorkers: number
+			totalWorkers: number
+			totalOrders: number
+			pendingOrders: number
+			completedOrders: number
+			workers: User[]
+		}
+	}> => {
+		const response = await api.get(`/branches/${encodeURIComponent(name)}`)
+		return response.data
+	},
+
+	createBranch: async (data: {
+		name: string
+	}): Promise<{
+		branch: {
+			name: string
+			activeWorkers: number
+			totalOrders: number
+			pendingOrders: number
+		}
+	}> => {
+		const response = await api.post('/branches', data)
+		return response.data
+	},
+
+	updateBranch: async (
+		oldName: string,
+		data: { name: string }
+	): Promise<{ branch: { oldName: string; newName: string } }> => {
+		const response = await api.put(
+			`/branches/${encodeURIComponent(oldName)}`,
+			data
+		)
+		return response.data
+	},
+
+	deleteBranch: async (name: string): Promise<void> => {
+		await api.delete(`/branches/${encodeURIComponent(name)}`)
+	},
+}
+
 export default api

@@ -9,15 +9,15 @@ import {
 	CardHeader,
 	CardTitle,
 } from '@/components/ui/card'
-import { ordersApi, productsApi, usersApi } from '@/lib/api'
+import { ordersApi, productsApi } from '@/lib/api'
 import { DashboardStats } from '@/types'
 import {
 	AlertCircle,
+	Building2,
 	DollarSign,
 	Package,
 	ShoppingCart,
 	TrendingUp,
-	Users,
 } from 'lucide-react'
 import Link from 'next/link'
 import React, { useEffect, useState } from 'react'
@@ -31,17 +31,13 @@ const AdminDashboard: React.FC = () => {
 		const fetchStats = async () => {
 			try {
 				setLoading(true)
-				const [ordersStats, usersStats] = await Promise.all([
-					ordersApi.getDashboardStats(),
-					usersApi.getUserStats(),
-				])
+				const ordersStats = await ordersApi.getDashboardStats()
 
 				// Get products count separately since it uses different endpoint
 				const productsResponse = await productsApi.getProducts({})
 
 				const combinedStats: DashboardStats = {
 					...ordersStats,
-					totalUsers: usersStats.totalUsers,
 					totalProducts: productsResponse.total,
 					completedOrders: ordersStats.totalOrders - ordersStats.pendingOrders,
 					totalRevenue: 0, // Revenue calculation would need to be added to backend
@@ -60,13 +56,6 @@ const AdminDashboard: React.FC = () => {
 	}, [])
 
 	const statsCards = [
-		{
-			title: 'Total Users',
-			value: stats?.totalUsers || 0,
-			icon: Users,
-			description: 'Active users in the system',
-			color: 'text-blue-600',
-		},
 		{
 			title: 'Total Products',
 			value: stats?.totalProducts || 0,
@@ -170,20 +159,21 @@ const AdminDashboard: React.FC = () => {
 					</div>
 
 					{/* Quick actions */}
-					<div className='grid grid-cols-1 md:grid-cols-3 gap-6'>
-						<Link href='/admin/users'>
+					<div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6'>
+						<Link href='/admin/branches'>
 							<Card className='hover:shadow-md transition-shadow cursor-pointer'>
 								<CardHeader>
 									<CardTitle className='flex items-center'>
-										<Users className='h-5 w-5 mr-2' />
-										Manage Users
+										<Building2 className='h-5 w-5 mr-2' />
+										Manage Branches
 									</CardTitle>
 									<CardDescription>
-										Create and manage system users
+										Add, edit, and manage branch locations
 									</CardDescription>
 								</CardHeader>
 							</Card>
 						</Link>
+
 						<Link href='/admin/products'>
 							<Card className='hover:shadow-md transition-shadow cursor-pointer'>
 								<CardHeader>
@@ -192,11 +182,12 @@ const AdminDashboard: React.FC = () => {
 										Manage Products
 									</CardTitle>
 									<CardDescription>
-										Add and manage product inventory
+										Add, edit, and manage product catalog
 									</CardDescription>
 								</CardHeader>
 							</Card>
 						</Link>
+
 						<Link href='/admin/orders'>
 							<Card className='hover:shadow-md transition-shadow cursor-pointer'>
 								<CardHeader>

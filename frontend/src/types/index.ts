@@ -192,6 +192,27 @@ export interface BranchesResponse {
 	branches: string[]
 }
 
+export interface Branch {
+	name: string
+	activeWorkers: number
+	totalOrders: number
+	pendingOrders: number
+}
+
+export interface BranchDetails {
+	name: string
+	activeWorkers: number
+	totalWorkers: number
+	totalOrders: number
+	pendingOrders: number
+	completedOrders: number
+	workers: User[]
+}
+
+export interface BranchFormData {
+	name: string
+}
+
 export interface CategoriesResponse {
 	categories: ProductCategory[]
 }

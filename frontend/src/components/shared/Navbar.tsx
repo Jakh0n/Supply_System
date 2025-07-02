@@ -17,7 +17,6 @@ import {
 	Settings,
 	ShoppingCart,
 	User,
-	Users,
 } from 'lucide-react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
@@ -74,13 +73,6 @@ const Navbar: React.FC = () => {
 									>
 										<Package className='h-4 w-4 mr-2' />
 										Products
-									</Link>
-									<Link
-										href='/admin/users'
-										className='text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium flex items-center'
-									>
-										<Users className='h-4 w-4 mr-2' />
-										Users
 									</Link>
 								</>
 							)}
@@ -173,12 +165,6 @@ const Navbar: React.FC = () => {
 								className='text-gray-700 hover:text-blue-600 block px-3 py-2 rounded-md text-base font-medium'
 							>
 								Products
-							</Link>
-							<Link
-								href='/admin/users'
-								className='text-gray-700 hover:text-blue-600 block px-3 py-2 rounded-md text-base font-medium'
-							>
-								Users
 							</Link>
 						</>
 					)}
