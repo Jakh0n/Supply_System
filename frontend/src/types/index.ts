@@ -1,7 +1,7 @@
 export interface User {
 	id: string
 	username: string
-	position: 'admin' | 'worker'
+	position: 'admin' | 'worker' | 'editor'
 	branch?: string
 	isActive: boolean
 	createdAt: string
@@ -10,7 +10,7 @@ export interface User {
 export interface AuthUser {
 	id: string
 	username: string
-	position: 'admin' | 'worker'
+	position: 'admin' | 'worker' | 'editor'
 	branch?: string
 }
 
@@ -22,7 +22,7 @@ export interface LoginCredentials {
 export interface RegisterData {
 	username: string
 	password: string
-	position: 'admin' | 'worker'
+	position: 'admin' | 'worker' | 'editor'
 	branch?: string
 }
 
@@ -127,7 +127,7 @@ export interface ProductFilters {
 }
 
 export interface UserFilters {
-	position?: 'admin' | 'worker' | 'all'
+	position?: 'admin' | 'worker' | 'editor' | 'all'
 	active?: 'true' | 'false' | 'all'
 	search?: string
 }

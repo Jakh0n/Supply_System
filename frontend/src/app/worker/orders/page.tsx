@@ -33,21 +33,23 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from '@/components/ui/select'
-import { ordersApi, usersApi } from '@/lib/api'
+import { useAuth } from '@/contexts/AuthContext'
+import { ordersApi } from '@/lib/api'
 import { Order, OrderStatus } from '@/types'
 import {
 	AlertCircle,
 	CheckCircle,
 	Clock,
-	Download,
 	Eye,
-	FileText,
 	MoreHorizontal,
 	Package,
+	Plus,
 	ShoppingCart,
+	Trash2,
 	Truck,
 	XCircle,
 } from 'lucide-react'
+import Link from 'next/link'
 import React, { useCallback, useEffect, useState } from 'react'
 import { toast } from 'sonner'
 
@@ -60,79 +62,62 @@ const formatDate = (dateString: string): string => {
 	})
 }
 
-// Helper function to format Korean Won
-const formatKRW = (price: number): string => {
+// Helper function to format currency
+const formatKRW = (amount: number): string => {
 	return new Intl.NumberFormat('ko-KR', {
 		style: 'currency',
 		currency: 'KRW',
-		minimumFractionDigits: 0,
-		maximumFractionDigits: 0,
-	}).format(price)
+	}).format(amount)
 }
 
-// Helper function to get status color and icon
+// Status display configuration
 const getStatusDisplay = (status: OrderStatus) => {
 	switch (status) {
 		case 'pending':
 			return {
-				color: 'bg-yellow-100 text-yellow-800',
-				icon: <Clock className='h-4 w-4' />,
 				label: 'Pending',
+				color: 'bg-orange-100 text-orange-800',
+				icon: <Clock className='h-3 w-3' />,
 			}
 		case 'approved':
 			return {
-				color: 'bg-blue-100 text-blue-800',
-				icon: <CheckCircle className='h-4 w-4' />,
 				label: 'Approved',
+				color: 'bg-green-100 text-green-800',
+				icon: <CheckCircle className='h-3 w-3' />,
 			}
 		case 'rejected':
 			return {
-				color: 'bg-red-100 text-red-800',
-				icon: <XCircle className='h-4 w-4' />,
 				label: 'Rejected',
+				color: 'bg-red-100 text-red-800',
+				icon: <XCircle className='h-3 w-3' />,
 			}
 		case 'completed':
 			return {
-				color: 'bg-green-100 text-green-800',
-				icon: <Truck className='h-4 w-4' />,
 				label: 'Completed',
+				color: 'bg-blue-100 text-blue-800',
+				icon: <Truck className='h-3 w-3' />,
 			}
 		default:
 			return {
+				label: 'Unknown',
 				color: 'bg-gray-100 text-gray-800',
-				icon: <Package className='h-4 w-4' />,
-				label: status,
+				icon: <AlertCircle className='h-3 w-3' />,
 			}
 	}
 }
 
-const OrdersManagement: React.FC = () => {
+const MyOrders: React.FC = () => {
+	const { user } = useAuth()
 	const [orders, setOrders] = useState<Order[]>([])
-	const [branches, setBranches] = useState<string[]>([])
 	const [loading, setLoading] = useState(true)
 	const [error, setError] = useState('')
 	const [selectedDate, setSelectedDate] = useState('')
-	const [branchFilter, setBranchFilter] = useState<string>('all')
 	const [statusFilter, setStatusFilter] = useState<OrderStatus | 'all'>('all')
 	const [currentPage, setCurrentPage] = useState(1)
 	const [totalPages, setTotalPages] = useState(1)
 	const [totalOrders, setTotalOrders] = useState(0)
 	const [selectedOrder, setSelectedOrder] = useState<Order | null>(null)
 	const [isDetailDialogOpen, setIsDetailDialogOpen] = useState(false)
-	const [isStatusDialogOpen, setIsStatusDialogOpen] = useState(false)
-	const [newStatus, setNewStatus] = useState<OrderStatus>('pending')
-	const [adminNotes, setAdminNotes] = useState('')
-	const [updatingStatus, setUpdatingStatus] = useState(false)
-
-	// Fetch branches
-	const fetchBranches = useCallback(async () => {
-		try {
-			const response = await usersApi.getBranches()
-			setBranches(response.branches)
-		} catch (err) {
-			console.error('Failed to fetch branches:', err)
-		}
-	}, [])
 
 	// Fetch orders
 	const fetchOrders = useCallback(async () => {
@@ -140,7 +125,6 @@ const OrdersManagement: React.FC = () => {
 			setLoading(true)
 			const response = await ordersApi.getOrders({
 				date: selectedDate || undefined,
-				branch: branchFilter !== 'all' ? branchFilter : undefined,
 				status: statusFilter !== 'all' ? statusFilter : undefined,
 				page: currentPage,
 				limit: 20,
@@ -154,80 +138,32 @@ const OrdersManagement: React.FC = () => {
 		} finally {
 			setLoading(false)
 		}
-	}, [selectedDate, branchFilter, statusFilter, currentPage])
-
-	useEffect(() => {
-		fetchBranches()
-	}, [fetchBranches])
+	}, [selectedDate, statusFilter, currentPage])
 
 	useEffect(() => {
 		fetchOrders()
 	}, [fetchOrders])
 
-	const handleStatusUpdate = async () => {
-		if (!selectedOrder) return
-
-		try {
-			setUpdatingStatus(true)
-			const response = await ordersApi.updateOrderStatus(
-				selectedOrder._id,
-				newStatus,
-				adminNotes || undefined
-			)
-
-			setOrders(prev =>
-				prev.map(order =>
-					order._id === selectedOrder._id ? response.order : order
-				)
-			)
-
-			setIsStatusDialogOpen(false)
-			setSelectedOrder(null)
-			setAdminNotes('')
-			toast.success('Order status updated successfully')
-		} catch (err: unknown) {
-			const error = err as { response?: { data?: { message?: string } } }
-			toast.error(
-				error.response?.data?.message || 'Failed to update order status'
-			)
-		} finally {
-			setUpdatingStatus(false)
+	const handleDeleteOrder = async (order: Order) => {
+		if (order.status !== 'pending') {
+			toast.error('Only pending orders can be deleted')
+			return
 		}
-	}
 
-	const handleDownloadPDF = async () => {
-		if (!selectedDate) {
-			toast.error('Please select a date to download PDF')
+		if (
+			!confirm(`Are you sure you want to delete order ${order.orderNumber}?`)
+		) {
 			return
 		}
 
 		try {
-			const blob = await ordersApi.downloadPDF(
-				selectedDate,
-				branchFilter !== 'all' ? branchFilter : undefined
-			)
-			const url = window.URL.createObjectURL(blob)
-			const a = document.createElement('a')
-			a.href = url
-			a.download = `orders-${selectedDate}${
-				branchFilter !== 'all' ? `-${branchFilter}` : ''
-			}.pdf`
-			document.body.appendChild(a)
-			a.click()
-			window.URL.revokeObjectURL(url)
-			document.body.removeChild(a)
-			toast.success('PDF downloaded successfully')
+			await ordersApi.deleteOrder(order._id)
+			await fetchOrders()
+			toast.success('Order deleted successfully')
 		} catch (err: unknown) {
 			const error = err as { response?: { data?: { message?: string } } }
-			toast.error(error.response?.data?.message || 'Failed to download PDF')
+			toast.error(error.response?.data?.message || 'Failed to delete order')
 		}
-	}
-
-	const openStatusDialog = (order: Order) => {
-		setSelectedOrder(order)
-		setNewStatus(order.status)
-		setAdminNotes(order.adminNotes || '')
-		setIsStatusDialogOpen(true)
 	}
 
 	const openDetailDialog = (order: Order) => {
@@ -248,12 +184,12 @@ const OrdersManagement: React.FC = () => {
 
 	if (loading && orders.length === 0) {
 		return (
-			<ProtectedRoute requiredRole='admin'>
+			<ProtectedRoute requiredRole='worker'>
 				<DashboardLayout>
 					<div className='flex items-center justify-center h-64'>
 						<div className='text-center'>
 							<div className='animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto'></div>
-							<p className='mt-4 text-gray-600'>Loading orders...</p>
+							<p className='mt-4 text-gray-600'>Loading your orders...</p>
 						</div>
 					</div>
 				</DashboardLayout>
@@ -262,27 +198,24 @@ const OrdersManagement: React.FC = () => {
 	}
 
 	return (
-		<ProtectedRoute requiredRole='admin'>
+		<ProtectedRoute requiredRole='worker'>
 			<DashboardLayout>
 				<div className='space-y-6'>
 					{/* Header */}
 					<div className='flex justify-between items-center'>
 						<div>
-							<h1 className='text-2xl font-bold text-gray-900'>
-								Orders Management
-							</h1>
+							<h1 className='text-2xl font-bold text-gray-900'>My Orders</h1>
 							<p className='mt-2 text-gray-600'>
-								Manage and track all restaurant supply orders
+								Track and manage your supply requests
+								{user?.branch && ` for ${user.branch}`}
 							</p>
 						</div>
-						<Button
-							onClick={handleDownloadPDF}
-							disabled={!selectedDate}
-							variant='outline'
-						>
-							<Download className='h-4 w-4 mr-2' />
-							Download PDF
-						</Button>
+						<Link href='/worker/new-order'>
+							<Button>
+								<Plus className='h-4 w-4 mr-2' />
+								New Order
+							</Button>
+						</Link>
 					</div>
 
 					{/* Error message */}
@@ -300,10 +233,10 @@ const OrdersManagement: React.FC = () => {
 					{/* Filters */}
 					<Card>
 						<CardHeader>
-							<CardTitle>Filters</CardTitle>
+							<CardTitle>Filter Orders</CardTitle>
 						</CardHeader>
 						<CardContent>
-							<div className='grid grid-cols-1 md:grid-cols-4 gap-4'>
+							<div className='grid grid-cols-1 md:grid-cols-3 gap-4'>
 								<div>
 									<Label htmlFor='date-filter'>Date</Label>
 									<Input
@@ -315,28 +248,6 @@ const OrdersManagement: React.FC = () => {
 											setCurrentPage(1)
 										}}
 									/>
-								</div>
-								<div>
-									<Label htmlFor='branch-filter'>Branch</Label>
-									<Select
-										value={branchFilter}
-										onValueChange={value => {
-											setBranchFilter(value)
-											setCurrentPage(1)
-										}}
-									>
-										<SelectTrigger>
-											<SelectValue placeholder='All branches' />
-										</SelectTrigger>
-										<SelectContent>
-											<SelectItem value='all'>All Branches</SelectItem>
-											{branches.map(branch => (
-												<SelectItem key={branch} value={branch}>
-													{branch}
-												</SelectItem>
-											))}
-										</SelectContent>
-									</Select>
 								</div>
 								<div>
 									<Label htmlFor='status-filter'>Status</Label>
@@ -364,7 +275,6 @@ const OrdersManagement: React.FC = () => {
 										variant='outline'
 										onClick={() => {
 											setSelectedDate('')
-											setBranchFilter('all')
 											setStatusFilter('all')
 											setCurrentPage(1)
 										}}
@@ -379,23 +289,29 @@ const OrdersManagement: React.FC = () => {
 					{/* Orders Table */}
 					<Card>
 						<CardHeader>
-							<CardTitle>Orders ({totalOrders})</CardTitle>
+							<CardTitle>Your Orders ({totalOrders})</CardTitle>
 							<CardDescription>
-								Manage order requests from all branches
+								All your supply requests and their current status
 							</CardDescription>
 						</CardHeader>
 						<CardContent>
 							{orders.length === 0 ? (
-								<div className='text-center py-8'>
-									<ShoppingCart className='h-12 w-12 text-gray-400 mx-auto mb-4' />
-									<p className='text-gray-500'>No orders found</p>
-									<p className='text-sm text-gray-400 mt-1'>
-										{selectedDate ||
-										branchFilter !== 'all' ||
-										statusFilter !== 'all'
-											? 'Try adjusting your filters'
-											: 'No orders have been created yet'}
+								<div className='text-center py-12'>
+									<ShoppingCart className='h-16 w-16 text-gray-400 mx-auto mb-4' />
+									<h3 className='text-lg font-medium text-gray-900 mb-2'>
+										No orders found
+									</h3>
+									<p className='text-gray-500 mb-6'>
+										{selectedDate || statusFilter !== 'all'
+											? 'Try adjusting your filters to see more orders'
+											: "You haven't created any orders yet"}
 									</p>
+									<Link href='/worker/new-order'>
+										<Button>
+											<Plus className='h-4 w-4 mr-2' />
+											Create Your First Order
+										</Button>
+									</Link>
 								</div>
 							) : (
 								<div className='overflow-x-auto'>
@@ -405,12 +321,6 @@ const OrdersManagement: React.FC = () => {
 												<tr className='border-b'>
 													<th className='text-left py-3 px-4 font-medium bg-gray-50'>
 														Order #
-													</th>
-													<th className='text-left py-3 px-4 font-medium bg-gray-50'>
-														Worker
-													</th>
-													<th className='text-left py-3 px-4 font-medium bg-gray-50'>
-														Branch
 													</th>
 													<th className='text-left py-3 px-4 font-medium bg-gray-50'>
 														Requested Date
@@ -441,30 +351,23 @@ const OrdersManagement: React.FC = () => {
 															className='border-b hover:bg-gray-50 transition-colors'
 														>
 															<td className='py-3 px-4'>
-																<div className='font-mono text-sm'>
+																<div className='font-mono text-sm font-medium'>
 																	{order.orderNumber}
 																</div>
-															</td>
-															<td className='py-3 px-4'>
-																<div>
-																	<p className='font-medium'>
-																		{order.worker.username}
-																	</p>
-																</div>
-															</td>
-															<td className='py-3 px-4'>
-																<span className='inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800'>
-																	{order.branch}
-																</span>
 															</td>
 															<td className='py-3 px-4 text-sm text-gray-600'>
 																{formatDate(order.requestedDate)}
 															</td>
-															<td className='py-3 px-4 text-sm text-gray-600'>
-																{order.items.length} items (
-																{getTotalQuantity(order)} total)
+															<td className='py-3 px-4'>
+																<div className='flex items-center'>
+																	<Package className='h-4 w-4 text-gray-400 mr-2' />
+																	<span className='text-sm text-gray-600'>
+																		{order.items.length} items (
+																		{getTotalQuantity(order)} total)
+																	</span>
+																</div>
 															</td>
-															<td className='py-3 px-4 text-sm text-gray-600'>
+															<td className='py-3 px-4 text-sm font-medium text-gray-900'>
 																{formatKRW(getTotalValue(order))}
 															</td>
 															<td className='py-3 px-4'>
@@ -497,12 +400,15 @@ const OrdersManagement: React.FC = () => {
 																			<Eye className='h-4 w-4 mr-2' />
 																			View Details
 																		</DropdownMenuItem>
-																		<DropdownMenuItem
-																			onClick={() => openStatusDialog(order)}
-																		>
-																			<FileText className='h-4 w-4 mr-2' />
-																			Update Status
-																		</DropdownMenuItem>
+																		{order.status === 'pending' && (
+																			<DropdownMenuItem
+																				onClick={() => handleDeleteOrder(order)}
+																				className='text-red-600'
+																			>
+																				<Trash2 className='h-4 w-4 mr-2' />
+																				Delete Order
+																			</DropdownMenuItem>
+																		)}
 																	</DropdownMenuContent>
 																</DropdownMenu>
 															</td>
@@ -558,14 +464,16 @@ const OrdersManagement: React.FC = () => {
 								</DialogDescription>
 							</DialogHeader>
 							{selectedOrder && (
-								<div className='space-y-4'>
+								<div className='space-y-6'>
 									{/* Order Info */}
 									<div className='grid grid-cols-2 gap-4'>
 										<div>
 											<Label className='text-sm font-medium text-gray-500'>
-												Worker
+												Order Number
 											</Label>
-											<p className='text-sm'>{selectedOrder.worker.username}</p>
+											<p className='text-sm font-mono'>
+												{selectedOrder.orderNumber}
+											</p>
 										</div>
 										<div>
 											<Label className='text-sm font-medium text-gray-500'>
@@ -596,54 +504,33 @@ const OrdersManagement: React.FC = () => {
 												</span>
 											</span>
 										</div>
-									</div>
-
-									{/* Order Items */}
-									<div>
-										<Label className='text-sm font-medium text-gray-500'>
-											Items
-										</Label>
-										<div className='mt-2 space-y-2'>
-											{selectedOrder.items.map(item => (
-												<div
-													key={item.product._id}
-													className='flex justify-between items-center p-2 bg-gray-50 rounded'
-												>
-													<div>
-														<p className='font-medium'>{item.product.name}</p>
-														<p className='text-sm text-gray-500'>
-															{item.quantity} {item.product.unit} ×{' '}
-															{formatKRW(item.product.price)}
-														</p>
-														{item.notes && (
-															<p className='text-sm text-gray-400 italic'>
-																Note: {item.notes}
-															</p>
-														)}
-													</div>
-													<div className='text-right'>
-														<p className='font-medium'>
-															{formatKRW(item.quantity * item.product.price)}
-														</p>
-													</div>
-												</div>
-											))}
+										<div>
+											<Label className='text-sm font-medium text-gray-500'>
+												Created Date
+											</Label>
+											<p className='text-sm'>
+												{formatDate(selectedOrder.createdAt)}
+											</p>
 										</div>
-										<div className='mt-2 pt-2 border-t'>
-											<div className='flex justify-between font-medium'>
-												<span>Total Value:</span>
-												<span>{formatKRW(getTotalValue(selectedOrder))}</span>
+										{selectedOrder.processedBy && (
+											<div>
+												<Label className='text-sm font-medium text-gray-500'>
+													Processed By
+												</Label>
+												<p className='text-sm'>
+													{selectedOrder.processedBy.username}
+												</p>
 											</div>
-										</div>
+										)}
 									</div>
 
-									{/* Notes */}
+									{/* Order Notes */}
 									{selectedOrder.notes && (
 										<div>
 											<Label className='text-sm font-medium text-gray-500'>
-												Worker Notes
+												Order Notes
 											</Label>
-											<p className='text-sm mt-1 p-2 bg-gray-50 rounded'>
+											<p className='text-sm bg-gray-50 p-3 rounded-md mt-1'>
 												{selectedOrder.notes}
 											</p>
 										</div>
@@ -655,97 +542,96 @@ const OrdersManagement: React.FC = () => {
 											<Label className='text-sm font-medium text-gray-500'>
 												Admin Notes
 											</Label>
-											<p className='text-sm mt-1 p-2 bg-blue-50 rounded'>
+											<p className='text-sm bg-blue-50 p-3 rounded-md mt-1 border-l-4 border-blue-400'>
 												{selectedOrder.adminNotes}
 											</p>
 										</div>
 									)}
 
-									{/* Processing Info */}
-									{selectedOrder.processedBy && (
-										<div className='grid grid-cols-2 gap-4'>
-											<div>
-												<Label className='text-sm font-medium text-gray-500'>
-													Processed By
-												</Label>
-												<p className='text-sm'>
-													{selectedOrder.processedBy.username}
-												</p>
-											</div>
-											<div>
-												<Label className='text-sm font-medium text-gray-500'>
-													Processed At
-												</Label>
-												<p className='text-sm'>
-													{selectedOrder.processedAt &&
-														formatDate(selectedOrder.processedAt)}
-												</p>
-											</div>
+									{/* Order Items */}
+									<div>
+										<Label className='text-sm font-medium text-gray-500 mb-3 block'>
+											Order Items ({selectedOrder.items.length})
+										</Label>
+										<div className='space-y-3 max-h-60 overflow-y-auto'>
+											{selectedOrder.items.map(item => (
+												<div
+													key={item.product._id}
+													className='flex items-center justify-between p-3 bg-gray-50 rounded-lg'
+												>
+													<div className='flex-1'>
+														<div className='flex items-center'>
+															<Package className='h-4 w-4 text-gray-400 mr-2' />
+															<div>
+																<p className='font-medium text-sm'>
+																	{item.product.name}
+																</p>
+																<p className='text-xs text-gray-500'>
+																	{item.product.category} • {item.product.unit}
+																</p>
+																{item.notes && (
+																	<p className='text-xs text-gray-600 mt-1 italic'>
+																		Note: {item.notes}
+																	</p>
+																)}
+															</div>
+														</div>
+													</div>
+													<div className='text-right'>
+														<p className='font-medium text-sm'>
+															{item.quantity} {item.product.unit}
+														</p>
+														<p className='text-xs text-gray-500'>
+															{formatKRW(item.product.price)} each
+														</p>
+														<p className='text-xs font-medium text-gray-900'>
+															{formatKRW(item.quantity * item.product.price)}
+														</p>
+													</div>
+												</div>
+											))}
 										</div>
-									)}
+									</div>
+
+									{/* Order Summary */}
+									<div className='border-t pt-4'>
+										<div className='flex justify-between items-center text-sm'>
+											<span className='text-gray-500'>Total Items:</span>
+											<span className='font-medium'>
+												{getTotalQuantity(selectedOrder)}
+											</span>
+										</div>
+										<div className='flex justify-between items-center text-base font-medium mt-2'>
+											<span>Total Value:</span>
+											<span className='text-lg'>
+												{formatKRW(getTotalValue(selectedOrder))}
+											</span>
+										</div>
+									</div>
+
+									{/* Actions */}
+									<div className='flex justify-end space-x-2 pt-4 border-t'>
+										<Button
+											variant='outline'
+											onClick={() => setIsDetailDialogOpen(false)}
+										>
+											Close
+										</Button>
+										{selectedOrder.status === 'pending' && (
+											<Button
+												variant='destructive'
+												onClick={() => {
+													setIsDetailDialogOpen(false)
+													handleDeleteOrder(selectedOrder)
+												}}
+											>
+												<Trash2 className='h-4 w-4 mr-2' />
+												Delete Order
+											</Button>
+										)}
+									</div>
 								</div>
 							)}
-						</DialogContent>
-					</Dialog>
-
-					{/* Status Update Dialog */}
-					<Dialog
-						open={isStatusDialogOpen}
-						onOpenChange={setIsStatusDialogOpen}
-					>
-						<DialogContent className='sm:max-w-[425px]'>
-							<DialogHeader>
-								<DialogTitle>Update Order Status</DialogTitle>
-								<DialogDescription>
-									{selectedOrder &&
-										`Update status for order ${selectedOrder.orderNumber}`}
-								</DialogDescription>
-							</DialogHeader>
-							<div className='space-y-4'>
-								<div>
-									<Label htmlFor='status'>Status</Label>
-									<Select
-										value={newStatus}
-										onValueChange={(value: OrderStatus) => setNewStatus(value)}
-									>
-										<SelectTrigger>
-											<SelectValue placeholder='Select status' />
-										</SelectTrigger>
-										<SelectContent>
-											<SelectItem value='pending'>Pending</SelectItem>
-											<SelectItem value='approved'>Approved</SelectItem>
-											<SelectItem value='rejected'>Rejected</SelectItem>
-											<SelectItem value='completed'>Completed</SelectItem>
-										</SelectContent>
-									</Select>
-								</div>
-								<div>
-									<Label htmlFor='admin-notes'>Admin Notes</Label>
-									<textarea
-										id='admin-notes'
-										value={adminNotes}
-										onChange={e => setAdminNotes(e.target.value)}
-										placeholder='Add notes about this status change...'
-										rows={3}
-										className='flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50'
-									/>
-								</div>
-								<div className='flex justify-end space-x-2'>
-									<Button
-										type='button'
-										variant='outline'
-										onClick={() => setIsStatusDialogOpen(false)}
-									>
-										Cancel
-									</Button>
-									<Button
-										onClick={handleStatusUpdate}
-										disabled={updatingStatus}
-									>
-										{updatingStatus ? 'Updating...' : 'Update Status'}
-									</Button>
-								</div>
-							</div>
 						</DialogContent>
 					</Dialog>
 				</div>
@@ -754,4 +640,4 @@ const OrdersManagement: React.FC = () => {
 	)
 }
 
-export default OrdersManagement
+export default MyOrders

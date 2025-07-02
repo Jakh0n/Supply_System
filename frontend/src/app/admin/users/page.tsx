@@ -320,6 +320,7 @@ const UsersManagement: React.FC = () => {
 											</SelectTrigger>
 											<SelectContent>
 												<SelectItem value='worker'>Worker</SelectItem>
+												<SelectItem value='editor'>Editor</SelectItem>
 												<SelectItem value='admin'>Admin</SelectItem>
 											</SelectContent>
 										</Select>
@@ -404,6 +405,7 @@ const UsersManagement: React.FC = () => {
 										<SelectContent>
 											<SelectItem value='all'>All Positions</SelectItem>
 											<SelectItem value='admin'>Admin</SelectItem>
+											<SelectItem value='editor'>Editor</SelectItem>
 											<SelectItem value='worker'>Worker</SelectItem>
 										</SelectContent>
 									</Select>
@@ -500,15 +502,23 @@ const UsersManagement: React.FC = () => {
 																className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
 																	user.position === 'admin'
 																		? 'bg-purple-100 text-purple-800'
+																		: user.position === 'editor'
+																		? 'bg-blue-100 text-blue-800'
 																		: 'bg-blue-100 text-blue-800'
 																}`}
 															>
 																{user.position === 'admin' ? (
 																	<Shield className='h-3 w-3 mr-1' />
+																) : user.position === 'editor' ? (
+																	<Shield className='h-3 w-3 mr-1' />
 																) : (
 																	<UserIcon className='h-3 w-3 mr-1' />
 																)}
-																{user.position === 'admin' ? 'Admin' : 'Worker'}
+																{user.position === 'admin'
+																	? 'Admin'
+																	: user.position === 'editor'
+																	? 'Editor'
+																	: 'Worker'}
 															</span>
 														</td>
 														<td className='py-3 px-4'>
@@ -645,6 +655,7 @@ const UsersManagement: React.FC = () => {
 										</SelectTrigger>
 										<SelectContent>
 											<SelectItem value='worker'>Worker</SelectItem>
+											<SelectItem value='editor'>Editor</SelectItem>
 											<SelectItem value='admin'>Admin</SelectItem>
 										</SelectContent>
 									</Select>

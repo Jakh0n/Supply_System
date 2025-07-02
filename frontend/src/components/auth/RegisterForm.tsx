@@ -116,6 +116,8 @@ const RegisterForm: React.FC = () => {
 		if (user) {
 			if (user.position === 'admin') {
 				router.push('/admin')
+			} else if (user.position === 'editor') {
+				router.push('/editor')
 			} else {
 				router.push('/worker')
 			}

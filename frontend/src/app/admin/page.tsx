@@ -148,10 +148,10 @@ const AdminDashboard: React.FC = () => {
 
 					{/* Stats cards */}
 					<div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6'>
-						{statsCards.map((card, index) => {
+						{statsCards.map(card => {
 							const Icon = card.icon
 							return (
-								<Card key={index}>
+								<Card key={card.title}>
 									<CardHeader className='flex flex-row items-center justify-between space-y-0 pb-2'>
 										<CardTitle className='text-sm font-medium'>
 											{card.title}
