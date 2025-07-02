@@ -19,6 +19,7 @@ import {
 	TrendingUp,
 	Users,
 } from 'lucide-react'
+import Link from 'next/link'
 import React, { useEffect, useState } from 'react'
 
 const AdminDashboard: React.FC = () => {
@@ -170,41 +171,47 @@ const AdminDashboard: React.FC = () => {
 
 					{/* Quick actions */}
 					<div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6'>
-						<Card className='cursor-pointer hover:shadow-md transition-shadow'>
-							<CardHeader>
-								<CardTitle className='flex items-center'>
-									<Users className='h-5 w-5 mr-2 text-blue-600' />
-									Manage Users
-								</CardTitle>
-								<CardDescription>
-									Add, edit, or remove users from the system
-								</CardDescription>
-							</CardHeader>
-						</Card>
+						<Link href='/admin/users'>
+							<Card className='cursor-pointer hover:shadow-md transition-shadow h-full'>
+								<CardHeader>
+									<CardTitle className='flex items-center'>
+										<Users className='h-5 w-5 mr-2 text-blue-600' />
+										Manage Users
+									</CardTitle>
+									<CardDescription>
+										Add, edit, or remove users from the system
+									</CardDescription>
+								</CardHeader>
+							</Card>
+						</Link>
 
-						<Card className='cursor-pointer hover:shadow-md transition-shadow'>
-							<CardHeader>
-								<CardTitle className='flex items-center'>
-									<Package className='h-5 w-5 mr-2 text-green-600' />
-									Manage Products
-								</CardTitle>
-								<CardDescription>
-									Add new products or update existing inventory
-								</CardDescription>
-							</CardHeader>
-						</Card>
+						<Link href='/admin/products'>
+							<Card className='cursor-pointer hover:shadow-md transition-shadow h-full'>
+								<CardHeader>
+									<CardTitle className='flex items-center'>
+										<Package className='h-5 w-5 mr-2 text-green-600' />
+										Manage Products
+									</CardTitle>
+									<CardDescription>
+										Add new products or update existing inventory
+									</CardDescription>
+								</CardHeader>
+							</Card>
+						</Link>
 
-						<Card className='cursor-pointer hover:shadow-md transition-shadow'>
-							<CardHeader>
-								<CardTitle className='flex items-center'>
-									<ShoppingCart className='h-5 w-5 mr-2 text-purple-600' />
-									View Orders
-								</CardTitle>
-								<CardDescription>
-									Monitor and manage all orders in the system
-								</CardDescription>
-							</CardHeader>
-						</Card>
+						<Link href='/admin/orders'>
+							<Card className='cursor-pointer hover:shadow-md transition-shadow h-full'>
+								<CardHeader>
+									<CardTitle className='flex items-center'>
+										<ShoppingCart className='h-5 w-5 mr-2 text-purple-600' />
+										Manage Orders
+									</CardTitle>
+									<CardDescription>
+										Monitor and manage all order requests
+									</CardDescription>
+								</CardHeader>
+							</Card>
+						</Link>
 					</div>
 				</div>
 			</DashboardLayout>

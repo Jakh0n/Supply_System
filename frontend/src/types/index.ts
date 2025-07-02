@@ -33,6 +33,7 @@ export interface Product {
 	unit: ProductUnit
 	description?: string
 	supplier?: string
+	price: number
 	isActive: boolean
 	createdBy: {
 		_id: string
@@ -67,6 +68,7 @@ export interface ProductFormData {
 	unit: ProductUnit
 	description?: string
 	supplier?: string
+	price: number
 }
 
 export interface OrderItem {
