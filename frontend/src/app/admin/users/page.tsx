@@ -1,6 +1,6 @@
 'use client'
 
-import DashboardLayout from '@/components/shared/DashboardLayout'
+import AdminLayout from '@/components/shared/AdminLayout'
 import ProtectedRoute from '@/components/shared/ProtectedRoute'
 import { Button } from '@/components/ui/button'
 import {
@@ -160,7 +160,8 @@ const UsersManagement = () => {
 				updateData.branch = formData.branch
 			}
 
-			await usersApi.updateUser(selectedUser.id, updateData)
+			const userId = selectedUser._id || selectedUser.id
+			await usersApi.updateUser(userId!, updateData)
 			await fetchUsers()
 			setIsEditDialogOpen(false)
 			resetForm()
@@ -175,7 +176,8 @@ const UsersManagement = () => {
 
 	const handleToggleStatus = async (user: User) => {
 		try {
-			await usersApi.toggleUserStatus(user.id)
+			const userId = user._id || user.id
+			await usersApi.toggleUserStatus(userId!)
 			await fetchUsers()
 			toast.success(
 				`User ${user.isActive ? 'deactivated' : 'activated'} successfully`
@@ -194,7 +196,8 @@ const UsersManagement = () => {
 		}
 
 		try {
-			await usersApi.deleteUser(user.id)
+			const userId = user._id || user.id
+			await usersApi.deleteUser(userId!)
 			await fetchUsers()
 			toast.success('User deleted successfully')
 		} catch (err: unknown) {
@@ -240,21 +243,21 @@ const UsersManagement = () => {
 	if (loading && users.length === 0) {
 		return (
 			<ProtectedRoute requiredRole='admin'>
-				<DashboardLayout>
+				<AdminLayout>
 					<div className='flex items-center justify-center h-64'>
 						<div className='text-center'>
 							<div className='animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto'></div>
 							<p className='mt-4 text-gray-600'>Loading users...</p>
 						</div>
 					</div>
-				</DashboardLayout>
+				</AdminLayout>
 			</ProtectedRoute>
 		)
 	}
 
 	return (
 		<ProtectedRoute requiredRole='admin'>
-			<DashboardLayout>
+			<AdminLayout>
 				<div className='space-y-6'>
 					{/* Header */}
 					<div className='flex justify-between items-center'>
@@ -319,15 +322,9 @@ const UsersManagement = () => {
 												<SelectValue placeholder='Select position' />
 											</SelectTrigger>
 											<SelectContent>
-												<SelectItem key='worker' value='worker'>
-													Worker
-												</SelectItem>
-												<SelectItem key='editor' value='editor'>
-													Editor
-												</SelectItem>
-												<SelectItem key='admin' value='admin'>
-													Admin
-												</SelectItem>
+												<SelectItem value='worker'>Worker</SelectItem>
+												<SelectItem value='editor'>Editor</SelectItem>
+												<SelectItem value='admin'>Admin</SelectItem>
 											</SelectContent>
 										</Select>
 									</div>
@@ -409,18 +406,10 @@ const UsersManagement = () => {
 											<SelectValue placeholder='All positions' />
 										</SelectTrigger>
 										<SelectContent>
-											<SelectItem key='all-positions' value='all'>
-												All Positions
-											</SelectItem>
-											<SelectItem key='admin-filter' value='admin'>
-												Admin
-											</SelectItem>
-											<SelectItem key='editor-filter' value='editor'>
-												Editor
-											</SelectItem>
-											<SelectItem key='worker-filter' value='worker'>
-												Worker
-											</SelectItem>
+											<SelectItem value='all'>All Positions</SelectItem>
+											<SelectItem value='admin'>Admin</SelectItem>
+											<SelectItem value='editor'>Editor</SelectItem>
+											<SelectItem value='worker'>Worker</SelectItem>
 										</SelectContent>
 									</Select>
 								</div>
@@ -438,15 +427,9 @@ const UsersManagement = () => {
 											<SelectValue placeholder='All statuses' />
 										</SelectTrigger>
 										<SelectContent>
-											<SelectItem key='all-status' value='all'>
-												All Status
-											</SelectItem>
-											<SelectItem key='active-only' value='true'>
-												Active Only
-											</SelectItem>
-											<SelectItem key='inactive-only' value='false'>
-												Inactive Only
-											</SelectItem>
+											<SelectItem value='all'>All Status</SelectItem>
+											<SelectItem value='true'>Active Only</SelectItem>
+											<SelectItem value='false'>Inactive Only</SelectItem>
 										</SelectContent>
 									</Select>
 								</div>
@@ -499,9 +482,9 @@ const UsersManagement = () => {
 												</tr>
 											</thead>
 											<tbody>
-												{users.map(user => (
+												{users.map((user, index) => (
 													<tr
-														key={user.id}
+														key={user._id || user.id || `user-${index}`}
 														className='border-b hover:bg-gray-50 transition-colors'
 													>
 														<td className='py-3 px-4'>
@@ -567,14 +550,12 @@ const UsersManagement = () => {
 																<DropdownMenuContent align='end'>
 																	<DropdownMenuLabel>Actions</DropdownMenuLabel>
 																	<DropdownMenuItem
-																		key={`edit-${user.id}`}
 																		onClick={() => openEditDialog(user)}
 																	>
 																		<Edit className='h-4 w-4 mr-2' />
 																		Edit
 																	</DropdownMenuItem>
 																	<DropdownMenuItem
-																		key={`toggle-${user.id}`}
 																		onClick={() => handleToggleStatus(user)}
 																	>
 																		{user.isActive ? (
@@ -591,7 +572,6 @@ const UsersManagement = () => {
 																	</DropdownMenuItem>
 																	<DropdownMenuSeparator />
 																	<DropdownMenuItem
-																		key={`delete-${user.id}`}
 																		onClick={() => handleDeleteUser(user)}
 																		className='text-red-600'
 																	>
@@ -663,15 +643,9 @@ const UsersManagement = () => {
 											<SelectValue placeholder='Select position' />
 										</SelectTrigger>
 										<SelectContent>
-											<SelectItem key='worker-edit' value='worker'>
-												Worker
-											</SelectItem>
-											<SelectItem key='editor-edit' value='editor'>
-												Editor
-											</SelectItem>
-											<SelectItem key='admin-edit' value='admin'>
-												Admin
-											</SelectItem>
+											<SelectItem value='worker'>Worker</SelectItem>
+											<SelectItem value='editor'>Editor</SelectItem>
+											<SelectItem value='admin'>Admin</SelectItem>
 										</SelectContent>
 									</Select>
 								</div>
@@ -704,7 +678,7 @@ const UsersManagement = () => {
 						</DialogContent>
 					</Dialog>
 				</div>
-			</DashboardLayout>
+			</AdminLayout>
 		</ProtectedRoute>
 	)
 }

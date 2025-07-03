@@ -8,7 +8,14 @@ import {
 	DialogHeader,
 	DialogTitle,
 } from '@/components/ui/dialog'
+import {
+	DropdownMenu,
+	DropdownMenuContent,
+	DropdownMenuItem,
+	DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
 import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
 import {
 	Select,
 	SelectContent,
@@ -30,9 +37,11 @@ import { Order, OrderFilters, OrderStatus } from '@/types'
 import {
 	Calendar,
 	Download,
+	Edit,
 	Eye,
 	FileText,
 	LogOut,
+	MoreHorizontal,
 	Package,
 	Printer,
 } from 'lucide-react'
@@ -58,6 +67,10 @@ export default function EditorDashboard() {
 	const [loading, setLoading] = useState(true)
 	const [selectedOrder, setSelectedOrder] = useState<Order | null>(null)
 	const [showOrderDialog, setShowOrderDialog] = useState(false)
+	const [showStatusDialog, setShowStatusDialog] = useState(false)
+	const [newStatus, setNewStatus] = useState<OrderStatus>('pending')
+	const [adminNotes, setAdminNotes] = useState('')
+	const [updatingStatus, setUpdatingStatus] = useState(false)
 	const [filters, setFilters] = useState<OrderFilters>({
 		date: '',
 		branch: '',
@@ -100,6 +113,37 @@ export default function EditorDashboard() {
 	const handleViewOrder = (order: Order) => {
 		setSelectedOrder(order)
 		setShowOrderDialog(true)
+	}
+
+	const handleUpdateStatus = (order: Order) => {
+		setSelectedOrder(order)
+		setNewStatus(order.status)
+		setAdminNotes(order.adminNotes || '')
+		setShowStatusDialog(true)
+	}
+
+	const handleStatusUpdate = async () => {
+		if (!selectedOrder) return
+
+		try {
+			setUpdatingStatus(true)
+			await ordersApi.updateOrderStatus(
+				selectedOrder._id,
+				newStatus,
+				adminNotes
+			)
+
+			// Refresh orders
+			await fetchOrders()
+
+			setShowStatusDialog(false)
+			toast.success('Order status updated successfully')
+		} catch (error) {
+			console.error('Error updating order status:', error)
+			toast.error('Failed to update order status')
+		} finally {
+			setUpdatingStatus(false)
+		}
 	}
 
 	const handlePrintOrder = (order: Order) => {
@@ -806,6 +850,21 @@ export default function EditorDashboard() {
 														<Printer className='h-4 w-4 mr-1' />
 														Print
 													</Button>
+													<DropdownMenu>
+														<DropdownMenuTrigger asChild>
+															<Button variant='outline' size='sm'>
+																<MoreHorizontal className='h-4 w-4' />
+															</Button>
+														</DropdownMenuTrigger>
+														<DropdownMenuContent>
+															<DropdownMenuItem
+																onClick={() => handleUpdateStatus(order)}
+															>
+																<Edit className='h-4 w-4 mr-2' />
+																Update Status
+															</DropdownMenuItem>
+														</DropdownMenuContent>
+													</DropdownMenu>
 												</div>
 											</TableCell>
 										</TableRow>
@@ -909,6 +968,58 @@ export default function EditorDashboard() {
 							)}
 						</div>
 					)}
+				</DialogContent>
+			</Dialog>
+
+			{/* Status Update Dialog */}
+			<Dialog open={showStatusDialog} onOpenChange={setShowStatusDialog}>
+				<DialogContent className='max-w-md'>
+					<DialogHeader>
+						<DialogTitle>
+							Update Order Status - {selectedOrder?.orderNumber}
+						</DialogTitle>
+					</DialogHeader>
+					<div className='space-y-4'>
+						<div>
+							<Label htmlFor='status'>Status</Label>
+							<Select
+								value={newStatus}
+								onValueChange={(value: OrderStatus) => setNewStatus(value)}
+							>
+								<SelectTrigger>
+									<SelectValue placeholder='Select status' />
+								</SelectTrigger>
+								<SelectContent>
+									<SelectItem value='pending'>Pending</SelectItem>
+									<SelectItem value='approved'>Approved</SelectItem>
+									<SelectItem value='rejected'>Rejected</SelectItem>
+									<SelectItem value='completed'>Completed</SelectItem>
+								</SelectContent>
+							</Select>
+						</div>
+						<div>
+							<Label htmlFor='adminNotes'>Admin Notes (Optional)</Label>
+							<textarea
+								id='adminNotes'
+								value={adminNotes}
+								onChange={e => setAdminNotes(e.target.value)}
+								placeholder='Add notes about this status update...'
+								className='w-full p-2 border rounded-md min-h-[80px] resize-none'
+							/>
+						</div>
+						<div className='flex justify-end space-x-2'>
+							<Button
+								variant='outline'
+								onClick={() => setShowStatusDialog(false)}
+								disabled={updatingStatus}
+							>
+								Cancel
+							</Button>
+							<Button onClick={handleStatusUpdate} disabled={updatingStatus}>
+								{updatingStatus ? 'Updating...' : 'Update Status'}
+							</Button>
+						</div>
+					</div>
 				</DialogContent>
 			</Dialog>
 		</div>

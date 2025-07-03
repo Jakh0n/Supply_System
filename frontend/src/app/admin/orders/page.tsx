@@ -1,6 +1,6 @@
 'use client'
 
-import DashboardLayout from '@/components/shared/DashboardLayout'
+import AdminLayout from '@/components/shared/AdminLayout'
 import ProtectedRoute from '@/components/shared/ProtectedRoute'
 import { Button } from '@/components/ui/button'
 import {
@@ -249,21 +249,21 @@ const OrdersManagement: React.FC = () => {
 	if (loading && orders.length === 0) {
 		return (
 			<ProtectedRoute requiredRole='admin'>
-				<DashboardLayout>
+				<AdminLayout>
 					<div className='flex items-center justify-center h-64'>
 						<div className='text-center'>
 							<div className='animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto'></div>
 							<p className='mt-4 text-gray-600'>Loading orders...</p>
 						</div>
 					</div>
-				</DashboardLayout>
+				</AdminLayout>
 			</ProtectedRoute>
 		)
 	}
 
 	return (
 		<ProtectedRoute requiredRole='admin'>
-			<DashboardLayout>
+			<AdminLayout>
 				<div className='space-y-6'>
 					{/* Header */}
 					<div className='flex justify-between items-center'>
@@ -749,7 +749,7 @@ const OrdersManagement: React.FC = () => {
 						</DialogContent>
 					</Dialog>
 				</div>
-			</DashboardLayout>
+			</AdminLayout>
 		</ProtectedRoute>
 	)
 }

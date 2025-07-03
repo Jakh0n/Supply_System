@@ -1,17 +1,8 @@
 'use client'
 
-import DashboardLayout from '@/components/shared/DashboardLayout'
+import AdminLayout from '@/components/shared/AdminLayout'
 import ProtectedRoute from '@/components/shared/ProtectedRoute'
-import {
-	AlertDialog,
-	AlertDialogAction,
-	AlertDialogCancel,
-	AlertDialogContent,
-	AlertDialogDescription,
-	AlertDialogFooter,
-	AlertDialogHeader,
-	AlertDialogTitle,
-} from '@/components/ui/alert-dialog'
+import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import {
 	Card,
@@ -20,490 +11,557 @@ import {
 	CardHeader,
 	CardTitle,
 } from '@/components/ui/card'
-import {
-	Dialog,
-	DialogContent,
-	DialogDescription,
-	DialogHeader,
-	DialogTitle,
-	DialogTrigger,
-} from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
 import {
-	Table,
-	TableBody,
-	TableCell,
-	TableHead,
-	TableHeader,
-	TableRow,
-} from '@/components/ui/table'
-import { branchesApi } from '@/lib/api'
-import { Branch, BranchDetails, BranchFormData } from '@/types'
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from '@/components/ui/select'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { ordersApi } from '@/lib/api'
+import { AnalyticsTimeframe, BranchAnalytics, BranchFilter } from '@/types'
 import {
-	Building2,
-	Clock,
-	Edit,
-	Eye,
-	Plus,
+	Activity,
+	BarChart3,
+	DollarSign,
+	Download,
+	Filter,
+	MapPin,
+	Package,
+	RefreshCw,
+	Search,
 	ShoppingCart,
-	Trash2,
-	Users,
+	TrendingDown,
+	TrendingUp,
 } from 'lucide-react'
 import { useCallback, useEffect, useState } from 'react'
 
-const BranchesManagement: React.FC = () => {
-	const [branches, setBranches] = useState<Branch[]>([])
+const BranchPerformancePage: React.FC = () => {
+	const [branchAnalytics, setBranchAnalytics] = useState<BranchAnalytics[]>([])
 	const [loading, setLoading] = useState(true)
-	const [error, setError] = useState('')
-	const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false)
-	const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
-	const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
-	const [isDetailsDialogOpen, setIsDetailsDialogOpen] = useState(false)
-	const [selectedBranch, setSelectedBranch] = useState<Branch | null>(null)
-	const [branchDetails, setBranchDetails] = useState<BranchDetails | null>(null)
-	const [formData, setFormData] = useState<BranchFormData>({ name: '' })
-	const [isSubmitting, setIsSubmitting] = useState(false)
+	const [searchTerm, setSearchTerm] = useState('')
+	const [filters, setFilters] = useState<BranchFilter>({
+		branch: 'all',
+		timeframe: 'month',
+		category: 'all',
+		dateRange: {
+			start: '',
+			end: '',
+		},
+	})
 
-	// Fetch branches
-	const fetchBranches = useCallback(async () => {
+	const fetchBranchData = useCallback(async () => {
 		try {
 			setLoading(true)
-			const response = await branchesApi.getBranches()
-			setBranches(response.branches)
-		} catch (err) {
-			setError('Failed to load branches')
-			console.error('Branches fetch error:', err)
+
+			const analyticsResponse = await ordersApi.getBranchAnalytics(
+				filters.timeframe
+			)
+			setBranchAnalytics(analyticsResponse.branches)
+		} catch (error) {
+			console.error('Branch data fetch error:', error)
 		} finally {
 			setLoading(false)
 		}
-	}, [])
-
-	// Fetch branch details
-	const fetchBranchDetails = useCallback(async (branchName: string) => {
-		try {
-			const response = await branchesApi.getBranch(branchName)
-			setBranchDetails(response.branch)
-		} catch (err) {
-			console.error('Branch details fetch error:', err)
-		}
-	}, [])
+	}, [filters.timeframe])
 
 	useEffect(() => {
-		fetchBranches()
-	}, [fetchBranches])
+		fetchBranchData()
+	}, [fetchBranchData])
 
-	// Handle form input changes
-	const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-		const { name, value } = e.target
-		setFormData(prev => ({ ...prev, [name]: value }))
+	const formatKRW = (amount: number) => {
+		return new Intl.NumberFormat('ko-KR', {
+			style: 'currency',
+			currency: 'KRW',
+			minimumFractionDigits: 0,
+		}).format(amount)
 	}
 
-	// Handle create branch
-	const handleCreateBranch = async (e: React.FormEvent) => {
-		e.preventDefault()
-		if (!formData.name.trim()) return
-
-		setIsSubmitting(true)
-		try {
-			await branchesApi.createBranch({ name: formData.name.trim() })
-			await fetchBranches()
-			setIsCreateDialogOpen(false)
-			setFormData({ name: '' })
-		} catch (err) {
-			console.error('Create branch error:', err)
-			setError('Failed to create branch')
-		} finally {
-			setIsSubmitting(false)
+	const getTrendIcon = (trend: string | number) => {
+		if (typeof trend === 'number') {
+			return trend > 0 ? (
+				<TrendingUp className='h-4 w-4 text-green-500' />
+			) : (
+				<TrendingDown className='h-4 w-4 text-red-500' />
+			)
 		}
+		return trend === 'up' ? (
+			<TrendingUp className='h-4 w-4 text-green-500' />
+		) : trend === 'down' ? (
+			<TrendingDown className='h-4 w-4 text-red-500' />
+		) : (
+			<Activity className='h-4 w-4 text-gray-500' />
+		)
 	}
 
-	// Handle edit branch
-	const handleEditBranch = async (e: React.FormEvent) => {
-		e.preventDefault()
-		if (!selectedBranch || !formData.name.trim()) return
+	const filteredBranches = branchAnalytics.filter(branch => {
+		const matchesSearch = branch.branch
+			.toLowerCase()
+			.includes(searchTerm.toLowerCase())
+		const matchesBranch =
+			filters.branch === 'all' || branch.branch === filters.branch
+		return matchesSearch && matchesBranch
+	})
 
-		setIsSubmitting(true)
-		try {
-			await branchesApi.updateBranch(selectedBranch.name, {
-				name: formData.name.trim(),
-			})
-			await fetchBranches()
-			setIsEditDialogOpen(false)
-			setSelectedBranch(null)
-			setFormData({ name: '' })
-		} catch (err) {
-			console.error('Update branch error:', err)
-			setError('Failed to update branch')
-		} finally {
-			setIsSubmitting(false)
-		}
+	const getEfficiencyScore = (branch: BranchAnalytics) => {
+		const completionRate =
+			branch.totalOrders > 0
+				? (branch.completedOrders / branch.totalOrders) * 100
+				: 0
+		const avgOrderValue = branch.avgOrderValue || 0
+		const trend = branch.weeklyTrend || 0
+
+		// Calculate efficiency score based on completion rate, order value, and trend
+		const score =
+			completionRate * 0.4 +
+			Math.min(avgOrderValue / 100000, 1) * 0.3 +
+			Math.max(trend, 0) * 0.3
+		return Math.min(Math.round(score), 100)
 	}
 
-	// Handle delete branch
-	const handleDeleteBranch = async () => {
-		if (!selectedBranch) return
-
-		setIsSubmitting(true)
-		try {
-			await branchesApi.deleteBranch(selectedBranch.name)
-			await fetchBranches()
-			setIsDeleteDialogOpen(false)
-			setSelectedBranch(null)
-		} catch (err) {
-			console.error('Delete branch error:', err)
-			setError('Failed to delete branch')
-		} finally {
-			setIsSubmitting(false)
-		}
-	}
-
-	// Open edit dialog
-	const openEditDialog = (branch: Branch) => {
-		setSelectedBranch(branch)
-		setFormData({ name: branch.name })
-		setIsEditDialogOpen(true)
-	}
-
-	// Open delete dialog
-	const openDeleteDialog = (branch: Branch) => {
-		setSelectedBranch(branch)
-		setIsDeleteDialogOpen(true)
-	}
-
-	// Open details dialog
-	const openDetailsDialog = async (branch: Branch) => {
-		setSelectedBranch(branch)
-		setIsDetailsDialogOpen(true)
-		await fetchBranchDetails(branch.name)
+	const getPerformanceLevel = (score: number) => {
+		if (score >= 80)
+			return { level: 'Excellent', color: 'bg-green-100 text-green-800' }
+		if (score >= 60)
+			return { level: 'Good', color: 'bg-blue-100 text-blue-800' }
+		if (score >= 40)
+			return { level: 'Average', color: 'bg-yellow-100 text-yellow-800' }
+		return { level: 'Needs Improvement', color: 'bg-red-100 text-red-800' }
 	}
 
 	if (loading) {
 		return (
 			<ProtectedRoute requiredRole='admin'>
-				<DashboardLayout>
-					<div className='min-h-screen flex items-center justify-center'>
+				<AdminLayout>
+					<div className='flex items-center justify-center h-64'>
 						<div className='text-center'>
-							<div className='animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto'></div>
-							<p className='mt-2 text-gray-600'>Loading branches...</p>
+							<div className='animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto'></div>
+							<p className='mt-4 text-gray-600'>Loading branch analytics...</p>
 						</div>
 					</div>
-				</DashboardLayout>
+				</AdminLayout>
 			</ProtectedRoute>
 		)
 	}
 
 	return (
 		<ProtectedRoute requiredRole='admin'>
-			<DashboardLayout>
+			<AdminLayout>
 				<div className='space-y-6'>
+					{/* Header */}
 					<div className='flex justify-between items-center'>
 						<div>
 							<h1 className='text-3xl font-bold text-gray-900'>
-								Branch Management
+								Branch Performance Analysis
 							</h1>
-							<p className='mt-2 text-gray-600'>
-								Manage branch locations and their information
+							<p className='text-gray-600 mt-1'>
+								Detailed consumption tracking and performance metrics for each
+								branch
 							</p>
 						</div>
-						<Dialog
-							open={isCreateDialogOpen}
-							onOpenChange={setIsCreateDialogOpen}
-						>
-							<DialogTrigger asChild>
-								<Button>
-									<Plus className='h-4 w-4 mr-2' />
-									Add Branch
-								</Button>
-							</DialogTrigger>
-							<DialogContent>
-								<DialogHeader>
-									<DialogTitle>Create New Branch</DialogTitle>
-									<DialogDescription>
-										Add a new branch location to the system.
-									</DialogDescription>
-								</DialogHeader>
-								<form onSubmit={handleCreateBranch} className='space-y-4'>
-									<div>
-										<Label htmlFor='name'>Branch Name</Label>
-										<Input
-											id='name'
-											name='name'
-											value={formData.name}
-											onChange={handleInputChange}
-											placeholder='Enter branch name'
-											required
-										/>
-									</div>
-									<div className='flex justify-end space-x-2'>
-										<Button
-											type='button'
-											variant='outline'
-											onClick={() => setIsCreateDialogOpen(false)}
-										>
-											Cancel
-										</Button>
-										<Button type='submit' disabled={isSubmitting}>
-											{isSubmitting ? 'Creating...' : 'Create Branch'}
-										</Button>
-									</div>
-								</form>
-							</DialogContent>
-						</Dialog>
+						<div className='flex gap-3'>
+							<Button onClick={fetchBranchData} variant='outline' size='sm'>
+								<RefreshCw className='h-4 w-4 mr-2' />
+								Refresh
+							</Button>
+							<Button variant='outline' size='sm'>
+								<Download className='h-4 w-4 mr-2' />
+								Export Report
+							</Button>
+						</div>
 					</div>
 
-					{error && (
-						<Card className='border-red-200 bg-red-50'>
-							<CardContent className='pt-6'>
-								<p className='text-red-800'>{error}</p>
-							</CardContent>
-						</Card>
-					)}
-
+					{/* Filters */}
 					<Card>
 						<CardHeader>
-							<CardTitle className='flex items-center'>
-								<Building2 className='h-5 w-5 mr-2' />
-								Branches ({branches.length})
+							<CardTitle className='flex items-center gap-2'>
+								<Filter className='h-5 w-5' />
+								Filters & Search
 							</CardTitle>
-							<CardDescription>
-								Overview of all branch locations and their statistics
-							</CardDescription>
 						</CardHeader>
 						<CardContent>
-							{branches.length === 0 ? (
-								<div className='text-center py-8'>
-									<Building2 className='h-12 w-12 text-gray-400 mx-auto mb-4' />
-									<p className='text-gray-500 mb-4'>No branches found</p>
-									<Button onClick={() => setIsCreateDialogOpen(true)}>
-										<Plus className='h-4 w-4 mr-2' />
-										Add Your First Branch
-									</Button>
+							<div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4'>
+								<div className='space-y-2'>
+									<label className='text-sm font-medium'>Search Branch</label>
+									<div className='relative'>
+										<Search className='absolute left-3 top-3 h-4 w-4 text-gray-400' />
+										<Input
+											placeholder='Search branches...'
+											value={searchTerm}
+											onChange={e => setSearchTerm(e.target.value)}
+											className='pl-10'
+										/>
+									</div>
 								</div>
-							) : (
-								<Table>
-									<TableHeader>
-										<TableRow>
-											<TableHead>Branch Name</TableHead>
-											<TableHead>Active Workers</TableHead>
-											<TableHead>Total Orders</TableHead>
-											<TableHead>Pending Orders</TableHead>
-											<TableHead>Actions</TableHead>
-										</TableRow>
-									</TableHeader>
-									<TableBody>
-										{branches.map((branch, index) => (
-											<TableRow key={branch.name || `branch-${index}`}>
-												<TableCell className='font-medium'>
-													{branch.name}
-												</TableCell>
-												<TableCell>
-													<div className='flex items-center'>
-														<Users className='h-4 w-4 mr-1 text-blue-500' />
-														{branch.activeWorkers}
-													</div>
-												</TableCell>
-												<TableCell>
-													<div className='flex items-center'>
-														<ShoppingCart className='h-4 w-4 mr-1 text-green-500' />
-														{branch.totalOrders}
-													</div>
-												</TableCell>
-												<TableCell>
-													<div className='flex items-center'>
-														<Clock className='h-4 w-4 mr-1 text-orange-500' />
-														{branch.pendingOrders}
-													</div>
-												</TableCell>
-												<TableCell>
-													<div className='flex space-x-2'>
-														<Button
-															size='sm'
-															variant='outline'
-															onClick={() => openDetailsDialog(branch)}
-														>
-															<Eye className='h-4 w-4' />
-														</Button>
-														<Button
-															size='sm'
-															variant='outline'
-															onClick={() => openEditDialog(branch)}
-														>
-															<Edit className='h-4 w-4' />
-														</Button>
-														<Button
-															size='sm'
-															variant='outline'
-															onClick={() => openDeleteDialog(branch)}
-															className='text-red-600 hover:text-red-700'
-														>
-															<Trash2 className='h-4 w-4' />
-														</Button>
-													</div>
-												</TableCell>
-											</TableRow>
-										))}
-									</TableBody>
-								</Table>
-							)}
+
+								<div className='space-y-2'>
+									<label className='text-sm font-medium'>Branch</label>
+									<Select
+										value={filters.branch}
+										onValueChange={(value: string) =>
+											setFilters((prev: BranchFilter) => ({
+												...prev,
+												branch: value,
+											}))
+										}
+									>
+										<SelectTrigger>
+											<SelectValue />
+										</SelectTrigger>
+										<SelectContent>
+											<SelectItem value='all'>All Branches</SelectItem>
+											{branchAnalytics.map(branch => (
+												<SelectItem key={branch.branch} value={branch.branch}>
+													{branch.branch}
+												</SelectItem>
+											))}
+										</SelectContent>
+									</Select>
+								</div>
+
+								<div className='space-y-2'>
+									<label className='text-sm font-medium'>Time Period</label>
+									<Select
+										value={filters.timeframe}
+										onValueChange={(value: string) =>
+											setFilters((prev: BranchFilter) => ({
+												...prev,
+												timeframe: value as AnalyticsTimeframe,
+											}))
+										}
+									>
+										<SelectTrigger>
+											<SelectValue />
+										</SelectTrigger>
+										<SelectContent>
+											<SelectItem value='day'>Last 24 Hours</SelectItem>
+											<SelectItem value='week'>Last Week</SelectItem>
+											<SelectItem value='month'>Last Month</SelectItem>
+											<SelectItem value='quarter'>Last Quarter</SelectItem>
+										</SelectContent>
+									</Select>
+								</div>
+
+								<div className='space-y-2'>
+									<label className='text-sm font-medium'>Category</label>
+									<Select
+										value={filters.category}
+										onValueChange={(value: string) =>
+											setFilters((prev: BranchFilter) => ({
+												...prev,
+												category: value,
+											}))
+										}
+									>
+										<SelectTrigger>
+											<SelectValue />
+										</SelectTrigger>
+										<SelectContent>
+											<SelectItem value='all'>All Categories</SelectItem>
+											<SelectItem value='food'>Food</SelectItem>
+											<SelectItem value='beverages'>Beverages</SelectItem>
+											<SelectItem value='cleaning'>Cleaning</SelectItem>
+											<SelectItem value='equipment'>Equipment</SelectItem>
+											<SelectItem value='packaging'>Packaging</SelectItem>
+										</SelectContent>
+									</Select>
+								</div>
+							</div>
 						</CardContent>
 					</Card>
 
-					{/* Edit Dialog */}
-					<Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-						<DialogContent>
-							<DialogHeader>
-								<DialogTitle>Edit Branch</DialogTitle>
-								<DialogDescription>
-									Update the branch information.
-								</DialogDescription>
-							</DialogHeader>
-							<form onSubmit={handleEditBranch} className='space-y-4'>
-								<div>
-									<Label htmlFor='edit-name'>Branch Name</Label>
-									<Input
-										id='edit-name'
-										name='name'
-										value={formData.name}
-										onChange={handleInputChange}
-										placeholder='Enter branch name'
-										required
-									/>
-								</div>
-								<div className='flex justify-end space-x-2'>
-									<Button
-										type='button'
-										variant='outline'
-										onClick={() => setIsEditDialogOpen(false)}
-									>
-										Cancel
-									</Button>
-									<Button type='submit' disabled={isSubmitting}>
-										{isSubmitting ? 'Updating...' : 'Update Branch'}
-									</Button>
-								</div>
-							</form>
-						</DialogContent>
-					</Dialog>
-
-					{/* Delete Dialog */}
-					<AlertDialog
-						open={isDeleteDialogOpen}
-						onOpenChange={setIsDeleteDialogOpen}
-					>
-						<AlertDialogContent>
-							<AlertDialogHeader>
-								<AlertDialogTitle>Delete Branch</AlertDialogTitle>
-								<AlertDialogDescription>
-									Are you sure you want to delete &quot;{selectedBranch?.name}
-									&quot;? This action cannot be undone and will only work if the
-									branch has no active workers or orders.
-								</AlertDialogDescription>
-							</AlertDialogHeader>
-							<AlertDialogFooter>
-								<AlertDialogCancel>Cancel</AlertDialogCancel>
-								<AlertDialogAction
-									onClick={handleDeleteBranch}
-									disabled={isSubmitting}
-									className='bg-red-600 hover:bg-red-700'
-								>
-									{isSubmitting ? 'Deleting...' : 'Delete'}
-								</AlertDialogAction>
-							</AlertDialogFooter>
-						</AlertDialogContent>
-					</AlertDialog>
-
-					{/* Details Dialog */}
-					<Dialog
-						open={isDetailsDialogOpen}
-						onOpenChange={setIsDetailsDialogOpen}
-					>
-						<DialogContent className='max-w-2xl'>
-							<DialogHeader>
-								<DialogTitle className='flex items-center'>
-									<Building2 className='h-5 w-5 mr-2' />
-									{selectedBranch?.name} Details
-								</DialogTitle>
-								<DialogDescription>
-									Detailed information about this branch location.
-								</DialogDescription>
-							</DialogHeader>
-							{branchDetails ? (
-								<div className='space-y-6'>
-									<div className='grid grid-cols-2 md:grid-cols-4 gap-4'>
-										<div className='text-center p-4 bg-blue-50 rounded-lg'>
-											<Users className='h-8 w-8 text-blue-600 mx-auto mb-2' />
-											<div className='text-2xl font-bold text-blue-900'>
-												{branchDetails.activeWorkers}
-											</div>
-											<div className='text-sm text-blue-600'>
-												Active Workers
-											</div>
-										</div>
-										<div className='text-center p-4 bg-gray-50 rounded-lg'>
-											<Users className='h-8 w-8 text-gray-600 mx-auto mb-2' />
-											<div className='text-2xl font-bold text-gray-900'>
-												{branchDetails.totalWorkers}
-											</div>
-											<div className='text-sm text-gray-600'>Total Workers</div>
-										</div>
-										<div className='text-center p-4 bg-green-50 rounded-lg'>
-											<ShoppingCart className='h-8 w-8 text-green-600 mx-auto mb-2' />
-											<div className='text-2xl font-bold text-green-900'>
-												{branchDetails.totalOrders}
-											</div>
-											<div className='text-sm text-green-600'>Total Orders</div>
-										</div>
-										<div className='text-center p-4 bg-orange-50 rounded-lg'>
-											<Clock className='h-8 w-8 text-orange-600 mx-auto mb-2' />
-											<div className='text-2xl font-bold text-orange-900'>
-												{branchDetails.pendingOrders}
-											</div>
-											<div className='text-sm text-orange-600'>
-												Pending Orders
-											</div>
-										</div>
+					{/* Overview Stats */}
+					<div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6'>
+						<Card>
+							<CardContent className='p-6'>
+								<div className='flex items-center justify-between'>
+									<div>
+										<p className='text-sm font-medium text-gray-600'>
+											Total Branches
+										</p>
+										<p className='text-2xl font-bold'>
+											{filteredBranches.length}
+										</p>
 									</div>
+									<MapPin className='h-8 w-8 text-blue-600' />
+								</div>
+							</CardContent>
+						</Card>
 
-									{branchDetails.workers.length > 0 && (
-										<div>
-											<h4 className='font-semibold mb-3'>Workers</h4>
-											<div className='space-y-2 max-h-40 overflow-y-auto'>
-												{branchDetails.workers.map((worker, index) => (
-													<div
-														key={worker.id || `worker-${index}`}
-														className='flex items-center justify-between p-2 bg-gray-50 rounded'
+						<Card>
+							<CardContent className='p-6'>
+								<div className='flex items-center justify-between'>
+									<div>
+										<p className='text-sm font-medium text-gray-600'>
+											Total Orders
+										</p>
+										<p className='text-2xl font-bold'>
+											{filteredBranches.reduce(
+												(sum, branch) => sum + branch.totalOrders,
+												0
+											)}
+										</p>
+									</div>
+									<ShoppingCart className='h-8 w-8 text-green-600' />
+								</div>
+							</CardContent>
+						</Card>
+
+						<Card>
+							<CardContent className='p-6'>
+								<div className='flex items-center justify-between'>
+									<div>
+										<p className='text-sm font-medium text-gray-600'>
+											Total Spending
+										</p>
+										<p className='text-2xl font-bold text-purple-600'>
+											{formatKRW(
+												filteredBranches.reduce(
+													(sum, branch) => sum + branch.totalValue,
+													0
+												)
+											)}
+										</p>
+									</div>
+									<DollarSign className='h-8 w-8 text-purple-600' />
+								</div>
+							</CardContent>
+						</Card>
+
+						<Card>
+							<CardContent className='p-6'>
+								<div className='flex items-center justify-between'>
+									<div>
+										<p className='text-sm font-medium text-gray-600'>
+											Avg Efficiency
+										</p>
+										<p className='text-2xl font-bold text-orange-600'>
+											{filteredBranches.length > 0
+												? Math.round(
+														filteredBranches.reduce(
+															(sum, branch) => sum + getEfficiencyScore(branch),
+															0
+														) / filteredBranches.length
+												  )
+												: 0}
+											%
+										</p>
+									</div>
+									<BarChart3 className='h-8 w-8 text-orange-600' />
+								</div>
+							</CardContent>
+						</Card>
+					</div>
+
+					{/* Branch Performance Cards */}
+					<div className='grid grid-cols-1 lg:grid-cols-2 gap-6'>
+						{filteredBranches.map(branch => {
+							const efficiencyScore = getEfficiencyScore(branch)
+							const performance = getPerformanceLevel(efficiencyScore)
+
+							return (
+								<Card
+									key={branch.branch}
+									className='hover:shadow-lg transition-shadow'
+								>
+									<CardHeader>
+										<div className='flex items-center justify-between'>
+											<div className='flex items-center gap-3'>
+												<MapPin className='h-5 w-5 text-blue-600' />
+												<div>
+													<CardTitle className='text-lg'>
+														{branch.branch}
+													</CardTitle>
+													<CardDescription>
+														Performance Analysis
+													</CardDescription>
+												</div>
+											</div>
+											<div className='flex items-center gap-2'>
+												<Badge className={performance.color}>
+													{performance.level}
+												</Badge>
+												<div className='flex items-center gap-1'>
+													{getTrendIcon(branch.weeklyTrend)}
+													<span
+														className={`text-sm font-medium ${
+															branch.weeklyTrend > 0
+																? 'text-green-600'
+																: 'text-red-600'
+														}`}
 													>
-														<span className='font-medium'>
-															{worker.username}
-														</span>
-														<span
-															className={`px-2 py-1 rounded-full text-xs ${
-																worker.isActive
-																	? 'bg-green-100 text-green-800'
-																	: 'bg-red-100 text-red-800'
-															}`}
-														>
-															{worker.isActive ? 'Active' : 'Inactive'}
-														</span>
-													</div>
-												))}
+														{branch.weeklyTrend > 0 ? '+' : ''}
+														{branch.weeklyTrend}%
+													</span>
+												</div>
 											</div>
 										</div>
-									)}
-								</div>
-							) : (
-								<div className='flex items-center justify-center py-8'>
-									<div className='animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600'></div>
-									<span className='ml-2 text-gray-600'>Loading details...</span>
-								</div>
-							)}
-						</DialogContent>
-					</Dialog>
+									</CardHeader>
+									<CardContent>
+										<Tabs defaultValue='overview' className='w-full'>
+											<TabsList className='grid w-full grid-cols-3'>
+												<TabsTrigger value='overview'>Overview</TabsTrigger>
+												<TabsTrigger value='products'>Products</TabsTrigger>
+												<TabsTrigger value='efficiency'>Efficiency</TabsTrigger>
+											</TabsList>
+
+											<TabsContent value='overview' className='space-y-4'>
+												<div className='grid grid-cols-2 gap-4'>
+													<div className='space-y-2'>
+														<p className='text-sm text-gray-600'>
+															Total Orders
+														</p>
+														<p className='text-2xl font-bold'>
+															{branch.totalOrders}
+														</p>
+													</div>
+													<div className='space-y-2'>
+														<p className='text-sm text-gray-600'>Total Value</p>
+														<p className='text-2xl font-bold text-green-600'>
+															{formatKRW(branch.totalValue)}
+														</p>
+													</div>
+													<div className='space-y-2'>
+														<p className='text-sm text-gray-600'>
+															Avg Order Value
+														</p>
+														<p className='text-xl font-semibold'>
+															{formatKRW(branch.avgOrderValue)}
+														</p>
+													</div>
+													<div className='space-y-2'>
+														<p className='text-sm text-gray-600'>
+															Pending Orders
+														</p>
+														<p className='text-xl font-semibold text-orange-600'>
+															{branch.pendingOrders}
+														</p>
+													</div>
+												</div>
+											</TabsContent>
+
+											<TabsContent value='products' className='space-y-4'>
+												<div className='space-y-3'>
+													<p className='text-sm font-medium text-gray-700'>
+														Top Products ({filters.timeframe})
+													</p>
+													{branch.mostOrderedProducts
+														.slice(0, 3)
+														.map((product, idx) => (
+															<div
+																key={idx}
+																className='flex items-center justify-between p-3 bg-gray-50 rounded-lg'
+															>
+																<div className='flex items-center gap-3'>
+																	<div className='w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center'>
+																		<Package className='h-4 w-4 text-blue-600' />
+																	</div>
+																	<div>
+																		<p className='font-medium'>
+																			{product.name}
+																		</p>
+																		<p className='text-sm text-gray-600'>
+																			{product.quantity} units
+																		</p>
+																	</div>
+																</div>
+																<Badge variant='secondary'>#{idx + 1}</Badge>
+															</div>
+														))}
+													{branch.mostOrderedProducts.length === 0 && (
+														<p className='text-center text-gray-500 py-4'>
+															No products data available
+														</p>
+													)}
+												</div>
+											</TabsContent>
+
+											<TabsContent value='efficiency' className='space-y-4'>
+												<div className='space-y-4'>
+													<div className='flex items-center justify-between'>
+														<p className='text-sm font-medium'>
+															Efficiency Score
+														</p>
+														<div className='flex items-center gap-2'>
+															<div className='w-16 h-2 bg-gray-200 rounded-full'>
+																<div
+																	className='h-2 bg-blue-600 rounded-full'
+																	style={{ width: `${efficiencyScore}%` }}
+																></div>
+															</div>
+															<span className='text-sm font-bold'>
+																{efficiencyScore}%
+															</span>
+														</div>
+													</div>
+
+													<div className='grid grid-cols-2 gap-4 text-sm'>
+														<div className='space-y-1'>
+															<p className='text-gray-600'>Completion Rate</p>
+															<p className='font-semibold'>
+																{branch.totalOrders > 0
+																	? Math.round(
+																			(branch.completedOrders /
+																				branch.totalOrders) *
+																				100
+																	  )
+																	: 0}
+																%
+															</p>
+														</div>
+														<div className='space-y-1'>
+															<p className='text-gray-600'>Order Frequency</p>
+															<p className='font-semibold'>
+																{Math.round(branch.totalOrders / 7)} orders/week
+															</p>
+														</div>
+														<div className='space-y-1'>
+															<p className='text-gray-600'>Growth Trend</p>
+															<p
+																className={`font-semibold ${
+																	branch.weeklyTrend > 0
+																		? 'text-green-600'
+																		: 'text-red-600'
+																}`}
+															>
+																{branch.weeklyTrend > 0 ? '+' : ''}
+																{branch.weeklyTrend}%
+															</p>
+														</div>
+														<div className='space-y-1'>
+															<p className='text-gray-600'>Avg Response Time</p>
+															<p className='font-semibold'>2.3 days</p>
+														</div>
+													</div>
+												</div>
+											</TabsContent>
+										</Tabs>
+									</CardContent>
+								</Card>
+							)
+						})}
+					</div>
+
+					{/* No Results */}
+					{filteredBranches.length === 0 && (
+						<Card>
+							<CardContent className='p-12 text-center'>
+								<MapPin className='h-12 w-12 text-gray-400 mx-auto mb-4' />
+								<h3 className='text-lg font-semibold text-gray-900 mb-2'>
+									No branches found
+								</h3>
+								<p className='text-gray-600'>
+									Try adjusting your search terms or filters to find branches.
+								</p>
+							</CardContent>
+						</Card>
+					)}
 				</div>
-			</DashboardLayout>
+			</AdminLayout>
 		</ProtectedRoute>
 	)
 }
 
-export default BranchesManagement
+export default BranchPerformancePage

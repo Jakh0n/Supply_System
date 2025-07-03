@@ -1,8 +1,11 @@
 import {
+	AnalyticsTimeframe,
 	AuthUser,
+	BranchAnalyticsResponse,
 	BranchesResponse,
 	CategoriesResponse,
 	DashboardStats,
+	FinancialMetrics,
 	LoginCredentials,
 	Order,
 	OrderFilters,
@@ -12,6 +15,7 @@ import {
 	Product,
 	ProductFilters,
 	ProductFormData,
+	ProductInsightsResponse,
 	ProductsResponse,
 	RegisterData,
 	UnitsResponse,
@@ -205,6 +209,33 @@ export const ordersApi = {
 
 	getDashboardStats: async (): Promise<DashboardStats> => {
 		const response = await api.get('/orders/stats/dashboard')
+		return response.data
+	},
+
+	getBranchAnalytics: async (
+		timeframe: AnalyticsTimeframe = 'week'
+	): Promise<BranchAnalyticsResponse> => {
+		const response = await api.get(
+			`/orders/analytics/branches?timeframe=${timeframe}`
+		)
+		return response.data
+	},
+
+	getProductInsights: async (
+		timeframe: AnalyticsTimeframe = 'week'
+	): Promise<ProductInsightsResponse> => {
+		const response = await api.get(
+			`/orders/analytics/products?timeframe=${timeframe}`
+		)
+		return response.data
+	},
+
+	getFinancialMetrics: async (
+		timeframe: AnalyticsTimeframe = 'week'
+	): Promise<FinancialMetrics> => {
+		const response = await api.get(
+			`/orders/analytics/financial?timeframe=${timeframe}`
+		)
 		return response.data
 	},
 }

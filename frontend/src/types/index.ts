@@ -1,5 +1,6 @@
 export interface User {
-	id: string
+	_id?: string
+	id?: string
 	username: string
 	position: 'admin' | 'worker' | 'editor'
 	branch?: string
@@ -219,4 +220,60 @@ export interface CategoriesResponse {
 
 export interface UnitsResponse {
 	units: ProductUnit[]
+}
+
+// Analytics Types
+export interface BranchAnalytics {
+	branch: string
+	totalOrders: number
+	totalValue: number
+	avgOrderValue: number
+	pendingOrders: number
+	completedOrders: number
+	mostOrderedProducts: Array<{
+		name: string
+		quantity: number
+		value: number
+	}>
+	weeklyTrend: number
+}
+
+export interface ProductInsights {
+	name: string
+	totalOrdered: number
+	totalValue: number
+	frequency: number
+	avgPrice: number
+	trend: 'up' | 'down' | 'stable'
+}
+
+export interface FinancialMetrics {
+	dailySpending: number
+	weeklySpending: number
+	monthlySpending: number
+	avgOrderValue: number
+	topSpendingBranches: Array<{
+		branch: string
+		spending: number
+	}>
+}
+
+export interface BranchAnalyticsResponse {
+	branches: BranchAnalytics[]
+}
+
+export interface ProductInsightsResponse {
+	products: ProductInsights[]
+}
+
+export type AnalyticsTimeframe = 'day' | 'week' | 'month' | 'quarter'
+
+export interface BranchFilter {
+	branch: string
+	timeframe: AnalyticsTimeframe
+	category: string
+	dateRange: {
+		start: string
+		end: string
+	}
 }

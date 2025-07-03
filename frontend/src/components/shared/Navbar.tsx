@@ -13,6 +13,7 @@ import { useAuth } from '@/contexts/AuthContext'
 import {
 	BarChart3,
 	LogOut,
+	MapPin,
 	Menu,
 	Package,
 	Settings,
@@ -94,6 +95,17 @@ const Navbar: React.FC = () => {
 									>
 										<Package className='h-4 w-4 mr-2' />
 										Products
+									</Link>
+									<Link
+										href='/admin/branches'
+										className={`px-3 py-2 rounded-md text-sm font-medium flex items-center transition-colors ${
+											isActiveLink('/admin/branches')
+												? 'text-blue-600 bg-blue-50'
+												: 'text-gray-700 hover:text-blue-600 hover:bg-gray-50'
+										}`}
+									>
+										<MapPin className='h-4 w-4 mr-2' />
+										Branch Analytics
 									</Link>
 								</>
 							)}
@@ -232,6 +244,19 @@ const Navbar: React.FC = () => {
 												>
 													<Package className='h-4 w-4 mr-3' />
 													Products
+												</Link>
+											</DropdownMenuItem>
+											<DropdownMenuItem asChild>
+												<Link
+													href='/admin/branches'
+													className={`flex items-center w-full ${
+														isActiveLink('/admin/branches')
+															? 'text-blue-600 bg-blue-50'
+															: 'text-gray-700'
+													}`}
+												>
+													<MapPin className='h-4 w-4 mr-3' />
+													Branch Analytics
 												</Link>
 											</DropdownMenuItem>
 										</>
