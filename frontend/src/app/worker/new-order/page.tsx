@@ -351,23 +351,23 @@ const NewOrder: React.FC = () => {
 	return (
 		<ProtectedRoute requiredRole='worker'>
 			<DashboardLayout>
-				<div className='space-y-6'>
+				<div className='space-y-4 sm:space-y-6'>
 					{/* Header */}
-					<div className='flex justify-between items-center'>
+					<div className='flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4'>
 						<div>
-							<h1 className='text-2xl font-bold text-gray-900'>
+							<h1 className='text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900'>
 								Create New Order
 							</h1>
-							<p className='mt-2 text-gray-600'>
+							<p className='mt-1 sm:mt-2 text-sm sm:text-base text-gray-600'>
 								Submit a new supply request for any branch
 							</p>
 						</div>
-						<div className='flex gap-2'>
+						<div className='flex flex-col sm:flex-row gap-2 sm:gap-3'>
 							{orderItems.length > 0 && (
 								<Button
 									variant='outline'
 									onClick={clearOrder}
-									className='text-red-600 hover:text-red-700'
+									className='text-red-600 hover:text-red-700 h-9 sm:h-10 text-sm'
 								>
 									<Trash2 className='h-4 w-4 mr-2' />
 									Clear Order
@@ -376,6 +376,7 @@ const NewOrder: React.FC = () => {
 							<Button
 								variant='outline'
 								onClick={() => router.push('/worker/orders')}
+								className='h-9 sm:h-10 text-sm'
 							>
 								<X className='h-4 w-4 mr-2' />
 								Cancel
@@ -385,9 +386,9 @@ const NewOrder: React.FC = () => {
 
 					{/* Error message */}
 					{error && (
-						<div className='bg-red-50 border border-red-200 rounded-md p-4'>
+						<div className='bg-red-50 border border-red-200 rounded-md p-3 sm:p-4'>
 							<div className='flex'>
-								<AlertCircle className='h-5 w-5 text-red-400' />
+								<AlertCircle className='h-4 w-4 sm:h-5 sm:w-5 text-red-400 flex-shrink-0 mt-0.5' />
 								<div className='ml-3'>
 									<p className='text-sm text-red-800'>{error}</p>
 								</div>
@@ -395,160 +396,209 @@ const NewOrder: React.FC = () => {
 						</div>
 					)}
 
-					<div className='grid grid-cols-1 lg:grid-cols-3 gap-6'>
+					<div className='grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6'>
 						{/* Product Selection */}
-						<div className='lg:col-span-2'>
+						<div className='lg:col-span-2 order-2 lg:order-1'>
 							<Card>
-								<CardHeader>
-									<CardTitle>Select Products</CardTitle>
-									<CardDescription>
+								<CardHeader className='p-4 sm:p-6'>
+									<CardTitle className='text-lg sm:text-xl'>
+										Select Products
+									</CardTitle>
+									<CardDescription className='text-sm'>
 										Choose items for your supply request
 									</CardDescription>
 								</CardHeader>
-								<CardContent>
+								<CardContent className='p-4 sm:p-6 pt-0'>
 									{/* Search and Filter */}
-									<div className='flex flex-col sm:flex-row gap-4 mb-6'>
-										<div className='flex-1'>
+									<div className='flex flex-col gap-3 sm:gap-4 mb-4 sm:mb-6'>
+										<div className='w-full'>
 											<div className='relative'>
 												<Search className='absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4' />
 												<Input
 													placeholder='Search products...'
 													value={searchTerm}
 													onChange={e => setSearchTerm(e.target.value)}
-													className='pl-10'
+													className='pl-10 h-9 sm:h-10 text-sm'
 												/>
 											</div>
 										</div>
-										<Select
-											value={categoryFilter}
-											onValueChange={(value: ProductCategory | 'all') =>
-												setCategoryFilter(value)
-											}
-										>
-											<SelectTrigger className='w-full sm:w-48'>
-												<SelectValue placeholder='All categories' />
-											</SelectTrigger>
-											<SelectContent>
-												<SelectItem value='all'>All Categories</SelectItem>
-												<SelectItem value='food'>Food</SelectItem>
-												<SelectItem value='beverages'>Beverages</SelectItem>
-												<SelectItem value='cleaning'>Cleaning</SelectItem>
-												<SelectItem value='equipment'>Equipment</SelectItem>
-												<SelectItem value='packaging'>Packaging</SelectItem>
-												<SelectItem value='other'>Other</SelectItem>
-											</SelectContent>
-										</Select>
+										<div className='w-full sm:w-auto'>
+											<Select
+												value={categoryFilter}
+												onValueChange={(value: ProductCategory | 'all') =>
+													setCategoryFilter(value)
+												}
+											>
+												<SelectTrigger className='w-full h-9 sm:h-10 text-sm'>
+													<SelectValue placeholder='All categories' />
+												</SelectTrigger>
+												<SelectContent>
+													<SelectItem value='all'>All Categories</SelectItem>
+													<SelectItem value='food'>Food</SelectItem>
+													<SelectItem value='beverages'>Beverages</SelectItem>
+													<SelectItem value='cleaning'>Cleaning</SelectItem>
+													<SelectItem value='equipment'>Equipment</SelectItem>
+													<SelectItem value='packaging'>Packaging</SelectItem>
+													<SelectItem value='other'>Other</SelectItem>
+												</SelectContent>
+											</Select>
+										</div>
 									</div>
 
-									{/* Products Table */}
+									{/* Products Display */}
 									{filteredProducts.length === 0 ? (
-										<div className='text-center py-12'>
-											<Package className='h-16 w-16 text-gray-400 mx-auto mb-4' />
-											<h3 className='text-lg font-medium text-gray-900 mb-2'>
+										<div className='text-center py-8 sm:py-12'>
+											<Package className='h-12 w-12 sm:h-16 sm:w-16 text-gray-400 mx-auto mb-3 sm:mb-4' />
+											<h3 className='text-base sm:text-lg font-medium text-gray-900 mb-2'>
 												No products found
 											</h3>
-											<p className='text-gray-500'>
+											<p className='text-sm text-gray-500'>
 												{searchTerm || categoryFilter !== 'all'
 													? 'Try adjusting your search or filter'
 													: 'No products available'}
 											</p>
 										</div>
 									) : (
-										<div className='overflow-x-auto max-h-96 overflow-y-auto border rounded-lg'>
-											<table className='w-full table-fixed'>
-												<thead className='bg-gray-50 sticky top-0'>
-													<tr className='border-b'>
-														<th className='text-left p-3 font-medium text-gray-700 w-1/2'>
-															Product
-														</th>
-														<th className='text-left p-3 font-medium text-gray-700 w-1/4'>
-															Category
-														</th>
-														<th className='text-left p-3 font-medium text-gray-700 w-1/6'>
-															Unit
-														</th>
-														<th className='text-right p-3 font-medium text-gray-700 w-1/6'>
-															Action
-														</th>
-													</tr>
-												</thead>
-												<tbody>
-													{filteredProducts.map(product => (
-														<tr
-															key={product._id}
-															className='border-b hover:bg-gray-50 transition-colors'
-														>
-															<td className='p-3'>
-																<div className='flex items-start'>
-																	<Package className='h-4 w-4 text-gray-400 mr-3 flex-shrink-0 mt-0.5' />
-																	<div className='min-w-0 flex-1'>
-																		<p className='font-medium text-sm text-gray-900 mb-1 truncate'>
-																			{product.name}
+										<>
+											{/* Mobile Card View */}
+											<div className='block sm:hidden space-y-3 max-h-80 overflow-y-auto'>
+												{filteredProducts.map(product => (
+													<div
+														key={product._id}
+														className='border rounded-lg p-3 hover:bg-gray-50 transition-colors'
+													>
+														<div className='flex items-start justify-between mb-2'>
+															<div className='flex items-start flex-1 min-w-0'>
+																<Package className='h-4 w-4 text-gray-400 mr-2 flex-shrink-0 mt-0.5' />
+																<div className='min-w-0 flex-1'>
+																	<p className='font-medium text-sm text-gray-900 mb-1 line-clamp-2'>
+																		{product.name}
+																	</p>
+																	{product.description && (
+																		<p className='text-xs text-gray-500 line-clamp-2 mb-2'>
+																			{product.description}
 																		</p>
-																		{product.description && (
-																			<div className='group relative'>
-																				<p className='text-xs text-gray-500 line-clamp-2 leading-relaxed'>
-																					{product.description}
-																				</p>
-																				{product.description.length > 80 && (
-																					<div className='absolute left-0 top-full mt-1 hidden group-hover:block z-10 bg-gray-900 text-white text-xs p-2 rounded-md shadow-lg max-w-xs'>
-																						{product.description}
-																						<div className='absolute -top-1 left-4 w-2 h-2 bg-gray-900 rotate-45'></div>
-																					</div>
-																				)}
-																			</div>
-																		)}
+																	)}
+																	<div className='flex items-center gap-2 mb-2'>
+																		<span className='inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800'>
+																			{getCategoryLabel(product.category)}
+																		</span>
+																		<span className='text-xs text-gray-600 font-medium'>
+																			{product.unit}
+																		</span>
 																	</div>
 																</div>
-															</td>
-															<td className='p-3'>
-																<span className='inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800 truncate'>
-																	{getCategoryLabel(product.category)}
-																</span>
-															</td>
-															<td className='p-3 text-sm text-gray-600 font-medium truncate'>
-																{product.unit}
-															</td>
-															<td className='p-3 text-right'>
-																<Button
-																	size='sm'
-																	onClick={() => addProductToOrder(product)}
-																	className='bg-green-600 hover:bg-green-700 text-white whitespace-nowrap'
-																>
-																	<Plus className='h-4 w-4 mr-1' />
-																	Add
-																</Button>
-															</td>
+															</div>
+														</div>
+														<Button
+															size='sm'
+															onClick={() => addProductToOrder(product)}
+															className='w-full bg-green-600 hover:bg-green-700 text-white h-8 text-xs'
+														>
+															<Plus className='h-3 w-3 mr-1' />
+															Add to Order
+														</Button>
+													</div>
+												))}
+											</div>
+
+											{/* Desktop Table View */}
+											<div className='hidden sm:block overflow-x-auto max-h-96 overflow-y-auto border rounded-lg'>
+												<table className='w-full table-fixed'>
+													<thead className='bg-gray-50 sticky top-0'>
+														<tr className='border-b'>
+															<th className='text-left p-3 font-medium text-gray-700 text-sm w-1/2'>
+																Product
+															</th>
+															<th className='text-left p-3 font-medium text-gray-700 text-sm w-1/4'>
+																Category
+															</th>
+															<th className='text-left p-3 font-medium text-gray-700 text-sm w-1/6'>
+																Unit
+															</th>
+															<th className='text-right p-3 font-medium text-gray-700 text-sm w-1/6'>
+																Action
+															</th>
 														</tr>
-													))}
-												</tbody>
-											</table>
-										</div>
+													</thead>
+													<tbody>
+														{filteredProducts.map(product => (
+															<tr
+																key={product._id}
+																className='border-b hover:bg-gray-50 transition-colors'
+															>
+																<td className='p-3'>
+																	<div className='flex items-start'>
+																		<Package className='h-4 w-4 text-gray-400 mr-3 flex-shrink-0 mt-0.5' />
+																		<div className='min-w-0 flex-1'>
+																			<p className='font-medium text-sm text-gray-900 mb-1 truncate'>
+																				{product.name}
+																			</p>
+																			{product.description && (
+																				<div className='group relative'>
+																					<p className='text-xs text-gray-500 line-clamp-2 leading-relaxed'>
+																						{product.description}
+																					</p>
+																					{product.description.length > 80 && (
+																						<div className='absolute left-0 top-full mt-1 hidden group-hover:block z-10 bg-gray-900 text-white text-xs p-2 rounded-md shadow-lg max-w-xs'>
+																							{product.description}
+																							<div className='absolute -top-1 left-4 w-2 h-2 bg-gray-900 rotate-45'></div>
+																						</div>
+																					)}
+																				</div>
+																			)}
+																		</div>
+																	</div>
+																</td>
+																<td className='p-3'>
+																	<span className='inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800 truncate'>
+																		{getCategoryLabel(product.category)}
+																	</span>
+																</td>
+																<td className='p-3 text-sm text-gray-600 font-medium truncate'>
+																	{product.unit}
+																</td>
+																<td className='p-3 text-right'>
+																	<Button
+																		size='sm'
+																		onClick={() => addProductToOrder(product)}
+																		className='bg-green-600 hover:bg-green-700 text-white whitespace-nowrap text-xs'
+																	>
+																		<Plus className='h-3 w-3 mr-1' />
+																		Add
+																	</Button>
+																</td>
+															</tr>
+														))}
+													</tbody>
+												</table>
+											</div>
+										</>
 									)}
 								</CardContent>
 							</Card>
 						</div>
 
 						{/* Order Summary */}
-						<div>
-							<Card className='sticky top-6 shadow-lg border-2'>
-								<CardHeader className='bg-gradient-to-r from-blue-50 to-indigo-50 border-b'>
-									<CardTitle className='flex items-center text-lg'>
-										<ShoppingCart className='h-5 w-5 mr-2 text-blue-600' />
+						<div className='order-1 lg:order-2'>
+							<Card className='sticky top-4 sm:top-6 shadow-lg border-2'>
+								<CardHeader className='bg-gradient-to-r from-blue-50 to-indigo-50 border-b p-4 sm:p-6'>
+									<CardTitle className='flex items-center text-base sm:text-lg'>
+										<ShoppingCart className='h-4 w-4 sm:h-5 sm:w-5 mr-2 text-blue-600' />
 										Order Summary
 									</CardTitle>
-									<CardDescription className='text-sm'>
+									<CardDescription className='text-xs sm:text-sm'>
 										Review your order details before submitting
 									</CardDescription>
 								</CardHeader>
-								<CardContent className='space-y-6 p-6'>
+								<CardContent className='space-y-4 sm:space-y-6 p-4 sm:p-6'>
 									{/* Branch Selection */}
 									<div className='space-y-2'>
 										<Label
 											htmlFor='branch-select'
-											className='text-sm font-semibold text-gray-700 flex items-center'
+											className='text-xs sm:text-sm font-semibold text-gray-700 flex items-center'
 										>
-											<Package className='h-4 w-4 mr-2 text-gray-500' />
+											<Package className='h-3 w-3 sm:h-4 sm:w-4 mr-2 text-gray-500' />
 											Delivery Branch
 										</Label>
 										<Select
@@ -556,7 +606,7 @@ const NewOrder: React.FC = () => {
 											onValueChange={setSelectedBranch}
 											disabled={branchesLoading}
 										>
-											<SelectTrigger className='h-11 border-2 focus:border-blue-500'>
+											<SelectTrigger className='h-9 sm:h-11 border-2 focus:border-blue-500 text-sm'>
 												<SelectValue
 													placeholder={
 														branchesLoading
@@ -570,7 +620,7 @@ const NewOrder: React.FC = () => {
 													<SelectItem key={branch.name} value={branch.name}>
 														<div className='flex items-center'>
 															<div className='w-2 h-2 bg-green-500 rounded-full mr-2'></div>
-															{branch.name}
+															<span className='text-sm'>{branch.name}</span>
 														</div>
 													</SelectItem>
 												))}
@@ -582,20 +632,20 @@ const NewOrder: React.FC = () => {
 									<div className='space-y-2'>
 										<Label
 											htmlFor='requested-date'
-											className='text-sm font-semibold text-gray-700 flex items-center'
+											className='text-xs sm:text-sm font-semibold text-gray-700 flex items-center'
 										>
-											<Calendar className='h-4 w-4 mr-2 text-gray-500' />
+											<Calendar className='h-3 w-3 sm:h-4 sm:w-4 mr-2 text-gray-500' />
 											Requested Delivery Date
 										</Label>
 										<div className='relative'>
-											<Calendar className='absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4' />
+											<Calendar className='absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-3 w-3 sm:h-4 sm:w-4' />
 											<Input
 												id='requested-date'
 												type='date'
 												value={requestedDate}
 												onChange={e => setRequestedDate(e.target.value)}
 												min={getTomorrowDate()}
-												className='pl-10 h-11 border-2 focus:border-blue-500'
+												className='pl-9 sm:pl-10 h-9 sm:h-11 border-2 focus:border-blue-500 text-sm'
 											/>
 										</div>
 										<p className='text-xs text-gray-500 mt-1'>
@@ -606,12 +656,12 @@ const NewOrder: React.FC = () => {
 									{/* Order Items */}
 									<div className='space-y-3'>
 										<div className='flex items-center justify-between'>
-											<Label className='text-sm font-semibold text-gray-700 flex items-center'>
-												<ShoppingCart className='h-4 w-4 mr-2 text-gray-500' />
+											<Label className='text-xs sm:text-sm font-semibold text-gray-700 flex items-center'>
+												<ShoppingCart className='h-3 w-3 sm:h-4 sm:w-4 mr-2 text-gray-500' />
 												Order Items
 											</Label>
 											<div className='flex items-center space-x-2'>
-												<span className='bg-blue-100 text-blue-800 text-xs font-medium px-2.5 py-1 rounded-full'>
+												<span className='bg-blue-100 text-blue-800 text-xs font-medium px-2 py-1 rounded-full'>
 													{orderItems.length}{' '}
 													{orderItems.length === 1 ? 'item' : 'items'}
 												</span>
@@ -619,31 +669,31 @@ const NewOrder: React.FC = () => {
 										</div>
 
 										{orderItems.length === 0 ? (
-											<div className='text-center py-8 text-gray-500 bg-gray-50 rounded-lg border-2 border-dashed border-gray-200'>
-												<ShoppingCart className='h-12 w-12 mx-auto mb-3 text-gray-300' />
-												<p className='text-sm font-medium text-gray-600 mb-1'>
+											<div className='text-center py-6 sm:py-8 text-gray-500 bg-gray-50 rounded-lg border-2 border-dashed border-gray-200'>
+												<ShoppingCart className='h-8 w-8 sm:h-12 sm:w-12 mx-auto mb-2 sm:mb-3 text-gray-300' />
+												<p className='text-xs sm:text-sm font-medium text-gray-600 mb-1'>
 													No items added yet
 												</p>
 												<p className='text-xs text-gray-500'>
-													Start by selecting products from the table
+													Start by selecting products
 												</p>
 											</div>
 										) : (
-											<div className='space-y-3 max-h-72 overflow-y-auto bg-gray-50 rounded-lg p-3 border'>
+											<div className='space-y-2 sm:space-y-3 max-h-60 sm:max-h-72 overflow-y-auto bg-gray-50 rounded-lg p-2 sm:p-3 border'>
 												{orderItems.map(item => (
 													<div
 														key={item.product._id}
-														className='bg-white border rounded-lg p-4 space-y-3 shadow-sm hover:shadow-md transition-shadow'
+														className='bg-white border rounded-lg p-3 sm:p-4 space-y-2 sm:space-y-3 shadow-sm hover:shadow-md transition-shadow'
 													>
 														<div className='flex items-start justify-between'>
 															<div className='flex-1 min-w-0'>
-																<div className='flex items-center mb-2'>
-																	<Package className='h-4 w-4 text-gray-400 mr-2 flex-shrink-0' />
-																	<p className='font-semibold text-sm text-gray-900 truncate'>
+																<div className='flex items-center mb-1 sm:mb-2'>
+																	<Package className='h-3 w-3 sm:h-4 sm:w-4 text-gray-400 mr-2 flex-shrink-0' />
+																	<p className='font-semibold text-xs sm:text-sm text-gray-900 truncate'>
 																		{item.product.name}
 																	</p>
 																</div>
-																<p className='text-xs text-gray-500 ml-6'>
+																<p className='text-xs text-gray-500 ml-5 sm:ml-6'>
 																	{item.product.category} • {item.product.unit}
 																</p>
 															</div>
@@ -653,19 +703,19 @@ const NewOrder: React.FC = () => {
 																onClick={() =>
 																	removeItemFromOrder(item.product._id)
 																}
-																className='text-red-500 hover:text-red-700 hover:bg-red-50 p-2 h-8 w-8'
+																className='text-red-500 hover:text-red-700 hover:bg-red-50 p-1 sm:p-2 h-6 w-6 sm:h-8 sm:w-8 ml-2'
 																title='Remove item'
 															>
-																<Trash2 className='h-4 w-4' />
+																<Trash2 className='h-3 w-3 sm:h-4 sm:w-4' />
 															</Button>
 														</div>
 
 														{/* Quantity controls */}
 														<div className='flex items-center justify-between bg-gray-50 rounded-lg p-2'>
-															<span className='text-sm font-medium text-gray-700'>
+															<span className='text-xs sm:text-sm font-medium text-gray-700'>
 																Quantity:
 															</span>
-															<div className='flex items-center space-x-3'>
+															<div className='flex items-center space-x-2 sm:space-x-3'>
 																<Button
 																	variant='outline'
 																	size='sm'
@@ -676,11 +726,11 @@ const NewOrder: React.FC = () => {
 																		)
 																	}
 																	disabled={item.quantity <= 1}
-																	className='h-8 w-8 p-0 rounded-full'
+																	className='h-6 w-6 sm:h-8 sm:w-8 p-0 rounded-full'
 																>
-																	<Minus className='h-3 w-3' />
+																	<Minus className='h-2 w-2 sm:h-3 sm:w-3' />
 																</Button>
-																<span className='text-sm font-bold text-gray-900 min-w-[2rem] text-center bg-white px-3 py-1 rounded-md border'>
+																<span className='text-xs sm:text-sm font-bold text-gray-900 min-w-[1.5rem] sm:min-w-[2rem] text-center bg-white px-2 sm:px-3 py-1 rounded-md border'>
 																	{item.quantity}
 																</span>
 																<Button
@@ -692,9 +742,9 @@ const NewOrder: React.FC = () => {
 																			item.quantity + 1
 																		)
 																	}
-																	className='h-8 w-8 p-0 rounded-full'
+																	className='h-6 w-6 sm:h-8 sm:w-8 p-0 rounded-full'
 																>
-																	<Plus className='h-3 w-3' />
+																	<Plus className='h-2 w-2 sm:h-3 sm:w-3' />
 																</Button>
 															</div>
 														</div>
@@ -713,7 +763,7 @@ const NewOrder: React.FC = () => {
 																		e.target.value
 																	)
 																}
-																className='text-sm h-9 border-gray-200 focus:border-blue-400'
+																className='text-xs sm:text-sm h-8 sm:h-9 border-gray-200 focus:border-blue-400'
 															/>
 														</div>
 
@@ -722,7 +772,7 @@ const NewOrder: React.FC = () => {
 															<span className='text-xs text-gray-500'>
 																Total:
 															</span>
-															<span className='text-sm font-bold text-gray-900 bg-blue-50 px-2 py-1 rounded'>
+															<span className='text-xs sm:text-sm font-bold text-gray-900 bg-blue-50 px-2 py-1 rounded'>
 																{item.quantity} {item.product.unit}
 															</span>
 														</div>
@@ -734,7 +784,12 @@ const NewOrder: React.FC = () => {
 
 									{/* Order Notes */}
 									<div>
-										<Label htmlFor='order-notes'>Order Notes (Optional)</Label>
+										<Label
+											htmlFor='order-notes'
+											className='text-xs sm:text-sm font-medium text-gray-700'
+										>
+											Order Notes (Optional)
+										</Label>
 										<textarea
 											id='order-notes'
 											placeholder='Add any special instructions or notes...'
@@ -743,12 +798,12 @@ const NewOrder: React.FC = () => {
 												setOrderNotes(e.target.value)
 											}
 											rows={3}
-											className='flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50'
+											className='flex min-h-[60px] sm:min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-xs sm:text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 mt-1'
 										/>
 									</div>
 
 									{/* Submit Button */}
-									<div className='pt-4 border-t border-gray-200'>
+									<div className='pt-3 sm:pt-4 border-t border-gray-200'>
 										<Button
 											onClick={handleSubmitOrder}
 											disabled={
@@ -757,7 +812,7 @@ const NewOrder: React.FC = () => {
 												orderItems.length === 0 ||
 												submitting
 											}
-											className='w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-semibold py-3 px-6 rounded-lg shadow-lg hover:shadow-xl transition-all duration-300 disabled:from-gray-400 disabled:to-gray-500 disabled:shadow-none'
+											className='w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-semibold py-2.5 sm:py-3 px-4 sm:px-6 rounded-lg shadow-lg hover:shadow-xl transition-all duration-300 disabled:from-gray-400 disabled:to-gray-500 disabled:shadow-none text-sm'
 										>
 											{submitting ? (
 												<div className='flex items-center justify-center space-x-2'>
@@ -766,14 +821,14 @@ const NewOrder: React.FC = () => {
 												</div>
 											) : (
 												<div className='flex items-center justify-center space-x-2'>
-													<Check className='h-5 w-5' />
+													<Check className='h-4 w-4 sm:h-5 sm:w-5' />
 													<span>Submit Order Request</span>
 												</div>
 											)}
 										</Button>
 
 										{/* Helper text */}
-										<div className='mt-3 text-center'>
+										<div className='mt-2 sm:mt-3 text-center'>
 											{!selectedBranch ||
 											!requestedDate ||
 											orderItems.length === 0 ? (
@@ -806,32 +861,33 @@ const NewOrder: React.FC = () => {
 					open={showSuggestionsModal}
 					onOpenChange={setShowSuggestionsModal}
 				>
-					<DialogContent className='max-w-4xl max-h-[80vh] overflow-hidden flex flex-col'>
-						<DialogHeader>
-							<DialogTitle className='flex items-center'>
-								<Package className='h-5 w-5 mr-2 text-blue-600' />
-								Any items you might have forgotten?
+					<DialogContent className='w-full max-w-[95vw] sm:max-w-2xl lg:max-w-4xl h-[90vh] sm:h-[85vh] overflow-hidden flex flex-col mx-2 sm:mx-auto'>
+						<DialogHeader className='p-3 sm:p-4 lg:p-6 pb-3 sm:pb-4 border-b flex-shrink-0'>
+							<DialogTitle className='flex items-center text-sm sm:text-base lg:text-lg font-semibold'>
+								<Package className='h-4 w-4 sm:h-5 sm:w-5 mr-2 text-blue-600 flex-shrink-0' />
+								<span className='truncate'>
+									Any items you might have forgotten?
+								</span>
 							</DialogTitle>
-							<DialogDescription>
-								Here are some products you haven&apos;t added yet. Add any items
-								you might have forgotten before submitting your order.
+							<DialogDescription className='text-xs sm:text-sm text-gray-600 mt-1'>
+								Add any missing items before submitting your order.
 							</DialogDescription>
 						</DialogHeader>
 
-						<div className='flex-1 overflow-hidden flex flex-col space-y-4'>
+						<div className='flex-1 overflow-hidden flex flex-col p-3 sm:p-4 lg:p-6 pt-0 min-h-0'>
 							{/* Search for suggested products */}
-							<div className='relative'>
+							<div className='relative mb-3 sm:mb-4 flex-shrink-0'>
 								<Search className='absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4' />
 								<Input
-									placeholder='Search suggested products...'
+									placeholder='Search products...'
 									value={modalSearchTerm}
 									onChange={e => setModalSearchTerm(e.target.value)}
-									className='pl-10'
+									className='pl-10 h-9 sm:h-10 text-sm border-gray-300 focus:border-blue-500'
 								/>
 							</div>
 
 							{/* Suggested Products List */}
-							<div className='flex-1 overflow-y-auto border rounded-lg'>
+							<div className='flex-1 overflow-y-auto border rounded-lg bg-gray-50 min-h-0'>
 								{(() => {
 									const filteredSuggestions = suggestedProducts.filter(
 										product =>
@@ -845,66 +901,113 @@ const NewOrder: React.FC = () => {
 
 									if (filteredSuggestions.length === 0) {
 										return (
-											<div className='text-center py-8'>
-												<Package className='h-12 w-12 text-gray-400 mx-auto mb-3' />
-												<p className='text-gray-500'>
+											<div className='flex flex-col items-center justify-center h-full py-8 sm:py-12 text-center'>
+												<Package className='h-12 w-12 sm:h-16 sm:w-16 text-gray-400 mb-3 sm:mb-4' />
+												<h3 className='text-sm sm:text-base font-medium text-gray-900 mb-1 sm:mb-2'>
 													{modalSearchTerm
 														? 'No matching products found'
-														: 'All available products have been added to your order!'}
+														: 'All products added!'}
+												</h3>
+												<p className='text-xs sm:text-sm text-gray-500 px-4'>
+													{modalSearchTerm
+														? 'Try a different search term'
+														: 'You have added all available products to your order'}
 												</p>
 											</div>
 										)
 									}
 
 									return (
-										<div className='space-y-2 p-4'>
-											{filteredSuggestions.slice(0, 10).map(product => (
+										<div className='p-2 sm:p-3 space-y-2'>
+											{filteredSuggestions.slice(0, 8).map(product => (
 												<div
 													key={product._id}
-													className='flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50 transition-colors'
+													className='bg-white border rounded-lg p-3 hover:bg-gray-50 transition-colors'
 												>
-													<div className='flex items-center flex-1 min-w-0'>
-														<Package className='h-4 w-4 text-gray-400 mr-3 flex-shrink-0' />
-														<div className='min-w-0 flex-1'>
-															<p className='font-medium text-sm text-gray-900 truncate'>
-																{product.name}
-															</p>
-															<div className='flex items-center space-x-2 mt-1'>
-																<span className='inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800'>
-																	{getCategoryLabel(product.category)}
-																</span>
-																<span className='text-xs text-gray-500'>
-																	{product.unit}
-																</span>
-															</div>
-															{product.description && (
-																<p className='text-xs text-gray-500 mt-1 line-clamp-1'>
-																	{product.description}
+													{/* Mobile Layout */}
+													<div className='block sm:hidden'>
+														<div className='flex items-start mb-2'>
+															<Package className='h-4 w-4 text-gray-400 mr-2 flex-shrink-0 mt-0.5' />
+															<div className='flex-1 min-w-0'>
+																<p className='font-medium text-sm text-gray-900 mb-1 line-clamp-2'>
+																	{product.name}
 																</p>
-															)}
+																<div className='flex items-center gap-2 mb-2'>
+																	<span className='inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800'>
+																		{getCategoryLabel(product.category)}
+																	</span>
+																	<span className='text-xs text-gray-500'>
+																		{product.unit}
+																	</span>
+																</div>
+																{product.description && (
+																	<p className='text-xs text-gray-500 line-clamp-2'>
+																		{product.description}
+																	</p>
+																)}
+															</div>
 														</div>
+														<Button
+															size='sm'
+															onClick={() => {
+																addProductToOrder(product)
+																setSuggestedProducts(prev =>
+																	prev.filter(p => p._id !== product._id)
+																)
+															}}
+															className='w-full bg-green-600 hover:bg-green-700 text-white h-8 text-xs'
+														>
+															<Plus className='h-3 w-3 mr-1' />
+															Add to Order
+														</Button>
 													</div>
-													<Button
-														size='sm'
-														onClick={() => {
-															addProductToOrder(product)
-															// Remove from suggestions after adding
-															setSuggestedProducts(prev =>
-																prev.filter(p => p._id !== product._id)
-															)
-														}}
-														className='bg-green-600 hover:bg-green-700 text-white ml-3'
-													>
-														<Plus className='h-4 w-4 mr-1' />
-														Add
-													</Button>
+
+													{/* Desktop Layout */}
+													<div className='hidden sm:flex items-center justify-between'>
+														<div className='flex items-center flex-1 min-w-0 mr-3'>
+															<Package className='h-4 w-4 text-gray-400 mr-3 flex-shrink-0' />
+															<div className='min-w-0 flex-1'>
+																<p className='font-medium text-sm text-gray-900 truncate mb-1'>
+																	{product.name}
+																</p>
+																<div className='flex items-center space-x-2'>
+																	<span className='inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800'>
+																		{getCategoryLabel(product.category)}
+																	</span>
+																	<span className='text-xs text-gray-500'>
+																		{product.unit}
+																	</span>
+																</div>
+																{product.description && (
+																	<p className='text-xs text-gray-500 mt-1 line-clamp-1'>
+																		{product.description}
+																	</p>
+																)}
+															</div>
+														</div>
+														<Button
+															size='sm'
+															onClick={() => {
+																addProductToOrder(product)
+																setSuggestedProducts(prev =>
+																	prev.filter(p => p._id !== product._id)
+																)
+															}}
+															className='bg-green-600 hover:bg-green-700 text-white whitespace-nowrap text-xs px-3'
+														>
+															<Plus className='h-3 w-3 mr-1' />
+															Add
+														</Button>
+													</div>
 												</div>
 											))}
-											{filteredSuggestions.length > 10 && (
-												<p className='text-xs text-gray-500 text-center py-2'>
-													Showing first 10 results. Use search to find more
-													specific items.
-												</p>
+											{filteredSuggestions.length > 8 && (
+												<div className='text-center py-2'>
+													<p className='text-xs text-gray-500'>
+														Showing first 8 results. Use search to find more
+														items.
+													</p>
+												</div>
 											)}
 										</div>
 									)
@@ -912,35 +1015,75 @@ const NewOrder: React.FC = () => {
 							</div>
 						</div>
 
-						<DialogFooter className='flex items-center justify-between'>
-							<p className='text-sm text-gray-500'>
-								{orderItems.length} {orderItems.length === 1 ? 'item' : 'items'}{' '}
-								in your order
-							</p>
-							<div className='flex space-x-2'>
-								<Button
-									variant='outline'
-									onClick={() => setShowSuggestionsModal(false)}
-								>
-									Continue Shopping
-								</Button>
-								<Button
-									onClick={submitOrderDirectly}
-									disabled={submitting}
-									className='bg-blue-600 hover:bg-blue-700'
-								>
-									{submitting ? (
-										<div className='flex items-center space-x-2'>
-											<div className='animate-spin rounded-full h-4 w-4 border-b-2 border-white'></div>
-											<span>Submitting...</span>
-										</div>
-									) : (
-										<div className='flex items-center space-x-2'>
-											<Check className='h-4 w-4' />
-											<span>Submit Order</span>
-										</div>
-									)}
-								</Button>
+						<DialogFooter className='flex-shrink-0 p-3 sm:p-4 lg:p-6 pt-3 sm:pt-4 border-t bg-white'>
+							{/* Mobile Footer */}
+							<div className='block sm:hidden w-full space-y-3'>
+								<div className='text-center'>
+									<span className='text-sm text-gray-600'>
+										{orderItems.length}{' '}
+										{orderItems.length === 1 ? 'item' : 'items'} in order
+									</span>
+								</div>
+								<div className='grid grid-cols-2 gap-2'>
+									<Button
+										variant='outline'
+										onClick={() => setShowSuggestionsModal(false)}
+										className='h-10 text-sm'
+									>
+										Continue Shopping
+									</Button>
+									<Button
+										onClick={submitOrderDirectly}
+										disabled={submitting}
+										className='bg-blue-600 hover:bg-blue-700 h-10 text-sm'
+									>
+										{submitting ? (
+											<div className='flex items-center space-x-1'>
+												<div className='animate-spin rounded-full h-3 w-3 border-b-2 border-white'></div>
+												<span>Submitting...</span>
+											</div>
+										) : (
+											<div className='flex items-center space-x-1'>
+												<Check className='h-4 w-4' />
+												<span>Submit Order</span>
+											</div>
+										)}
+									</Button>
+								</div>
+							</div>
+
+							{/* Desktop Footer */}
+							<div className='hidden sm:flex items-center justify-between w-full'>
+								<p className='text-sm text-gray-500'>
+									{orderItems.length}{' '}
+									{orderItems.length === 1 ? 'item' : 'items'} in your order
+								</p>
+								<div className='flex space-x-2'>
+									<Button
+										variant='outline'
+										onClick={() => setShowSuggestionsModal(false)}
+										className='h-9 text-sm'
+									>
+										Continue Shopping
+									</Button>
+									<Button
+										onClick={submitOrderDirectly}
+										disabled={submitting}
+										className='bg-blue-600 hover:bg-blue-700 h-9 text-sm'
+									>
+										{submitting ? (
+											<div className='flex items-center space-x-2'>
+												<div className='animate-spin rounded-full h-4 w-4 border-b-2 border-white'></div>
+												<span>Submitting...</span>
+											</div>
+										) : (
+											<div className='flex items-center space-x-2'>
+												<Check className='h-4 w-4' />
+												<span>Submit Order</span>
+											</div>
+										)}
+									</Button>
+								</div>
 							</div>
 						</DialogFooter>
 					</DialogContent>
