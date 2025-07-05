@@ -12,6 +12,12 @@ import {
 	CardTitle,
 } from '@/components/ui/card'
 import {
+	DropdownMenu,
+	DropdownMenuContent,
+	DropdownMenuItem,
+	DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
+import {
 	Select,
 	SelectContent,
 	SelectItem,
@@ -31,29 +37,74 @@ import {
 	AlertTriangle,
 	BarChart3,
 	Calendar,
+	ChevronDown,
+	ChevronUp,
 	Clock,
 	DollarSign,
 	Download,
+	FileSpreadsheet,
 	FileText,
+	FileType,
 	MapPin,
 	Package,
 	RefreshCw,
+	Settings,
 	ShoppingCart,
 	TrendingDown,
 	TrendingUp,
 	Users,
 } from 'lucide-react'
+import { useRouter } from 'next/navigation'
 import React, { useCallback, useEffect, useState } from 'react'
 
 const AdminDashboard: React.FC = () => {
+	const router = useRouter()
 	const [stats, setStats] = useState<DashboardStats | null>(null)
 	const [branchAnalytics, setBranchAnalytics] = useState<BranchAnalytics[]>([])
 	const [productInsights, setProductInsights] = useState<ProductInsights[]>([])
 	const [financialMetrics, setFinancialMetrics] =
 		useState<FinancialMetrics | null>(null)
 	const [loading, setLoading] = useState(true)
-	const [selectedTimeframe, setSelectedTimeframe] =
-		useState<AnalyticsTimeframe>('week')
+	const [selectedTimeframe] = useState<AnalyticsTimeframe>('week')
+	const [selectedMonth, setSelectedMonth] = useState<number>(
+		new Date().getMonth() + 1
+	)
+	const [selectedYear, setSelectedYear] = useState<number>(
+		new Date().getFullYear()
+	)
+	const [showAllBranches, setShowAllBranches] = useState(false)
+	const [actionLoading, setActionLoading] = useState<string | null>(null)
+
+	// Month and year options
+	const monthOptions = [
+		{ value: 1, label: 'January' },
+		{ value: 2, label: 'February' },
+		{ value: 3, label: 'March' },
+		{ value: 4, label: 'April' },
+		{ value: 5, label: 'May' },
+		{ value: 6, label: 'June' },
+		{ value: 7, label: 'July' },
+		{ value: 8, label: 'August' },
+		{ value: 9, label: 'September' },
+		{ value: 10, label: 'October' },
+		{ value: 11, label: 'November' },
+		{ value: 12, label: 'December' },
+	]
+
+	const yearOptions = [
+		{
+			value: new Date().getFullYear(),
+			label: new Date().getFullYear().toString(),
+		},
+		{
+			value: new Date().getFullYear() - 1,
+			label: (new Date().getFullYear() - 1).toString(),
+		},
+		{
+			value: new Date().getFullYear() - 2,
+			label: (new Date().getFullYear() - 2).toString(),
+		},
+	]
 
 	const fetchDashboardData = useCallback(async () => {
 		try {
@@ -67,7 +118,11 @@ const AdminDashboard: React.FC = () => {
 				financialResponse,
 			] = await Promise.all([
 				ordersApi.getDashboardStats(),
-				ordersApi.getBranchAnalytics(selectedTimeframe),
+				ordersApi.getBranchAnalytics(
+					selectedTimeframe,
+					selectedMonth,
+					selectedYear
+				),
 				ordersApi.getProductInsights(selectedTimeframe),
 				ordersApi.getFinancialMetrics(selectedTimeframe),
 			])
@@ -81,7 +136,7 @@ const AdminDashboard: React.FC = () => {
 		} finally {
 			setLoading(false)
 		}
-	}, [selectedTimeframe])
+	}, [selectedTimeframe, selectedMonth, selectedYear])
 
 	useEffect(() => {
 		fetchDashboardData()
@@ -110,6 +165,329 @@ const AdminDashboard: React.FC = () => {
 		) : (
 			<Activity className='h-4 w-4 text-gray-500' />
 		)
+	}
+
+	// Determine which branches to display based on showAllBranches state
+	const branchesToDisplay = showAllBranches
+		? branchAnalytics
+		: branchAnalytics.slice(0, 2)
+
+	const handleQuickAction = async (action: string, format?: string) => {
+		setActionLoading(action)
+		try {
+			switch (action) {
+				case 'generate-report':
+					// Simulate report generation
+					await new Promise(resolve => setTimeout(resolve, 2000))
+					// In real implementation, this would call an API to generate and download report
+					const reportData = {
+						timeframe: selectedTimeframe,
+						branches: branchAnalytics.length,
+						totalOrders: stats?.totalOrders || 0,
+						totalSpending: financialMetrics?.monthlySpending || 0,
+						generatedAt: new Date().toISOString(),
+						branchDetails: branchAnalytics.map(b => ({
+							branch: b.branch,
+							orders: b.totalOrders,
+							value: b.totalValue,
+							avgOrderValue: b.avgOrderValue,
+							pendingOrders: b.pendingOrders,
+							weeklyTrend: b.weeklyTrend,
+						})),
+						productInsights: productInsights.slice(0, 10).map(p => ({
+							name: p.name,
+							totalOrdered: p.totalOrdered,
+							totalValue: p.totalValue,
+							frequency: p.frequency,
+							trend: p.trend,
+						})),
+					}
+
+					let blob: Blob
+					let fileExtension: string
+
+					switch (format) {
+						case 'excel':
+							// For Excel format, create CSV-like content
+							const csvContent = [
+								'Branch Performance Report',
+								`Generated: ${new Date().toLocaleString()}`,
+								`Timeframe: ${selectedTimeframe}`,
+								'',
+								'Branch Summary:',
+								'Branch Name,Total Orders,Total Value,Avg Order Value,Pending Orders,Weekly Trend',
+								...branchAnalytics.map(
+									b =>
+										`${b.branch},${b.totalOrders},${b.totalValue},${b.avgOrderValue},${b.pendingOrders},${b.weeklyTrend}%`
+								),
+								'',
+								'Product Insights:',
+								'Product Name,Total Ordered,Total Value,Frequency,Trend',
+								...productInsights
+									.slice(0, 10)
+									.map(
+										p =>
+											`${p.name},${p.totalOrdered},${p.totalValue},${p.frequency}%,${p.trend}`
+									),
+							].join('\n')
+							blob = new Blob([csvContent], { type: 'text/csv' })
+							fileExtension = 'csv'
+							break
+
+						case 'pdf':
+							// For PDF format, create HTML content (in real app, use PDF library)
+							const htmlContent = `
+								<html>
+									<head><title>Branch Performance Report</title></head>
+									<body>
+										<h1>Branch Performance Report</h1>
+										<p>Generated: ${new Date().toLocaleString()}</p>
+										<p>Timeframe: ${selectedTimeframe}</p>
+										<h2>Branch Summary</h2>
+										<table border="1">
+											<tr><th>Branch</th><th>Orders</th><th>Value</th><th>Avg Order</th><th>Pending</th><th>Trend</th></tr>
+											${branchAnalytics
+												.map(
+													b =>
+														`<tr><td>${b.branch}</td><td>${b.totalOrders}</td><td>${b.totalValue}</td><td>${b.avgOrderValue}</td><td>${b.pendingOrders}</td><td>${b.weeklyTrend}%</td></tr>`
+												)
+												.join('')}
+										</table>
+										<h2>Product Insights</h2>
+										<table border="1">
+											<tr><th>Product</th><th>Total Ordered</th><th>Total Value</th><th>Frequency</th><th>Trend</th></tr>
+											${productInsights
+												.slice(0, 10)
+												.map(
+													p =>
+														`<tr><td>${p.name}</td><td>${p.totalOrdered}</td><td>${p.totalValue}</td><td>${p.frequency}%</td><td>${p.trend}</td></tr>`
+												)
+												.join('')}
+										</table>
+									</body>
+								</html>
+							`
+							blob = new Blob([htmlContent], { type: 'text/html' })
+							fileExtension = 'html'
+							break
+
+						case 'doc':
+							// For DOC format, create RTF content
+							const rtfContent = `{\\rtf1\\ansi\\deff0 {\\fonttbl {\\f0 Times New Roman;}}
+								\\f0\\fs24 Branch Performance Report\\par
+								Generated: ${new Date().toLocaleString()}\\par
+								Timeframe: ${selectedTimeframe}\\par\\par
+								Branch Summary:\\par
+								${branchAnalytics
+									.map(
+										b =>
+											`${b.branch}: ${b.totalOrders} orders, ${b.totalValue} value, ${b.weeklyTrend}% trend\\par`
+									)
+									.join('')}
+								\\par
+								Product Insights:\\par
+								${productInsights
+									.slice(0, 10)
+									.map(
+										p =>
+											`${p.name}: ${p.totalOrdered} ordered, ${p.totalValue} value, ${p.trend} trend\\par`
+									)
+									.join('')}
+							}`
+							blob = new Blob([rtfContent], { type: 'application/rtf' })
+							fileExtension = 'rtf'
+							break
+
+						default:
+							// Default JSON format
+							blob = new Blob([JSON.stringify(reportData, null, 2)], {
+								type: 'application/json',
+							})
+							fileExtension = 'json'
+					}
+
+					const fileName = `report-${selectedTimeframe}-${new Date().getTime()}.${fileExtension}`
+					const url = URL.createObjectURL(blob)
+					const a = document.createElement('a')
+					a.href = url
+					a.download = fileName
+					document.body.appendChild(a)
+					a.click()
+					document.body.removeChild(a)
+					URL.revokeObjectURL(url)
+					break
+
+				case 'export-orders':
+					// Simulate order export
+					await new Promise(resolve => setTimeout(resolve, 1500))
+					// In real implementation, this would call ordersApi.exportOrders()
+					const orderData = {
+						timeframe: selectedTimeframe,
+						totalOrders: stats?.totalOrders || 0,
+						pendingOrders: stats?.pendingOrders || 0,
+						branches: branchAnalytics.map(b => ({
+							branch: b.branch,
+							orders: b.totalOrders,
+							value: b.totalValue,
+							avgOrderValue: b.avgOrderValue,
+							pendingOrders: b.pendingOrders,
+							weeklyTrend: b.weeklyTrend,
+							mostOrderedProducts: b.mostOrderedProducts,
+						})),
+						exportedAt: new Date().toISOString(),
+					}
+
+					let orderBlob: Blob
+					let orderFileExtension: string
+
+					switch (format) {
+						case 'excel':
+							// For Excel format, create CSV content
+							const orderCsvContent = [
+								'Order Export Report',
+								`Generated: ${new Date().toLocaleString()}`,
+								`Timeframe: ${selectedTimeframe}`,
+								`Total Orders: ${stats?.totalOrders || 0}`,
+								`Pending Orders: ${stats?.pendingOrders || 0}`,
+								'',
+								'Branch Order Summary:',
+								'Branch Name,Total Orders,Total Value,Avg Order Value,Pending Orders,Weekly Trend',
+								...branchAnalytics.map(
+									b =>
+										`${b.branch},${b.totalOrders},${b.totalValue},${b.avgOrderValue},${b.pendingOrders},${b.weeklyTrend}%`
+								),
+								'',
+								'Branch Top Products:',
+								'Branch,Product Name,Quantity Ordered',
+								...branchAnalytics.flatMap(b =>
+									b.mostOrderedProducts.map(
+										p => `${b.branch},${p.name},${p.quantity}`
+									)
+								),
+							].join('\n')
+							orderBlob = new Blob([orderCsvContent], { type: 'text/csv' })
+							orderFileExtension = 'csv'
+							break
+
+						case 'pdf':
+							// For PDF format, create HTML content
+							const orderHtmlContent = `
+								<html>
+									<head><title>Order Export Report</title></head>
+									<body>
+										<h1>Order Export Report</h1>
+										<p>Generated: ${new Date().toLocaleString()}</p>
+										<p>Timeframe: ${selectedTimeframe}</p>
+										<p>Total Orders: ${stats?.totalOrders || 0}</p>
+										<p>Pending Orders: ${stats?.pendingOrders || 0}</p>
+										<h2>Branch Order Summary</h2>
+										<table border="1">
+											<tr><th>Branch</th><th>Total Orders</th><th>Total Value</th><th>Avg Order Value</th><th>Pending</th><th>Weekly Trend</th></tr>
+											${branchAnalytics
+												.map(
+													b =>
+														`<tr><td>${b.branch}</td><td>${b.totalOrders}</td><td>${b.totalValue}</td><td>${b.avgOrderValue}</td><td>${b.pendingOrders}</td><td>${b.weeklyTrend}%</td></tr>`
+												)
+												.join('')}
+										</table>
+										<h2>Top Products by Branch</h2>
+										${branchAnalytics
+											.map(
+												b => `
+											<h3>${b.branch}</h3>
+											<table border="1">
+												<tr><th>Product</th><th>Quantity</th></tr>
+												${b.mostOrderedProducts
+													.map(
+														p =>
+															`<tr><td>${p.name}</td><td>${p.quantity}</td></tr>`
+													)
+													.join('')}
+											</table>
+										`
+											)
+											.join('')}
+									</body>
+								</html>
+							`
+							orderBlob = new Blob([orderHtmlContent], { type: 'text/html' })
+							orderFileExtension = 'html'
+							break
+
+						case 'doc':
+							// For DOC format, create RTF content
+							const orderRtfContent = `{\\rtf1\\ansi\\deff0 {\\fonttbl {\\f0 Times New Roman;}}
+								\\f0\\fs24 Order Export Report\\par
+								Generated: ${new Date().toLocaleString()}\\par
+								Timeframe: ${selectedTimeframe}\\par
+								Total Orders: ${stats?.totalOrders || 0}\\par
+								Pending Orders: ${stats?.pendingOrders || 0}\\par\\par
+								Branch Order Summary:\\par
+								${branchAnalytics
+									.map(
+										b =>
+											`${b.branch}: ${b.totalOrders} orders, ${b.totalValue} value, ${b.pendingOrders} pending, ${b.weeklyTrend}% trend\\par`
+									)
+									.join('')}
+								\\par
+								Top Products by Branch:\\par
+								${branchAnalytics
+									.map(
+										b =>
+											`${b.branch}: ${b.mostOrderedProducts
+												.map(p => `${p.name} (${p.quantity})`)
+												.join(', ')}\\par`
+									)
+									.join('')}
+							}`
+							orderBlob = new Blob([orderRtfContent], {
+								type: 'application/rtf',
+							})
+							orderFileExtension = 'rtf'
+							break
+
+						default:
+							// Default JSON format
+							orderBlob = new Blob([JSON.stringify(orderData, null, 2)], {
+								type: 'application/json',
+							})
+							orderFileExtension = 'json'
+					}
+
+					const orderFileName = `orders-export-${selectedTimeframe}-${new Date().getTime()}.${orderFileExtension}`
+					const orderUrl = URL.createObjectURL(orderBlob)
+					const orderLink = document.createElement('a')
+					orderLink.href = orderUrl
+					orderLink.download = orderFileName
+					document.body.appendChild(orderLink)
+					orderLink.click()
+					document.body.removeChild(orderLink)
+					URL.revokeObjectURL(orderUrl)
+					break
+
+				case 'manage-users':
+					// Navigate to user management using Next.js router
+					router.push('/admin/users')
+					break
+
+				case 'system-settings':
+					// Navigate to system settings using Next.js router
+					router.push('/admin/settings')
+					break
+
+				case 'refresh-data':
+					// Refresh all dashboard data
+					await fetchDashboardData()
+					break
+
+				default:
+					console.log(`Action ${action} not implemented`)
+			}
+		} catch (error) {
+			console.error(`Error performing action ${action}:`, error)
+		} finally {
+			setActionLoading(null)
+		}
 	}
 
 	if (loading) {
@@ -142,22 +520,6 @@ const AdminDashboard: React.FC = () => {
 							</p>
 						</div>
 						<div className='flex gap-3'>
-							<Select
-								value={selectedTimeframe}
-								onValueChange={(value: string) =>
-									setSelectedTimeframe(value as AnalyticsTimeframe)
-								}
-							>
-								<SelectTrigger className='w-32'>
-									<SelectValue />
-								</SelectTrigger>
-								<SelectContent>
-									<SelectItem value='day'>Today</SelectItem>
-									<SelectItem value='week'>This Week</SelectItem>
-									<SelectItem value='month'>This Month</SelectItem>
-									<SelectItem value='quarter'>This Quarter</SelectItem>
-								</SelectContent>
-							</Select>
 							<Button onClick={fetchDashboardData} variant='outline' size='sm'>
 								<RefreshCw className='h-4 w-4 mr-2' />
 								Refresh
@@ -310,83 +672,184 @@ const AdminDashboard: React.FC = () => {
 					{/* Branch Performance */}
 					<Card>
 						<CardHeader>
-							<CardTitle className='flex items-center gap-2'>
-								<MapPin className='h-5 w-5' />
-								Branch Performance Analysis
-							</CardTitle>
-							<CardDescription>
-								Detailed analytics for each branch location
-							</CardDescription>
+							<div className='flex items-center justify-between'>
+								<div>
+									<CardTitle className='flex items-center gap-2'>
+										<MapPin className='h-5 w-5' />
+										Branch Performance Analysis
+									</CardTitle>
+									<CardDescription>
+										Analytics for{' '}
+										{monthOptions.find(m => m.value === selectedMonth)?.label}{' '}
+										{selectedYear}
+									</CardDescription>
+								</div>
+								<div className='flex items-center gap-3'>
+									{/* Month Selector */}
+									<div className='flex items-center gap-2'>
+										<label className='text-sm font-medium'>Month:</label>
+										<Select
+											value={selectedMonth.toString()}
+											onValueChange={(value: string) =>
+												setSelectedMonth(parseInt(value))
+											}
+										>
+											<SelectTrigger className='w-32'>
+												<SelectValue />
+											</SelectTrigger>
+											<SelectContent>
+												{monthOptions.map(month => (
+													<SelectItem
+														key={month.value}
+														value={month.value.toString()}
+													>
+														{month.label}
+													</SelectItem>
+												))}
+											</SelectContent>
+										</Select>
+									</div>
+
+									{/* Year Selector */}
+									<div className='flex items-center gap-2'>
+										<label className='text-sm font-medium'>Year:</label>
+										<Select
+											value={selectedYear.toString()}
+											onValueChange={(value: string) =>
+												setSelectedYear(parseInt(value))
+											}
+										>
+											<SelectTrigger className='w-24'>
+												<SelectValue />
+											</SelectTrigger>
+											<SelectContent>
+												{yearOptions.map(year => (
+													<SelectItem
+														key={year.value}
+														value={year.value.toString()}
+													>
+														{year.label}
+													</SelectItem>
+												))}
+											</SelectContent>
+										</Select>
+									</div>
+
+									{/* Toggle Button */}
+									{branchAnalytics.length > 2 && (
+										<Button
+											variant='outline'
+											size='sm'
+											onClick={() => setShowAllBranches(!showAllBranches)}
+											className='flex items-center gap-2'
+										>
+											{showAllBranches ? (
+												<>
+													<ChevronUp className='h-4 w-4' />
+													Hide Branches ({branchAnalytics.length - 2} hidden)
+												</>
+											) : (
+												<>
+													<ChevronDown className='h-4 w-4' />
+													Show All Branches ({branchAnalytics.length} total)
+												</>
+											)}
+										</Button>
+									)}
+								</div>
+							</div>
 						</CardHeader>
 						<CardContent>
-							<div className='grid grid-cols-1 lg:grid-cols-2 gap-6'>
-								{branchAnalytics.map(branch => (
-									<div key={branch.branch} className='border rounded-lg p-4'>
-										<div className='flex items-center justify-between mb-4'>
-											<h3 className='font-semibold text-lg'>{branch.branch}</h3>
-											<div className='flex items-center gap-1'>
-												{getTrendIcon(branch.weeklyTrend)}
-												<span
-													className={`text-sm ${
-														branch.weeklyTrend > 0
-															? 'text-green-600'
-															: 'text-red-600'
-													}`}
-												>
-													{branch.weeklyTrend > 0 ? '+' : ''}
-													{branch.weeklyTrend}%
-												</span>
-											</div>
-										</div>
-
-										<div className='grid grid-cols-2 gap-4 mb-4'>
-											<div>
-												<p className='text-sm text-gray-600'>Total Orders</p>
-												<p className='text-xl font-bold'>
-													{branch.totalOrders}
-												</p>
-											</div>
-											<div>
-												<p className='text-sm text-gray-600'>Total Value</p>
-												<p className='text-xl font-bold'>
-													{formatKRW(branch.totalValue)}
-												</p>
-											</div>
-											<div>
-												<p className='text-sm text-gray-600'>Avg Order Value</p>
-												<p className='text-lg font-semibold'>
-													{formatKRW(branch.avgOrderValue)}
-												</p>
-											</div>
-											<div>
-												<p className='text-sm text-gray-600'>Pending</p>
-												<p className='text-lg font-semibold text-orange-600'>
-													{branch.pendingOrders}
-												</p>
-											</div>
-										</div>
-
-										<div>
-											<p className='text-sm font-medium text-gray-700 mb-2'>
-												Top Products
-											</p>
-											<div className='space-y-1'>
-												{branch.mostOrderedProducts.map((product, idx) => (
-													<div
-														key={idx}
-														className='flex justify-between text-sm'
+							{branchAnalytics.length === 0 ? (
+								<div className='text-center py-12'>
+									<MapPin className='h-16 w-16 text-gray-300 mx-auto mb-4' />
+									<h3 className='text-lg font-semibold text-gray-900 mb-2'>
+										No Data Available
+									</h3>
+									<p className='text-gray-600 mb-4'>
+										There is no branch data available for{' '}
+										{monthOptions.find(m => m.value === selectedMonth)?.label}{' '}
+										{selectedYear}.
+									</p>
+									<p className='text-sm text-gray-500'>
+										Try selecting a different month or year to view analytics
+										data.
+									</p>
+								</div>
+							) : (
+								<div className='grid grid-cols-1 lg:grid-cols-2 gap-6'>
+									{branchesToDisplay.map(branch => (
+										<div key={branch.branch} className='border rounded-lg p-4'>
+											<div className='flex items-center justify-between mb-4'>
+												<h3 className='font-semibold text-lg'>
+													{branch.branch}
+												</h3>
+												<div className='flex items-center gap-1'>
+													{getTrendIcon(branch.weeklyTrend)}
+													<span
+														className={`text-sm ${
+															branch.weeklyTrend > 0
+																? 'text-green-600'
+																: 'text-red-600'
+														}`}
 													>
-														<span>{product.name}</span>
-														<span className='text-gray-600'>
-															{product.quantity} units
-														</span>
-													</div>
-												))}
+														{branch.weeklyTrend > 0 ? '+' : ''}
+														{branch.weeklyTrend}%
+													</span>
+												</div>
+											</div>
+
+											<div className='grid grid-cols-2 gap-4 mb-4'>
+												<div>
+													<p className='text-sm text-gray-600'>Total Orders</p>
+													<p className='text-xl font-bold'>
+														{branch.totalOrders}
+													</p>
+												</div>
+												<div>
+													<p className='text-sm text-gray-600'>Total Value</p>
+													<p className='text-xl font-bold'>
+														{formatKRW(branch.totalValue)}
+													</p>
+												</div>
+												<div>
+													<p className='text-sm text-gray-600'>
+														Avg Order Value
+													</p>
+													<p className='text-lg font-semibold'>
+														{formatKRW(branch.avgOrderValue)}
+													</p>
+												</div>
+												<div>
+													<p className='text-sm text-gray-600'>Pending</p>
+													<p className='text-lg font-semibold text-orange-600'>
+														{branch.pendingOrders}
+													</p>
+												</div>
+											</div>
+
+											<div>
+												<p className='text-sm font-medium text-gray-700 mb-2'>
+													Top Products
+												</p>
+												<div className='space-y-1'>
+													{branch.mostOrderedProducts.map((product, idx) => (
+														<div
+															key={idx}
+															className='flex justify-between text-sm'
+														>
+															<span>{product.name}</span>
+															<span className='text-gray-600'>
+																{product.quantity} units
+															</span>
+														</div>
+													))}
+												</div>
 											</div>
 										</div>
-									</div>
-								))}
-							</div>
+									))}
+								</div>
+							)}
 						</CardContent>
 					</Card>
 
@@ -440,19 +903,135 @@ const AdminDashboard: React.FC = () => {
 						<Card>
 							<CardHeader>
 								<CardTitle className='text-lg'>Quick Actions</CardTitle>
+								<CardDescription>Common administrative tasks</CardDescription>
 							</CardHeader>
 							<CardContent className='space-y-3'>
-								<Button className='w-full justify-start' variant='outline'>
-									<FileText className='h-4 w-4 mr-2' />
-									Generate Weekly Report
-								</Button>
-								<Button className='w-full justify-start' variant='outline'>
-									<Download className='h-4 w-4 mr-2' />
-									Export Order Data
-								</Button>
-								<Button className='w-full justify-start' variant='outline'>
-									<Users className='h-4 w-4 mr-2' />
+								<DropdownMenu>
+									<DropdownMenuTrigger asChild>
+										<Button
+											className='w-full justify-start'
+											variant='outline'
+											disabled={actionLoading === 'generate-report'}
+										>
+											{actionLoading === 'generate-report' ? (
+												<div className='animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600 mr-2' />
+											) : (
+												<FileText className='h-4 w-4 mr-2' />
+											)}
+											Generate Report
+											<ChevronDown className='h-4 w-4 ml-auto' />
+										</Button>
+									</DropdownMenuTrigger>
+									<DropdownMenuContent align='start' className='w-48'>
+										<DropdownMenuItem
+											onClick={() =>
+												handleQuickAction('generate-report', 'excel')
+											}
+											disabled={actionLoading === 'generate-report'}
+										>
+											<FileSpreadsheet className='h-4 w-4 mr-2 text-green-600' />
+											Download as Excel
+										</DropdownMenuItem>
+										<DropdownMenuItem
+											onClick={() =>
+												handleQuickAction('generate-report', 'pdf')
+											}
+											disabled={actionLoading === 'generate-report'}
+										>
+											<FileType className='h-4 w-4 mr-2 text-red-600' />
+											Download as PDF
+										</DropdownMenuItem>
+										<DropdownMenuItem
+											onClick={() =>
+												handleQuickAction('generate-report', 'doc')
+											}
+											disabled={actionLoading === 'generate-report'}
+										>
+											<FileText className='h-4 w-4 mr-2 text-blue-600' />
+											Download as DOC
+										</DropdownMenuItem>
+									</DropdownMenuContent>
+								</DropdownMenu>
+								<DropdownMenu>
+									<DropdownMenuTrigger asChild>
+										<Button
+											className='w-full justify-start'
+											variant='outline'
+											disabled={actionLoading === 'export-orders'}
+										>
+											{actionLoading === 'export-orders' ? (
+												<div className='animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600 mr-2' />
+											) : (
+												<Download className='h-4 w-4 mr-2' />
+											)}
+											Export Order Data
+											<ChevronDown className='h-4 w-4 ml-auto' />
+										</Button>
+									</DropdownMenuTrigger>
+									<DropdownMenuContent align='start' className='w-48'>
+										<DropdownMenuItem
+											onClick={() =>
+												handleQuickAction('export-orders', 'excel')
+											}
+											disabled={actionLoading === 'export-orders'}
+										>
+											<FileSpreadsheet className='h-4 w-4 mr-2 text-green-600' />
+											Export as Excel
+										</DropdownMenuItem>
+										<DropdownMenuItem
+											onClick={() => handleQuickAction('export-orders', 'pdf')}
+											disabled={actionLoading === 'export-orders'}
+										>
+											<FileType className='h-4 w-4 mr-2 text-red-600' />
+											Export as PDF
+										</DropdownMenuItem>
+										<DropdownMenuItem
+											onClick={() => handleQuickAction('export-orders', 'doc')}
+											disabled={actionLoading === 'export-orders'}
+										>
+											<FileText className='h-4 w-4 mr-2 text-blue-600' />
+											Export as DOC
+										</DropdownMenuItem>
+									</DropdownMenuContent>
+								</DropdownMenu>
+								<Button
+									className='w-full justify-start'
+									variant='outline'
+									onClick={() => handleQuickAction('manage-users')}
+									disabled={actionLoading === 'manage-users'}
+								>
+									{actionLoading === 'manage-users' ? (
+										<div className='animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600 mr-2' />
+									) : (
+										<Users className='h-4 w-4 mr-2' />
+									)}
 									Manage User Permissions
+								</Button>
+								<Button
+									className='w-full justify-start'
+									variant='outline'
+									onClick={() => handleQuickAction('system-settings')}
+									disabled={actionLoading === 'system-settings'}
+								>
+									{actionLoading === 'system-settings' ? (
+										<div className='animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600 mr-2' />
+									) : (
+										<Settings className='h-4 w-4 mr-2' />
+									)}
+									System Settings
+								</Button>
+								<Button
+									className='w-full justify-start'
+									variant='outline'
+									onClick={() => handleQuickAction('refresh-data')}
+									disabled={actionLoading === 'refresh-data'}
+								>
+									{actionLoading === 'refresh-data' ? (
+										<div className='animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600 mr-2' />
+									) : (
+										<RefreshCw className='h-4 w-4 mr-2' />
+									)}
+									Refresh All Data
 								</Button>
 							</CardContent>
 						</Card>

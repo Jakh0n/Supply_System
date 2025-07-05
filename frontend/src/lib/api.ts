@@ -213,10 +213,20 @@ export const ordersApi = {
 	},
 
 	getBranchAnalytics: async (
-		timeframe: AnalyticsTimeframe = 'week'
+		timeframe: AnalyticsTimeframe = 'week',
+		month?: number,
+		year?: number
 	): Promise<BranchAnalyticsResponse> => {
+		const params = new URLSearchParams()
+		params.append('timeframe', timeframe)
+
+		if (month && year) {
+			params.append('month', month.toString())
+			params.append('year', year.toString())
+		}
+
 		const response = await api.get(
-			`/orders/analytics/branches?timeframe=${timeframe}`
+			`/orders/analytics/branches?${params.toString()}`
 		)
 		return response.data
 	},

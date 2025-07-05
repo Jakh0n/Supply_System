@@ -25,6 +25,8 @@ import { AnalyticsTimeframe, BranchAnalytics, BranchFilter } from '@/types'
 import {
 	Activity,
 	BarChart3,
+	ChevronDown,
+	ChevronUp,
 	DollarSign,
 	Download,
 	Filter,
@@ -42,6 +44,7 @@ const BranchPerformancePage: React.FC = () => {
 	const [branchAnalytics, setBranchAnalytics] = useState<BranchAnalytics[]>([])
 	const [loading, setLoading] = useState(true)
 	const [searchTerm, setSearchTerm] = useState('')
+	const [showAllBranches, setShowAllBranches] = useState(false)
 	const [filters, setFilters] = useState<BranchFilter>({
 		branch: 'all',
 		timeframe: 'month',
@@ -104,6 +107,11 @@ const BranchPerformancePage: React.FC = () => {
 			filters.branch === 'all' || branch.branch === filters.branch
 		return matchesSearch && matchesBranch
 	})
+
+	// Determine which branches to display based on showAllBranches state
+	const branchesToDisplay = showAllBranches
+		? filteredBranches
+		: filteredBranches.slice(0, 2)
 
 	const getEfficiencyScore = (branch: BranchAnalytics) => {
 		const completionRate =
@@ -356,171 +364,78 @@ const BranchPerformancePage: React.FC = () => {
 					</div>
 
 					{/* Branch Performance Cards */}
-					<div className='grid grid-cols-1 lg:grid-cols-2 gap-6'>
-						{filteredBranches.map(branch => {
-							const efficiencyScore = getEfficiencyScore(branch)
-							const performance = getPerformanceLevel(efficiencyScore)
-
-							return (
-								<Card
-									key={branch.branch}
-									className='hover:shadow-lg transition-shadow'
+					<div className='space-y-4'>
+						{/* Toggle Button */}
+						{filteredBranches.length > 2 && (
+							<div className='flex justify-between items-center'>
+								<h2 className='text-xl font-semibold text-gray-900'>
+									Branch Performance Cards
+								</h2>
+								<Button
+									variant='outline'
+									size='sm'
+									onClick={() => setShowAllBranches(!showAllBranches)}
+									className='flex items-center gap-2'
 								>
-									<CardHeader>
-										<div className='flex items-center justify-between'>
-											<div className='flex items-center gap-3'>
-												<MapPin className='h-5 w-5 text-blue-600' />
-												<div>
-													<CardTitle className='text-lg'>
-														{branch.branch}
-													</CardTitle>
-													<CardDescription>
-														Performance Analysis
-													</CardDescription>
-												</div>
-											</div>
-											<div className='flex items-center gap-2'>
-												<Badge className={performance.color}>
-													{performance.level}
-												</Badge>
-												<div className='flex items-center gap-1'>
-													{getTrendIcon(branch.weeklyTrend)}
-													<span
-														className={`text-sm font-medium ${
-															branch.weeklyTrend > 0
-																? 'text-green-600'
-																: 'text-red-600'
-														}`}
-													>
-														{branch.weeklyTrend > 0 ? '+' : ''}
-														{branch.weeklyTrend}%
-													</span>
-												</div>
-											</div>
-										</div>
-									</CardHeader>
-									<CardContent>
-										<Tabs defaultValue='overview' className='w-full'>
-											<TabsList className='grid w-full grid-cols-3'>
-												<TabsTrigger value='overview'>Overview</TabsTrigger>
-												<TabsTrigger value='products'>Products</TabsTrigger>
-												<TabsTrigger value='efficiency'>Efficiency</TabsTrigger>
-											</TabsList>
+									{showAllBranches ? (
+										<>
+											<ChevronUp className='h-4 w-4' />
+											Hide Branches ({filteredBranches.length - 2} hidden)
+										</>
+									) : (
+										<>
+											<ChevronDown className='h-4 w-4' />
+											Show All Branches ({filteredBranches.length} total)
+										</>
+									)}
+								</Button>
+							</div>
+						)}
 
-											<TabsContent value='overview' className='space-y-4'>
-												<div className='grid grid-cols-2 gap-4'>
-													<div className='space-y-2'>
-														<p className='text-sm text-gray-600'>
-															Total Orders
-														</p>
-														<p className='text-2xl font-bold'>
-															{branch.totalOrders}
-														</p>
-													</div>
-													<div className='space-y-2'>
-														<p className='text-sm text-gray-600'>Total Value</p>
-														<p className='text-2xl font-bold text-green-600'>
-															{formatKRW(branch.totalValue)}
-														</p>
-													</div>
-													<div className='space-y-2'>
-														<p className='text-sm text-gray-600'>
-															Avg Order Value
-														</p>
-														<p className='text-xl font-semibold'>
-															{formatKRW(branch.avgOrderValue)}
-														</p>
-													</div>
-													<div className='space-y-2'>
-														<p className='text-sm text-gray-600'>
-															Pending Orders
-														</p>
-														<p className='text-xl font-semibold text-orange-600'>
-															{branch.pendingOrders}
-														</p>
-													</div>
-												</div>
-											</TabsContent>
+						{filteredBranches.length === 0 ? (
+							<Card>
+								<CardContent className='p-12 text-center'>
+									<MapPin className='h-12 w-12 text-gray-400 mx-auto mb-4' />
+									<h3 className='text-lg font-semibold text-gray-900 mb-2'>
+										No branches found
+									</h3>
+									<p className='text-gray-600'>
+										Try adjusting your search terms or filters to find branches.
+									</p>
+								</CardContent>
+							</Card>
+						) : (
+							<div className='grid grid-cols-1 lg:grid-cols-2 gap-6'>
+								{branchesToDisplay.map(branch => {
+									const efficiencyScore = getEfficiencyScore(branch)
+									const performance = getPerformanceLevel(efficiencyScore)
 
-											<TabsContent value='products' className='space-y-4'>
-												<div className='space-y-3'>
-													<p className='text-sm font-medium text-gray-700'>
-														Top Products ({filters.timeframe})
-													</p>
-													{branch.mostOrderedProducts
-														.slice(0, 3)
-														.map((product, idx) => (
-															<div
-																key={idx}
-																className='flex items-center justify-between p-3 bg-gray-50 rounded-lg'
-															>
-																<div className='flex items-center gap-3'>
-																	<div className='w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center'>
-																		<Package className='h-4 w-4 text-blue-600' />
-																	</div>
-																	<div>
-																		<p className='font-medium'>
-																			{product.name}
-																		</p>
-																		<p className='text-sm text-gray-600'>
-																			{product.quantity} units
-																		</p>
-																	</div>
-																</div>
-																<Badge variant='secondary'>#{idx + 1}</Badge>
-															</div>
-														))}
-													{branch.mostOrderedProducts.length === 0 && (
-														<p className='text-center text-gray-500 py-4'>
-															No products data available
-														</p>
-													)}
-												</div>
-											</TabsContent>
-
-											<TabsContent value='efficiency' className='space-y-4'>
-												<div className='space-y-4'>
-													<div className='flex items-center justify-between'>
-														<p className='text-sm font-medium'>
-															Efficiency Score
-														</p>
-														<div className='flex items-center gap-2'>
-															<div className='w-16 h-2 bg-gray-200 rounded-full'>
-																<div
-																	className='h-2 bg-blue-600 rounded-full'
-																	style={{ width: `${efficiencyScore}%` }}
-																></div>
-															</div>
-															<span className='text-sm font-bold'>
-																{efficiencyScore}%
-															</span>
+									return (
+										<Card
+											key={branch.branch}
+											className='hover:shadow-lg transition-shadow'
+										>
+											<CardHeader>
+												<div className='flex items-center justify-between'>
+													<div className='flex items-center gap-3'>
+														<MapPin className='h-5 w-5 text-blue-600' />
+														<div>
+															<CardTitle className='text-lg'>
+																{branch.branch}
+															</CardTitle>
+															<CardDescription>
+																Performance Analysis
+															</CardDescription>
 														</div>
 													</div>
-
-													<div className='grid grid-cols-2 gap-4 text-sm'>
-														<div className='space-y-1'>
-															<p className='text-gray-600'>Completion Rate</p>
-															<p className='font-semibold'>
-																{branch.totalOrders > 0
-																	? Math.round(
-																			(branch.completedOrders /
-																				branch.totalOrders) *
-																				100
-																	  )
-																	: 0}
-																%
-															</p>
-														</div>
-														<div className='space-y-1'>
-															<p className='text-gray-600'>Order Frequency</p>
-															<p className='font-semibold'>
-																{Math.round(branch.totalOrders / 7)} orders/week
-															</p>
-														</div>
-														<div className='space-y-1'>
-															<p className='text-gray-600'>Growth Trend</p>
-															<p
-																className={`font-semibold ${
+													<div className='flex items-center gap-2'>
+														<Badge className={performance.color}>
+															{performance.level}
+														</Badge>
+														<div className='flex items-center gap-1'>
+															{getTrendIcon(branch.weeklyTrend)}
+															<span
+																className={`text-sm font-medium ${
 																	branch.weeklyTrend > 0
 																		? 'text-green-600'
 																		: 'text-red-600'
@@ -528,36 +443,170 @@ const BranchPerformancePage: React.FC = () => {
 															>
 																{branch.weeklyTrend > 0 ? '+' : ''}
 																{branch.weeklyTrend}%
-															</p>
-														</div>
-														<div className='space-y-1'>
-															<p className='text-gray-600'>Avg Response Time</p>
-															<p className='font-semibold'>2.3 days</p>
+															</span>
 														</div>
 													</div>
 												</div>
-											</TabsContent>
-										</Tabs>
-									</CardContent>
-								</Card>
-							)
-						})}
-					</div>
+											</CardHeader>
+											<CardContent>
+												<Tabs defaultValue='overview' className='w-full'>
+													<TabsList className='grid w-full grid-cols-3'>
+														<TabsTrigger value='overview'>Overview</TabsTrigger>
+														<TabsTrigger value='products'>Products</TabsTrigger>
+														<TabsTrigger value='efficiency'>
+															Efficiency
+														</TabsTrigger>
+													</TabsList>
 
-					{/* No Results */}
-					{filteredBranches.length === 0 && (
-						<Card>
-							<CardContent className='p-12 text-center'>
-								<MapPin className='h-12 w-12 text-gray-400 mx-auto mb-4' />
-								<h3 className='text-lg font-semibold text-gray-900 mb-2'>
-									No branches found
-								</h3>
-								<p className='text-gray-600'>
-									Try adjusting your search terms or filters to find branches.
-								</p>
-							</CardContent>
-						</Card>
-					)}
+													<TabsContent value='overview' className='space-y-4'>
+														<div className='grid grid-cols-2 gap-4'>
+															<div className='space-y-2'>
+																<p className='text-sm text-gray-600'>
+																	Total Orders
+																</p>
+																<p className='text-2xl font-bold'>
+																	{branch.totalOrders}
+																</p>
+															</div>
+															<div className='space-y-2'>
+																<p className='text-sm text-gray-600'>
+																	Total Value
+																</p>
+																<p className='text-2xl font-bold text-green-600'>
+																	{formatKRW(branch.totalValue)}
+																</p>
+															</div>
+															<div className='space-y-2'>
+																<p className='text-sm text-gray-600'>
+																	Avg Order Value
+																</p>
+																<p className='text-xl font-semibold'>
+																	{formatKRW(branch.avgOrderValue)}
+																</p>
+															</div>
+															<div className='space-y-2'>
+																<p className='text-sm text-gray-600'>
+																	Pending Orders
+																</p>
+																<p className='text-xl font-semibold text-orange-600'>
+																	{branch.pendingOrders}
+																</p>
+															</div>
+														</div>
+													</TabsContent>
+
+													<TabsContent value='products' className='space-y-4'>
+														<div className='space-y-3'>
+															<p className='text-sm font-medium text-gray-700'>
+																Top Products ({filters.timeframe})
+															</p>
+															{branch.mostOrderedProducts
+																.slice(0, 3)
+																.map((product, idx) => (
+																	<div
+																		key={idx}
+																		className='flex items-center justify-between p-3 bg-gray-50 rounded-lg'
+																	>
+																		<div className='flex items-center gap-3'>
+																			<div className='w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center'>
+																				<Package className='h-4 w-4 text-blue-600' />
+																			</div>
+																			<div>
+																				<p className='font-medium'>
+																					{product.name}
+																				</p>
+																				<p className='text-sm text-gray-600'>
+																					{product.quantity} units
+																				</p>
+																			</div>
+																		</div>
+																		<Badge variant='secondary'>
+																			#{idx + 1}
+																		</Badge>
+																	</div>
+																))}
+															{branch.mostOrderedProducts.length === 0 && (
+																<p className='text-center text-gray-500 py-4'>
+																	No products data available
+																</p>
+															)}
+														</div>
+													</TabsContent>
+
+													<TabsContent value='efficiency' className='space-y-4'>
+														<div className='space-y-4'>
+															<div className='flex items-center justify-between'>
+																<p className='text-sm font-medium'>
+																	Efficiency Score
+																</p>
+																<div className='flex items-center gap-2'>
+																	<div className='w-16 h-2 bg-gray-200 rounded-full'>
+																		<div
+																			className='h-2 bg-blue-600 rounded-full'
+																			style={{ width: `${efficiencyScore}%` }}
+																		></div>
+																	</div>
+																	<span className='text-sm font-bold'>
+																		{efficiencyScore}%
+																	</span>
+																</div>
+															</div>
+
+															<div className='grid grid-cols-2 gap-4 text-sm'>
+																<div className='space-y-1'>
+																	<p className='text-gray-600'>
+																		Completion Rate
+																	</p>
+																	<p className='font-semibold'>
+																		{branch.totalOrders > 0
+																			? Math.round(
+																					(branch.completedOrders /
+																						branch.totalOrders) *
+																						100
+																			  )
+																			: 0}
+																		%
+																	</p>
+																</div>
+																<div className='space-y-1'>
+																	<p className='text-gray-600'>
+																		Order Frequency
+																	</p>
+																	<p className='font-semibold'>
+																		{Math.round(branch.totalOrders / 7)}{' '}
+																		orders/week
+																	</p>
+																</div>
+																<div className='space-y-1'>
+																	<p className='text-gray-600'>Growth Trend</p>
+																	<p
+																		className={`font-semibold ${
+																			branch.weeklyTrend > 0
+																				? 'text-green-600'
+																				: 'text-red-600'
+																		}`}
+																	>
+																		{branch.weeklyTrend > 0 ? '+' : ''}
+																		{branch.weeklyTrend}%
+																	</p>
+																</div>
+																<div className='space-y-1'>
+																	<p className='text-gray-600'>
+																		Avg Response Time
+																	</p>
+																	<p className='font-semibold'>2.3 days</p>
+																</div>
+															</div>
+														</div>
+													</TabsContent>
+												</Tabs>
+											</CardContent>
+										</Card>
+									)
+								})}
+							</div>
+						)}
+					</div>
 				</div>
 			</AdminLayout>
 		</ProtectedRoute>
