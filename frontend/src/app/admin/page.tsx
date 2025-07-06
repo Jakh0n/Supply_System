@@ -510,12 +510,12 @@ const AdminDashboard: React.FC = () => {
 			<AdminLayout>
 				<div className='space-y-6'>
 					{/* Header */}
-					<div className='flex justify-between items-center'>
+					<div className='flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4'>
 						<div>
-							<h1 className='text-3xl font-bold text-gray-900'>
+							<h1 className='text-2xl sm:text-3xl font-bold text-gray-900'>
 								Admin Dashboard
 							</h1>
-							<p className='text-gray-600 mt-1'>
+							<p className='text-gray-600 mt-1 text-sm sm:text-base'>
 								Complete overview of your restaurant supply operations
 							</p>
 						</div>
@@ -528,104 +528,110 @@ const AdminDashboard: React.FC = () => {
 					</div>
 
 					{/* Quick Stats */}
-					<div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6'>
+					<div className='grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6'>
 						<Card>
-							<CardContent className='p-6'>
+							<CardContent className='p-4 sm:p-6'>
 								<div className='flex items-center justify-between'>
 									<div>
-										<p className='text-sm font-medium text-gray-600'>
+										<p className='text-xs sm:text-sm font-medium text-gray-600'>
 											Today&apos;s Orders
 										</p>
-										<p className='text-2xl font-bold'>
+										<p className='text-xl sm:text-2xl font-bold'>
 											{stats?.todayOrders || 0}
 										</p>
 									</div>
-									<Calendar className='h-8 w-8 text-blue-600' />
+									<Calendar className='h-6 w-6 sm:h-8 sm:w-8 text-blue-600' />
 								</div>
 							</CardContent>
 						</Card>
 
 						<Card>
-							<CardContent className='p-6'>
+							<CardContent className='p-4 sm:p-6'>
 								<div className='flex items-center justify-between'>
 									<div>
-										<p className='text-sm font-medium text-gray-600'>
+										<p className='text-xs sm:text-sm font-medium text-gray-600'>
 											Pending Orders
 										</p>
-										<p className='text-2xl font-bold text-orange-600'>
+										<p className='text-xl sm:text-2xl font-bold text-orange-600'>
 											{stats?.pendingOrders || 0}
 										</p>
 									</div>
-									<Clock className='h-8 w-8 text-orange-600' />
+									<Clock className='h-6 w-6 sm:h-8 sm:w-8 text-orange-600' />
 								</div>
 							</CardContent>
 						</Card>
 
 						<Card>
-							<CardContent className='p-6'>
+							<CardContent className='p-4 sm:p-6'>
 								<div className='flex items-center justify-between'>
 									<div>
-										<p className='text-sm font-medium text-gray-600'>
+										<p className='text-xs sm:text-sm font-medium text-gray-600'>
 											Total Orders
 										</p>
-										<p className='text-2xl font-bold'>
+										<p className='text-xl sm:text-2xl font-bold'>
 											{stats?.totalOrders || 0}
 										</p>
 									</div>
-									<ShoppingCart className='h-8 w-8 text-green-600' />
+									<ShoppingCart className='h-6 w-6 sm:h-8 sm:w-8 text-green-600' />
 								</div>
 							</CardContent>
 						</Card>
 
 						<Card>
-							<CardContent className='p-6'>
+							<CardContent className='p-4 sm:p-6'>
 								<div className='flex items-center justify-between'>
 									<div>
-										<p className='text-sm font-medium text-gray-600'>
+										<p className='text-xs sm:text-sm font-medium text-gray-600'>
 											Daily Spending
 										</p>
-										<p className='text-2xl font-bold text-purple-600'>
+										<p className='text-xl sm:text-2xl font-bold text-purple-600'>
 											{financialMetrics
 												? formatKRW(financialMetrics.dailySpending)
 												: formatKRW(0)}
 										</p>
 									</div>
-									<DollarSign className='h-8 w-8 text-purple-600' />
+									<DollarSign className='h-6 w-6 sm:h-8 sm:w-8 text-purple-600' />
 								</div>
 							</CardContent>
 						</Card>
 					</div>
 
 					{/* Financial Overview */}
-					<div className='grid grid-cols-1 lg:grid-cols-3 gap-6'>
+					<div className='grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6'>
 						<Card className='lg:col-span-2'>
-							<CardHeader>
-								<CardTitle className='flex items-center gap-2'>
+							<CardHeader className='pb-4'>
+								<CardTitle className='flex items-center gap-2 text-lg sm:text-xl'>
 									<BarChart3 className='h-5 w-5' />
 									Financial Overview
 								</CardTitle>
-								<CardDescription>
+								<CardDescription className='text-sm'>
 									Spending analysis across different timeframes
 								</CardDescription>
 							</CardHeader>
-							<CardContent>
+							<CardContent className='pt-0'>
 								{financialMetrics && (
-									<div className='grid grid-cols-1 md:grid-cols-3 gap-4'>
-										<div className='text-center p-4 bg-blue-50 rounded-lg'>
-											<p className='text-sm text-gray-600'>Weekly Spending</p>
-											<p className='text-xl font-bold text-blue-600'>
+									<div className='grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4'>
+										<div className='text-center p-3 sm:p-4 bg-blue-50 rounded-lg'>
+											<p className='text-xs sm:text-sm text-gray-600'>
+												Weekly Spending
+											</p>
+											<p className='text-lg sm:text-xl font-bold text-blue-600'>
 												{formatKRW(financialMetrics.weeklySpending)}
 											</p>
 										</div>
-										<div className='text-center p-4 bg-green-50 rounded-lg'>
-											<p className='text-sm text-gray-600'>Monthly Spending</p>
-											<p className='text-xl font-bold text-green-600'>
+										<div className='text-center p-3 sm:p-4 bg-green-50 rounded-lg'>
+											<p className='text-xs sm:text-sm text-gray-600'>
+												Monthly Spending
+											</p>
+											<p className='text-lg sm:text-xl font-bold text-green-600'>
 												{formatKRW(financialMetrics.monthlySpending)}
 											</p>
 										</div>
-										<div className='text-center p-4 bg-purple-50 rounded-lg'>
-											<p className='text-sm text-gray-600'>Avg Order Value</p>
-											<p className='text-xl font-bold text-purple-600'>
+										<div className='text-center p-3 sm:p-4 bg-purple-50 rounded-lg'>
+											<p className='text-xs sm:text-sm text-gray-600'>
+												Avg Order Value
+											</p>
+											<p className='text-lg sm:text-xl font-bold text-purple-600'>
 												{formatKRW(financialMetrics.avgOrderValue)}
 											</p>
 										</div>
@@ -635,26 +641,28 @@ const AdminDashboard: React.FC = () => {
 						</Card>
 
 						<Card>
-							<CardHeader>
-								<CardTitle className='flex items-center gap-2'>
+							<CardHeader className='pb-4'>
+								<CardTitle className='flex items-center gap-2 text-lg sm:text-xl'>
 									<AlertTriangle className='h-5 w-5 text-orange-500' />
 									Quick Alerts
 								</CardTitle>
 							</CardHeader>
-							<CardContent className='space-y-3'>
+							<CardContent className='space-y-3 pt-0'>
 								<div className='flex items-center gap-2 p-2 bg-orange-50 rounded'>
-									<AlertTriangle className='h-4 w-4 text-orange-500' />
-									<span className='text-sm'>
+									<AlertTriangle className='h-4 w-4 text-orange-500 flex-shrink-0' />
+									<span className='text-xs sm:text-sm'>
 										{stats?.pendingOrders || 0} pending orders need review
 									</span>
 								</div>
 								<div className='flex items-center gap-2 p-2 bg-red-50 rounded'>
-									<Package className='h-4 w-4 text-red-500' />
-									<span className='text-sm'>Low stock alerts available</span>
+									<Package className='h-4 w-4 text-red-500 flex-shrink-0' />
+									<span className='text-xs sm:text-sm'>
+										Low stock alerts available
+									</span>
 								</div>
 								<div className='flex items-center gap-2 p-2 bg-blue-50 rounded'>
-									<TrendingUp className='h-4 w-4 text-blue-500' />
-									<span className='text-sm'>
+									<TrendingUp className='h-4 w-4 text-blue-500 flex-shrink-0' />
+									<span className='text-xs sm:text-sm'>
 										{branchAnalytics.find(b => b.weeklyTrend > 0)?.branch ||
 											'No branch'}
 										{branchAnalytics.find(b => b.weeklyTrend > 0)
@@ -671,30 +679,32 @@ const AdminDashboard: React.FC = () => {
 
 					{/* Branch Performance */}
 					<Card>
-						<CardHeader>
-							<div className='flex items-center justify-between'>
+						<CardHeader className='pb-4'>
+							<div className='flex flex-col space-y-4 lg:flex-row lg:items-center lg:justify-between lg:space-y-0'>
 								<div>
-									<CardTitle className='flex items-center gap-2'>
+									<CardTitle className='flex items-center gap-2 text-lg sm:text-xl'>
 										<MapPin className='h-5 w-5' />
 										Branch Performance Analysis
 									</CardTitle>
-									<CardDescription>
+									<CardDescription className='text-sm'>
 										Analytics for{' '}
 										{monthOptions.find(m => m.value === selectedMonth)?.label}{' '}
 										{selectedYear}
 									</CardDescription>
 								</div>
-								<div className='flex items-center gap-3'>
+								<div className='flex flex-col sm:flex-row items-start sm:items-center gap-3'>
 									{/* Month Selector */}
-									<div className='flex items-center gap-2'>
-										<label className='text-sm font-medium'>Month:</label>
+									<div className='flex items-center gap-2 w-full sm:w-auto'>
+										<label className='text-sm font-medium whitespace-nowrap'>
+											Month:
+										</label>
 										<Select
 											value={selectedMonth.toString()}
 											onValueChange={(value: string) =>
 												setSelectedMonth(parseInt(value))
 											}
 										>
-											<SelectTrigger className='w-32'>
+											<SelectTrigger className='w-full sm:w-32'>
 												<SelectValue />
 											</SelectTrigger>
 											<SelectContent>
@@ -711,15 +721,17 @@ const AdminDashboard: React.FC = () => {
 									</div>
 
 									{/* Year Selector */}
-									<div className='flex items-center gap-2'>
-										<label className='text-sm font-medium'>Year:</label>
+									<div className='flex items-center gap-2 w-full sm:w-auto'>
+										<label className='text-sm font-medium whitespace-nowrap'>
+											Year:
+										</label>
 										<Select
 											value={selectedYear.toString()}
 											onValueChange={(value: string) =>
 												setSelectedYear(parseInt(value))
 											}
 										>
-											<SelectTrigger className='w-24'>
+											<SelectTrigger className='w-full sm:w-24'>
 												<SelectValue />
 											</SelectTrigger>
 											<SelectContent>
@@ -741,17 +753,27 @@ const AdminDashboard: React.FC = () => {
 											variant='outline'
 											size='sm'
 											onClick={() => setShowAllBranches(!showAllBranches)}
-											className='flex items-center gap-2'
+											className='flex items-center gap-2 w-full sm:w-auto text-xs sm:text-sm'
 										>
 											{showAllBranches ? (
 												<>
 													<ChevronUp className='h-4 w-4' />
-													Hide Branches ({branchAnalytics.length - 2} hidden)
+													<span className='hidden sm:inline'>
+														Hide Branches ({branchAnalytics.length - 2} hidden)
+													</span>
+													<span className='sm:hidden'>
+														Hide ({branchAnalytics.length - 2})
+													</span>
 												</>
 											) : (
 												<>
 													<ChevronDown className='h-4 w-4' />
-													Show All Branches ({branchAnalytics.length} total)
+													<span className='hidden sm:inline'>
+														Show All Branches ({branchAnalytics.length} total)
+													</span>
+													<span className='sm:hidden'>
+														Show All ({branchAnalytics.length})
+													</span>
 												</>
 											)}
 										</Button>
@@ -759,29 +781,32 @@ const AdminDashboard: React.FC = () => {
 								</div>
 							</div>
 						</CardHeader>
-						<CardContent>
+						<CardContent className='pt-0'>
 							{branchAnalytics.length === 0 ? (
-								<div className='text-center py-12'>
-									<MapPin className='h-16 w-16 text-gray-300 mx-auto mb-4' />
-									<h3 className='text-lg font-semibold text-gray-900 mb-2'>
+								<div className='text-center py-8 sm:py-12'>
+									<MapPin className='h-12 w-12 sm:h-16 sm:w-16 text-gray-300 mx-auto mb-4' />
+									<h3 className='text-base sm:text-lg font-semibold text-gray-900 mb-2'>
 										No Data Available
 									</h3>
-									<p className='text-gray-600 mb-4'>
+									<p className='text-sm sm:text-base text-gray-600 mb-4'>
 										There is no branch data available for{' '}
 										{monthOptions.find(m => m.value === selectedMonth)?.label}{' '}
 										{selectedYear}.
 									</p>
-									<p className='text-sm text-gray-500'>
+									<p className='text-xs sm:text-sm text-gray-500'>
 										Try selecting a different month or year to view analytics
 										data.
 									</p>
 								</div>
 							) : (
-								<div className='grid grid-cols-1 lg:grid-cols-2 gap-6'>
+								<div className='grid grid-cols-1 xl:grid-cols-2 gap-4 sm:gap-6'>
 									{branchesToDisplay.map(branch => (
-										<div key={branch.branch} className='border rounded-lg p-4'>
+										<div
+											key={branch.branch}
+											className='border rounded-lg p-4 sm:p-6'
+										>
 											<div className='flex items-center justify-between mb-4'>
-												<h3 className='font-semibold text-lg'>
+												<h3 className='font-semibold text-base sm:text-lg'>
 													{branch.branch}
 												</h3>
 												<div className='flex items-center gap-1'>
@@ -799,30 +824,36 @@ const AdminDashboard: React.FC = () => {
 												</div>
 											</div>
 
-											<div className='grid grid-cols-2 gap-4 mb-4'>
+											<div className='grid grid-cols-2 gap-3 sm:gap-4 mb-4'>
 												<div>
-													<p className='text-sm text-gray-600'>Total Orders</p>
-													<p className='text-xl font-bold'>
+													<p className='text-xs sm:text-sm text-gray-600'>
+														Total Orders
+													</p>
+													<p className='text-lg sm:text-xl font-bold'>
 														{branch.totalOrders}
 													</p>
 												</div>
 												<div>
-													<p className='text-sm text-gray-600'>Total Value</p>
-													<p className='text-xl font-bold'>
+													<p className='text-xs sm:text-sm text-gray-600'>
+														Total Value
+													</p>
+													<p className='text-lg sm:text-xl font-bold'>
 														{formatKRW(branch.totalValue)}
 													</p>
 												</div>
 												<div>
-													<p className='text-sm text-gray-600'>
+													<p className='text-xs sm:text-sm text-gray-600'>
 														Avg Order Value
 													</p>
-													<p className='text-lg font-semibold'>
+													<p className='text-base sm:text-lg font-semibold'>
 														{formatKRW(branch.avgOrderValue)}
 													</p>
 												</div>
 												<div>
-													<p className='text-sm text-gray-600'>Pending</p>
-													<p className='text-lg font-semibold text-orange-600'>
+													<p className='text-xs sm:text-sm text-gray-600'>
+														Pending
+													</p>
+													<p className='text-base sm:text-lg font-semibold text-orange-600'>
 														{branch.pendingOrders}
 													</p>
 												</div>
@@ -836,10 +867,12 @@ const AdminDashboard: React.FC = () => {
 													{branch.mostOrderedProducts.map((product, idx) => (
 														<div
 															key={idx}
-															className='flex justify-between text-sm'
+															className='flex justify-between text-xs sm:text-sm'
 														>
-															<span>{product.name}</span>
-															<span className='text-gray-600'>
+															<span className='truncate mr-2'>
+																{product.name}
+															</span>
+															<span className='text-gray-600 flex-shrink-0'>
 																{product.quantity} units
 															</span>
 														</div>
@@ -855,40 +888,97 @@ const AdminDashboard: React.FC = () => {
 
 					{/* Product Insights */}
 					<Card>
-						<CardHeader>
-							<CardTitle className='flex items-center gap-2'>
+						<CardHeader className='pb-4'>
+							<CardTitle className='flex items-center gap-2 text-lg sm:text-xl'>
 								<Package className='h-5 w-5' />
 								Product Performance Insights
 							</CardTitle>
-							<CardDescription>
+							<CardDescription className='text-sm'>
 								Most popular products and ordering trends
 							</CardDescription>
 						</CardHeader>
-						<CardContent>
-							<div className='overflow-x-auto'>
+						<CardContent className='pt-0'>
+							{/* Mobile Card Layout */}
+							<div className='block sm:hidden space-y-4'>
+								{productInsights.map((product, idx) => (
+									<div key={idx} className='border rounded-lg p-4 bg-gray-50'>
+										<div className='flex justify-between items-start mb-2'>
+											<h4 className='font-medium text-sm'>{product.name}</h4>
+											<div className='flex items-center gap-1'>
+												{getTrendIcon(product.trend)}
+											</div>
+										</div>
+										<div className='grid grid-cols-2 gap-3 text-xs'>
+											<div>
+												<p className='text-gray-600'>Total Ordered</p>
+												<p className='font-semibold'>{product.totalOrdered}</p>
+											</div>
+											<div>
+												<p className='text-gray-600'>Total Value</p>
+												<p className='font-semibold'>
+													{formatKRW(product.totalValue)}
+												</p>
+											</div>
+											<div>
+												<p className='text-gray-600'>Frequency</p>
+												<Badge variant='secondary' className='text-xs'>
+													{product.frequency}%
+												</Badge>
+											</div>
+											<div>
+												<p className='text-gray-600'>Avg Price</p>
+												<p className='font-semibold'>
+													{formatKRW(product.avgPrice)}
+												</p>
+											</div>
+										</div>
+									</div>
+								))}
+							</div>
+
+							{/* Desktop Table Layout */}
+							<div className='hidden sm:block overflow-x-auto'>
 								<table className='w-full'>
 									<thead>
 										<tr className='border-b'>
-											<th className='text-left p-2'>Product</th>
-											<th className='text-left p-2'>Total Ordered</th>
-											<th className='text-left p-2'>Total Value</th>
-											<th className='text-left p-2'>Frequency</th>
-											<th className='text-left p-2'>Avg Price</th>
-											<th className='text-left p-2'>Trend</th>
+											<th className='text-left p-2 text-sm font-medium'>
+												Product
+											</th>
+											<th className='text-left p-2 text-sm font-medium'>
+												Total Ordered
+											</th>
+											<th className='text-left p-2 text-sm font-medium'>
+												Total Value
+											</th>
+											<th className='text-left p-2 text-sm font-medium'>
+												Frequency
+											</th>
+											<th className='text-left p-2 text-sm font-medium'>
+												Avg Price
+											</th>
+											<th className='text-left p-2 text-sm font-medium'>
+												Trend
+											</th>
 										</tr>
 									</thead>
 									<tbody>
 										{productInsights.map((product, idx) => (
 											<tr key={idx} className='border-b hover:bg-gray-50'>
-												<td className='p-2 font-medium'>{product.name}</td>
-												<td className='p-2'>{product.totalOrdered}</td>
-												<td className='p-2'>{formatKRW(product.totalValue)}</td>
+												<td className='p-2 font-medium text-sm'>
+													{product.name}
+												</td>
+												<td className='p-2 text-sm'>{product.totalOrdered}</td>
+												<td className='p-2 text-sm'>
+													{formatKRW(product.totalValue)}
+												</td>
 												<td className='p-2'>
-													<Badge variant='secondary'>
+													<Badge variant='secondary' className='text-xs'>
 														{product.frequency}%
 													</Badge>
 												</td>
-												<td className='p-2'>{formatKRW(product.avgPrice)}</td>
+												<td className='p-2 text-sm'>
+													{formatKRW(product.avgPrice)}
+												</td>
 												<td className='p-2'>{getTrendIcon(product.trend)}</td>
 											</tr>
 										))}
@@ -899,17 +989,21 @@ const AdminDashboard: React.FC = () => {
 					</Card>
 
 					{/* Action Items */}
-					<div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6'>
+					<div className='grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6'>
 						<Card>
-							<CardHeader>
-								<CardTitle className='text-lg'>Quick Actions</CardTitle>
-								<CardDescription>Common administrative tasks</CardDescription>
+							<CardHeader className='pb-4'>
+								<CardTitle className='text-base sm:text-lg'>
+									Quick Actions
+								</CardTitle>
+								<CardDescription className='text-sm'>
+									Common administrative tasks
+								</CardDescription>
 							</CardHeader>
-							<CardContent className='space-y-3'>
+							<CardContent className='space-y-3 pt-0'>
 								<DropdownMenu>
 									<DropdownMenuTrigger asChild>
 										<Button
-											className='w-full justify-start'
+											className='w-full justify-start text-sm'
 											variant='outline'
 											disabled={actionLoading === 'generate-report'}
 										>
@@ -955,7 +1049,7 @@ const AdminDashboard: React.FC = () => {
 								<DropdownMenu>
 									<DropdownMenuTrigger asChild>
 										<Button
-											className='w-full justify-start'
+											className='w-full justify-start text-sm'
 											variant='outline'
 											disabled={actionLoading === 'export-orders'}
 										>
@@ -995,7 +1089,7 @@ const AdminDashboard: React.FC = () => {
 									</DropdownMenuContent>
 								</DropdownMenu>
 								<Button
-									className='w-full justify-start'
+									className='w-full justify-start text-sm'
 									variant='outline'
 									onClick={() => handleQuickAction('manage-users')}
 									disabled={actionLoading === 'manage-users'}
@@ -1008,7 +1102,7 @@ const AdminDashboard: React.FC = () => {
 									Manage User Permissions
 								</Button>
 								<Button
-									className='w-full justify-start'
+									className='w-full justify-start text-sm'
 									variant='outline'
 									onClick={() => handleQuickAction('system-settings')}
 									disabled={actionLoading === 'system-settings'}
@@ -1021,7 +1115,7 @@ const AdminDashboard: React.FC = () => {
 									System Settings
 								</Button>
 								<Button
-									className='w-full justify-start'
+									className='w-full justify-start text-sm'
 									variant='outline'
 									onClick={() => handleQuickAction('refresh-data')}
 									disabled={actionLoading === 'refresh-data'}
@@ -1037,19 +1131,25 @@ const AdminDashboard: React.FC = () => {
 						</Card>
 
 						<Card>
-							<CardHeader>
-								<CardTitle className='text-lg'>System Health</CardTitle>
+							<CardHeader className='pb-4'>
+								<CardTitle className='text-base sm:text-lg'>
+									System Health
+								</CardTitle>
 							</CardHeader>
-							<CardContent className='space-y-3'>
-								<div className='flex justify-between'>
+							<CardContent className='space-y-3 pt-0'>
+								<div className='flex justify-between items-center'>
 									<span className='text-sm'>Database Status</span>
-									<Badge className='bg-green-100 text-green-800'>Healthy</Badge>
+									<Badge className='bg-green-100 text-green-800 text-xs'>
+										Healthy
+									</Badge>
 								</div>
-								<div className='flex justify-between'>
+								<div className='flex justify-between items-center'>
 									<span className='text-sm'>API Response</span>
-									<Badge className='bg-green-100 text-green-800'>Fast</Badge>
+									<Badge className='bg-green-100 text-green-800 text-xs'>
+										Fast
+									</Badge>
 								</div>
-								<div className='flex justify-between'>
+								<div className='flex justify-between items-center'>
 									<span className='text-sm'>Active Users</span>
 									<span className='text-sm font-medium'>12</span>
 								</div>
@@ -1057,21 +1157,23 @@ const AdminDashboard: React.FC = () => {
 						</Card>
 
 						<Card>
-							<CardHeader>
-								<CardTitle className='text-lg'>Recent Activity</CardTitle>
+							<CardHeader className='pb-4'>
+								<CardTitle className='text-base sm:text-lg'>
+									Recent Activity
+								</CardTitle>
 							</CardHeader>
-							<CardContent className='space-y-2'>
+							<CardContent className='space-y-3 pt-0'>
 								<div className='text-sm'>
 									<p className='font-medium'>New order from Gangnam</p>
-									<p className='text-gray-600'>2 minutes ago</p>
+									<p className='text-gray-600 text-xs'>2 minutes ago</p>
 								</div>
 								<div className='text-sm'>
 									<p className='font-medium'>Order approved</p>
-									<p className='text-gray-600'>5 minutes ago</p>
+									<p className='text-gray-600 text-xs'>5 minutes ago</p>
 								</div>
 								<div className='text-sm'>
 									<p className='font-medium'>User registered</p>
-									<p className='text-gray-600'>10 minutes ago</p>
+									<p className='text-gray-600 text-xs'>10 minutes ago</p>
 								</div>
 							</CardContent>
 						</Card>
@@ -1079,25 +1181,27 @@ const AdminDashboard: React.FC = () => {
 
 					{/* Stock Alerts */}
 					<Card>
-						<CardHeader>
-							<CardTitle className='flex items-center gap-2'>
+						<CardHeader className='pb-4'>
+							<CardTitle className='flex items-center gap-2 text-lg sm:text-xl'>
 								<Package className='h-5 w-5' />
 								Product Alerts & Trends
 							</CardTitle>
-							<CardDescription>
+							<CardDescription className='text-sm'>
 								Products requiring attention based on ordering patterns
 							</CardDescription>
 						</CardHeader>
-						<CardContent>
+						<CardContent className='pt-0'>
 							<div className='space-y-3'>
 								{productInsights.slice(0, 3).map(product => (
 									<div
 										key={product.name}
-										className='flex items-center justify-between p-2 border rounded'
+										className='flex flex-col sm:flex-row sm:items-center sm:justify-between p-3 sm:p-4 border rounded gap-3 sm:gap-0'
 									>
-										<div>
-											<p className='font-medium'>{product.name}</p>
-											<p className='text-sm text-gray-500'>
+										<div className='flex-1 min-w-0'>
+											<p className='font-medium text-sm sm:text-base truncate'>
+												{product.name}
+											</p>
+											<p className='text-xs sm:text-sm text-gray-500'>
 												{product.totalOrdered} units ordered •{' '}
 												{formatKRW(product.totalValue)} total value
 											</p>
@@ -1110,6 +1214,7 @@ const AdminDashboard: React.FC = () => {
 													? 'destructive'
 													: 'secondary'
 											}
+											className='text-xs self-start sm:self-center'
 										>
 											{product.trend === 'up'
 												? 'Trending Up'
@@ -1120,7 +1225,7 @@ const AdminDashboard: React.FC = () => {
 									</div>
 								))}
 								{productInsights.length === 0 && (
-									<div className='text-center text-gray-500 py-4'>
+									<div className='text-center text-gray-500 py-6 sm:py-8 text-sm'>
 										No product data available for the selected timeframe
 									</div>
 								)}

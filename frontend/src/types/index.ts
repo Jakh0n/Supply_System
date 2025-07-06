@@ -115,6 +115,8 @@ export interface OrderFormData {
 
 export interface OrderFilters {
 	date?: string
+	month?: number
+	year?: number
 	branch?: string
 	status?: OrderStatus | 'all'
 	page?: number

@@ -24,16 +24,17 @@ import { Order, OrderStatus } from '@/types'
 import {
 	AlertCircle,
 	CheckCircle,
+	ChevronLeft,
+	ChevronRight,
 	Clock,
 	FileText,
 	Package,
 	Plus,
 	ShoppingCart,
-	Truck,
 	XCircle,
 } from 'lucide-react'
 import Link from 'next/link'
-import React, { useEffect, useState } from 'react'
+import React, { useCallback, useEffect, useState } from 'react'
 
 // Helper function to format date
 const formatDate = (dateString: string): string => {
@@ -44,38 +45,38 @@ const formatDate = (dateString: string): string => {
 	})
 }
 
-// Status display configuration
+// Helper function to get status display
 const getStatusDisplay = (status: OrderStatus) => {
 	switch (status) {
 		case 'pending':
 			return {
+				icon: <Clock className='h-3 w-3 sm:h-4 sm:w-4' />,
 				label: 'Pending',
 				color: 'bg-orange-100 text-orange-800',
-				icon: <Clock className='h-4 w-4' />,
 			}
 		case 'approved':
 			return {
+				icon: <CheckCircle className='h-3 w-3 sm:h-4 sm:w-4' />,
 				label: 'Approved',
 				color: 'bg-green-100 text-green-800',
-				icon: <CheckCircle className='h-4 w-4' />,
 			}
 		case 'rejected':
 			return {
+				icon: <XCircle className='h-3 w-3 sm:h-4 sm:w-4' />,
 				label: 'Rejected',
 				color: 'bg-red-100 text-red-800',
-				icon: <XCircle className='h-4 w-4' />,
 			}
 		case 'completed':
 			return {
+				icon: <Package className='h-3 w-3 sm:h-4 sm:w-4' />,
 				label: 'Completed',
 				color: 'bg-blue-100 text-blue-800',
-				icon: <Truck className='h-4 w-4' />,
 			}
 		default:
 			return {
+				icon: <Clock className='h-3 w-3 sm:h-4 sm:w-4' />,
 				label: 'Unknown',
 				color: 'bg-gray-100 text-gray-800',
-				icon: <AlertCircle className='h-4 w-4' />,
 			}
 	}
 }
@@ -88,22 +89,37 @@ const WorkerDashboard: React.FC = () => {
 	const [selectedOrder, setSelectedOrder] = useState<Order | null>(null)
 	const [isModalOpen, setIsModalOpen] = useState(false)
 
-	useEffect(() => {
-		const fetchRecentOrders = async () => {
-			try {
-				setLoading(true)
-				const response = await ordersApi.getOrders({ page: 1, limit: 5 })
-				setRecentOrders(response.orders)
-			} catch (err) {
-				setError('Failed to load recent orders')
-				console.error('Recent orders error:', err)
-			} finally {
-				setLoading(false)
-			}
-		}
+	// Pagination states
+	const [currentPage, setCurrentPage] = useState(1)
+	const [totalPages, setTotalPages] = useState(1)
+	const [totalOrders, setTotalOrders] = useState(0)
 
+	const ordersPerPage = 7
+
+	const fetchRecentOrders = useCallback(async () => {
+		try {
+			setLoading(true)
+
+			const filters = {
+				page: currentPage,
+				limit: ordersPerPage,
+			}
+
+			const response = await ordersApi.getOrders(filters)
+			setRecentOrders(response.orders)
+			setTotalPages(response.pagination.pages)
+			setTotalOrders(response.pagination.total)
+		} catch (err) {
+			setError('Failed to load recent orders')
+			console.error('Recent orders error:', err)
+		} finally {
+			setLoading(false)
+		}
+	}, [currentPage])
+
+	useEffect(() => {
 		fetchRecentOrders()
-	}, [])
+	}, [fetchRecentOrders])
 
 	const handleViewOrder = async (orderId: string) => {
 		try {
@@ -119,7 +135,11 @@ const WorkerDashboard: React.FC = () => {
 		return order.items.reduce((total, item) => total + item.quantity, 0)
 	}
 
-	if (loading) {
+	const handlePageChange = (newPage: number) => {
+		setCurrentPage(newPage)
+	}
+
+	if (loading && recentOrders.length === 0) {
 		return (
 			<ProtectedRoute requiredRole='worker'>
 				<DashboardLayout>
@@ -134,43 +154,42 @@ const WorkerDashboard: React.FC = () => {
 		)
 	}
 
+	if (error) {
+		return (
+			<ProtectedRoute requiredRole='worker'>
+				<DashboardLayout>
+					<div className='flex items-center justify-center h-64'>
+						<div className='text-center'>
+							<AlertCircle className='h-12 w-12 text-red-400 mx-auto mb-4' />
+							<p className='text-red-600 mb-4'>{error}</p>
+							<Button onClick={() => window.location.reload()}>
+								Try Again
+							</Button>
+						</div>
+					</div>
+				</DashboardLayout>
+			</ProtectedRoute>
+		)
+	}
+
 	return (
 		<ProtectedRoute requiredRole='worker'>
 			<DashboardLayout>
 				<div className='space-y-4 sm:space-y-6'>
 					{/* Header */}
-					<div className='flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4'>
+					<div className='flex flex-col sm:flex-row sm:justify-between sm:items-start gap-4'>
 						<div className='min-w-0 flex-1'>
-							<h1 className='text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 truncate'>
-								Welcome back, {user?.username}!
+							<h1 className='text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900'>
+								Worker Dashboard
 							</h1>
 							<p className='mt-1 sm:mt-2 text-sm sm:text-base text-gray-600'>
-								{user?.branch && `${user.branch} • `}Worker Dashboard
+								Welcome back, {user?.username}!
+								{user?.branch && ` Managing orders for ${user.branch}`}
 							</p>
-						</div>
-						<div className='flex-shrink-0 hidden sm:block'>
-							<Link href='/worker/new-order'>
-								<Button className='flex items-center justify-center h-9 text-base'>
-									<Plus className='h-4 w-4 mr-2' />
-									New Order
-								</Button>
-							</Link>
 						</div>
 					</div>
 
-					{/* Error message */}
-					{error && (
-						<div className='bg-red-50 border border-red-200 rounded-md p-3 sm:p-4'>
-							<div className='flex'>
-								<AlertCircle className='h-4 w-4 sm:h-5 sm:w-5 text-red-400 flex-shrink-0 mt-0.5' />
-								<div className='ml-2 sm:ml-3'>
-									<p className='text-sm text-red-800'>{error}</p>
-								</div>
-							</div>
-						</div>
-					)}
-
-					{/* Quick actions */}
+					{/* Quick Actions */}
 					<div className='grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6'>
 						<Link href='/worker/new-order' className='block'>
 							<Card className='cursor-pointer hover:shadow-lg transition-all duration-200 h-full border-l-4 border-l-green-500 hover:border-l-green-600'>
@@ -208,18 +227,30 @@ const WorkerDashboard: React.FC = () => {
 					{/* Recent orders */}
 					<Card>
 						<CardHeader className='p-4 sm:p-6'>
-							<CardTitle className='text-lg sm:text-xl'>
-								Recent Orders
-							</CardTitle>
-							<CardDescription className='text-sm sm:text-base'>
-								Your latest order submissions
-							</CardDescription>
+							<div className='flex flex-col sm:flex-row sm:justify-between sm:items-start gap-4'>
+								<div>
+									<CardTitle className='text-lg sm:text-xl'>
+										Recent Orders
+									</CardTitle>
+									<CardDescription className='text-sm sm:text-base'>
+										Your latest order submissions
+										{totalOrders > 0 && ` (${totalOrders} total)`}
+									</CardDescription>
+								</div>
+							</div>
 						</CardHeader>
 						<CardContent className='p-4 sm:p-6 pt-0'>
 							{error ? (
 								<div className='text-center py-6 sm:py-8'>
 									<AlertCircle className='h-10 w-10 sm:h-12 sm:w-12 text-red-400 mx-auto mb-3 sm:mb-4' />
 									<p className='text-red-600 text-sm sm:text-base'>{error}</p>
+									<Button
+										onClick={fetchRecentOrders}
+										className='mt-4'
+										variant='outline'
+									>
+										Retry
+									</Button>
 								</div>
 							) : recentOrders.length === 0 ? (
 								<div className='text-center py-6 sm:py-8'>
@@ -237,66 +268,139 @@ const WorkerDashboard: React.FC = () => {
 									</Link>
 								</div>
 							) : (
-								<div className='space-y-3 sm:space-y-4'>
-									{recentOrders.map(order => (
-										<div
-											key={order._id}
-											className='flex flex-col sm:flex-row sm:items-center justify-between p-3 sm:p-4 bg-gray-50 hover:bg-gray-100 rounded-lg transition-colors border border-gray-200'
-										>
-											<div className='flex-1 min-w-0'>
-												<div className='flex items-start sm:items-center justify-between mb-2 sm:mb-0'>
-													<div className='flex items-center min-w-0 flex-1'>
-														<div className='p-1.5 sm:p-2 bg-white rounded-md mr-2 sm:mr-3 flex-shrink-0'>
-															<FileText className='h-4 w-4 sm:h-5 sm:w-5 text-gray-400' />
+								<div className='space-y-4'>
+									{/* Orders List */}
+									<div className='space-y-3 sm:space-y-4'>
+										{recentOrders.map(order => (
+											<div
+												key={order._id}
+												className='flex flex-col sm:flex-row sm:items-center justify-between p-3 sm:p-4 bg-gray-50 hover:bg-gray-100 rounded-lg transition-colors border border-gray-200'
+											>
+												<div className='flex-1 min-w-0'>
+													<div className='flex items-start sm:items-center justify-between mb-2 sm:mb-0'>
+														<div className='flex items-center min-w-0 flex-1'>
+															<div className='p-1.5 sm:p-2 bg-white rounded-md mr-2 sm:mr-3 flex-shrink-0'>
+																<FileText className='h-4 w-4 sm:h-5 sm:w-5 text-gray-400' />
+															</div>
+															<div className='min-w-0 flex-1'>
+																<p className='font-medium text-sm sm:text-base truncate'>
+																	Order {order.orderNumber}
+																</p>
+																<p className='text-xs sm:text-sm text-gray-500 truncate'>
+																	{order.branch} •{' '}
+																	{formatDate(order.requestedDate)}
+																</p>
+																<p className='text-xs text-gray-400 sm:hidden mt-1'>
+																	{order.items.length} items •{' '}
+																	{getTotalQuantity(order)} total
+																</p>
+															</div>
 														</div>
-														<div className='min-w-0 flex-1'>
-															<p className='font-medium text-sm sm:text-base truncate'>
-																Order {order.orderNumber}
-															</p>
-															<p className='text-xs sm:text-sm text-gray-500 truncate'>
-																{order.branch} •{' '}
-																{formatDate(order.requestedDate)}
-															</p>
-															<p className='text-xs text-gray-400 sm:hidden mt-1'>
+														<div className='flex flex-col sm:flex-row items-end sm:items-center gap-2 sm:gap-3 ml-2'>
+															<span
+																className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium whitespace-nowrap ${
+																	getStatusDisplay(order.status).color
+																}`}
+															>
+																{getStatusDisplay(order.status).icon}
+																<span className='ml-1'>
+																	{getStatusDisplay(order.status).label}
+																</span>
+															</span>
+															<div className='hidden sm:block text-xs text-gray-500'>
 																{order.items.length} items •{' '}
 																{getTotalQuantity(order)} total
-															</p>
-														</div>
-													</div>
-													<div className='flex flex-col sm:flex-row items-end sm:items-center gap-2 sm:gap-3 ml-2'>
-														<span
-															className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium whitespace-nowrap ${
-																order.status === 'pending'
-																	? 'bg-orange-100 text-orange-800'
-																	: order.status === 'approved'
-																	? 'bg-green-100 text-green-800'
-																	: order.status === 'rejected'
-																	? 'bg-red-100 text-red-800'
-																	: 'bg-blue-100 text-blue-800'
-															}`}
-														>
-															{order.status.charAt(0).toUpperCase() +
-																order.status.slice(1)}
-														</span>
-														<div className='hidden sm:block text-xs text-gray-500'>
-															{order.items.length} items •{' '}
-															{getTotalQuantity(order)} total
+															</div>
 														</div>
 													</div>
 												</div>
+												<div className='mt-3 sm:mt-0 sm:ml-4 flex-shrink-0'>
+													<Button
+														variant='outline'
+														size='sm'
+														onClick={() => handleViewOrder(order._id)}
+														className='w-full sm:w-auto text-xs sm:text-sm h-8 sm:h-9'
+													>
+														View Details
+													</Button>
+												</div>
 											</div>
-											<div className='mt-3 sm:mt-0 sm:ml-4 flex-shrink-0'>
+										))}
+									</div>
+
+									{/* Pagination */}
+									{totalPages > 1 && (
+										<div className='flex flex-col sm:flex-row items-center justify-between gap-4 pt-4 border-t border-gray-200'>
+											<div className='text-xs sm:text-sm text-gray-500 text-center sm:text-left'>
+												Showing page {currentPage} of {totalPages} (
+												{totalOrders} total orders)
+											</div>
+											<div className='flex items-center space-x-2'>
 												<Button
 													variant='outline'
 													size='sm'
-													onClick={() => handleViewOrder(order._id)}
-													className='w-full sm:w-auto text-xs sm:text-sm h-8 sm:h-9'
+													disabled={currentPage === 1 || loading}
+													onClick={() => handlePageChange(currentPage - 1)}
+													className='flex items-center gap-1'
 												>
-													View Details
+													<ChevronLeft className='h-4 w-4' />
+													Previous
+												</Button>
+
+												{/* Page numbers for larger screens */}
+												<div className='hidden sm:flex items-center space-x-1'>
+													{Array.from(
+														{ length: Math.min(totalPages, 5) },
+														(_, i) => {
+															const pageNum = i + 1
+															const isActive = pageNum === currentPage
+															return (
+																<Button
+																	key={pageNum}
+																	variant={isActive ? 'default' : 'outline'}
+																	size='sm'
+																	onClick={() => handlePageChange(pageNum)}
+																	className='w-8 h-8 p-0'
+																	disabled={loading}
+																>
+																	{pageNum}
+																</Button>
+															)
+														}
+													)}
+													{totalPages > 5 && (
+														<>
+															<span className='text-gray-400'>...</span>
+															<Button
+																variant={
+																	currentPage === totalPages
+																		? 'default'
+																		: 'outline'
+																}
+																size='sm'
+																onClick={() => handlePageChange(totalPages)}
+																className='w-8 h-8 p-0'
+																disabled={loading}
+															>
+																{totalPages}
+															</Button>
+														</>
+													)}
+												</div>
+
+												<Button
+													variant='outline'
+													size='sm'
+													disabled={currentPage === totalPages || loading}
+													onClick={() => handlePageChange(currentPage + 1)}
+													className='flex items-center gap-1'
+												>
+													Next
+													<ChevronRight className='h-4 w-4' />
 												</Button>
 											</div>
 										</div>
-									))}
+									)}
 
 									{/* View All Orders Link */}
 									<div className='pt-2 sm:pt-4 border-t border-gray-200'>
@@ -473,26 +577,6 @@ const WorkerDashboard: React.FC = () => {
 											{selectedOrder.items.length}
 										</span>
 									</div>
-								</div>
-
-								{/* Modal Actions */}
-								<div className='flex flex-col sm:flex-row justify-end gap-2 sm:gap-3 pt-4 border-t'>
-									<Button
-										variant='outline'
-										onClick={() => setIsModalOpen(false)}
-										className='w-full sm:w-auto order-2 sm:order-1'
-									>
-										Close
-									</Button>
-									<Link href={`/worker/orders`}>
-										<Button
-											className='w-full sm:w-auto order-1 sm:order-2'
-											onClick={() => setIsModalOpen(false)}
-										>
-											<ShoppingCart className='h-4 w-4 mr-2' />
-											View All Orders
-										</Button>
-									</Link>
 								</div>
 							</div>
 						)}

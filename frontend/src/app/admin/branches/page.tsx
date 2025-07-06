@@ -21,7 +21,7 @@ import {
 } from '@/components/ui/select'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { ordersApi } from '@/lib/api'
-import { AnalyticsTimeframe, BranchAnalytics, BranchFilter } from '@/types'
+import { BranchAnalytics, BranchFilter } from '@/types'
 import {
 	Activity,
 	BarChart3,
@@ -45,6 +45,12 @@ const BranchPerformancePage: React.FC = () => {
 	const [loading, setLoading] = useState(true)
 	const [searchTerm, setSearchTerm] = useState('')
 	const [showAllBranches, setShowAllBranches] = useState(false)
+	const [selectedMonth, setSelectedMonth] = useState<number>(
+		new Date().getMonth() + 1
+	)
+	const [selectedYear, setSelectedYear] = useState<number>(
+		new Date().getFullYear()
+	)
 	const [filters, setFilters] = useState<BranchFilter>({
 		branch: 'all',
 		timeframe: 'month',
@@ -55,12 +61,35 @@ const BranchPerformancePage: React.FC = () => {
 		},
 	})
 
+	// Month and year options
+	const monthOptions = [
+		{ value: 1, label: 'January' },
+		{ value: 2, label: 'February' },
+		{ value: 3, label: 'March' },
+		{ value: 4, label: 'April' },
+		{ value: 5, label: 'May' },
+		{ value: 6, label: 'June' },
+		{ value: 7, label: 'July' },
+		{ value: 8, label: 'August' },
+		{ value: 9, label: 'September' },
+		{ value: 10, label: 'October' },
+		{ value: 11, label: 'November' },
+		{ value: 12, label: 'December' },
+	]
+
+	const yearOptions = Array.from({ length: 6 }, (_, i) => {
+		const year = new Date().getFullYear() - i
+		return { value: year, label: year.toString() }
+	})
+
 	const fetchBranchData = useCallback(async () => {
 		try {
 			setLoading(true)
 
 			const analyticsResponse = await ordersApi.getBranchAnalytics(
-				filters.timeframe
+				'month',
+				selectedMonth,
+				selectedYear
 			)
 			setBranchAnalytics(analyticsResponse.branches)
 		} catch (error) {
@@ -68,7 +97,7 @@ const BranchPerformancePage: React.FC = () => {
 		} finally {
 			setLoading(false)
 		}
-	}, [filters.timeframe])
+	}, [selectedMonth, selectedYear])
 
 	useEffect(() => {
 		fetchBranchData()
@@ -165,8 +194,10 @@ const BranchPerformancePage: React.FC = () => {
 								Branch Performance Analysis
 							</h1>
 							<p className='text-gray-600 mt-1'>
-								Detailed consumption tracking and performance metrics for each
-								branch
+								Analytics for{' '}
+								{monthOptions.find(m => m.value === selectedMonth)?.label}{' '}
+								{selectedYear} - Detailed consumption tracking and performance
+								metrics
 							</p>
 						</div>
 						<div className='flex gap-3'>
@@ -184,13 +215,27 @@ const BranchPerformancePage: React.FC = () => {
 					{/* Filters */}
 					<Card>
 						<CardHeader>
-							<CardTitle className='flex items-center gap-2'>
-								<Filter className='h-5 w-5' />
-								Filters & Search
-							</CardTitle>
+							<div className='flex items-center justify-between'>
+								<CardTitle className='flex items-center gap-2'>
+									<Filter className='h-5 w-5' />
+									Filters & Search
+								</CardTitle>
+								<Button
+									variant='outline'
+									size='sm'
+									onClick={() => {
+										setSelectedMonth(new Date().getMonth() + 1)
+										setSelectedYear(new Date().getFullYear())
+									}}
+									className='flex items-center gap-2'
+								>
+									<RefreshCw className='h-4 w-4' />
+									Reset to Current Month
+								</Button>
+							</div>
 						</CardHeader>
 						<CardContent>
-							<div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4'>
+							<div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4'>
 								<div className='space-y-2'>
 									<label className='text-sm font-medium'>Search Branch</label>
 									<div className='relative'>
@@ -230,24 +275,49 @@ const BranchPerformancePage: React.FC = () => {
 								</div>
 
 								<div className='space-y-2'>
-									<label className='text-sm font-medium'>Time Period</label>
+									<label className='text-sm font-medium'>Month</label>
 									<Select
-										value={filters.timeframe}
+										value={selectedMonth.toString()}
 										onValueChange={(value: string) =>
-											setFilters((prev: BranchFilter) => ({
-												...prev,
-												timeframe: value as AnalyticsTimeframe,
-											}))
+											setSelectedMonth(Number(value))
 										}
 									>
 										<SelectTrigger>
 											<SelectValue />
 										</SelectTrigger>
 										<SelectContent>
-											<SelectItem value='day'>Last 24 Hours</SelectItem>
-											<SelectItem value='week'>Last Week</SelectItem>
-											<SelectItem value='month'>Last Month</SelectItem>
-											<SelectItem value='quarter'>Last Quarter</SelectItem>
+											{monthOptions.map(option => (
+												<SelectItem
+													key={option.value}
+													value={option.value.toString()}
+												>
+													{option.label}
+												</SelectItem>
+											))}
+										</SelectContent>
+									</Select>
+								</div>
+
+								<div className='space-y-2'>
+									<label className='text-sm font-medium'>Year</label>
+									<Select
+										value={selectedYear.toString()}
+										onValueChange={(value: string) =>
+											setSelectedYear(Number(value))
+										}
+									>
+										<SelectTrigger>
+											<SelectValue />
+										</SelectTrigger>
+										<SelectContent>
+											{yearOptions.map(option => (
+												<SelectItem
+													key={option.value}
+													value={option.value.toString()}
+												>
+													{option.label}
+												</SelectItem>
+											))}
 										</SelectContent>
 									</Select>
 								</div>
@@ -498,7 +568,7 @@ const BranchPerformancePage: React.FC = () => {
 													<TabsContent value='products' className='space-y-4'>
 														<div className='space-y-3'>
 															<p className='text-sm font-medium text-gray-700'>
-																Top Products ({filters.timeframe})
+																Top Products ({selectedMonth}/{selectedYear})
 															</p>
 															{branch.mostOrderedProducts
 																.slice(0, 3)

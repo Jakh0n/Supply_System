@@ -149,6 +149,8 @@ export const ordersApi = {
 	getOrders: async (filters?: OrderFilters): Promise<OrdersResponse> => {
 		const params = new URLSearchParams()
 		if (filters?.date) params.append('date', filters.date)
+		if (filters?.month) params.append('month', filters.month.toString())
+		if (filters?.year) params.append('year', filters.year.toString())
 		if (filters?.branch && filters.branch !== 'all')
 			params.append('branch', filters.branch)
 		if (filters?.status && filters.status !== 'all')
