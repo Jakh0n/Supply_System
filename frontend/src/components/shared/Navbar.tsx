@@ -20,6 +20,7 @@ import {
 	ShoppingCart,
 	User,
 } from 'lucide-react'
+import Image from 'next/image'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import React from 'react'
@@ -50,13 +51,19 @@ const Navbar: React.FC = () => {
 							href={isAdmin ? '/admin' : '/worker'}
 							className='flex items-center flex-shrink-0'
 						>
-							<Package className='h-8 w-8 text-blue-600' />
-							<span className='ml-2 text-lg sm:text-xl font-bold text-gray-900 hidden sm:block'>
-								RestaurantSupply
-							</span>
-							<span className='ml-2 text-lg font-bold text-gray-900 sm:hidden'>
-								RS
-							</span>
+							<Image
+								src='/crown.png'
+								alt='King Kebab Supply'
+								width={32}
+								height={32}
+								className='h-8 w-8'
+							/>
+							<h1 className='text-lg sm:text-xl font-bold text-blue-500 hidden sm:block'>
+								<span className='text-red-600'>King Kebab</span> Supply
+							</h1>
+							<h1 className='ml-2 text-md font-bold text-gray-900 sm:hidden'>
+								<span className='text-red-600'>King Kebab</span> Supply
+							</h1>
 						</Link>
 
 						{/* Desktop navigation links */}

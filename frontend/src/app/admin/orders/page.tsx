@@ -34,6 +34,7 @@ import {
 	SelectValue,
 } from '@/components/ui/select'
 import { ordersApi, usersApi } from '@/lib/api'
+import { PDFGenerator } from '@/lib/pdfGenerator'
 import { Order, OrderStatus } from '@/types'
 import {
 	AlertCircle,
@@ -202,24 +203,44 @@ const OrdersManagement: React.FC = () => {
 		}
 
 		try {
-			const blob = await ordersApi.downloadPDF(
-				selectedDate,
-				branchFilter !== 'all' ? branchFilter : undefined
+			// Fetch orders for the selected date and branch
+			const response = await ordersApi.getOrders({
+				date: selectedDate,
+				branch: branchFilter !== 'all' ? branchFilter : undefined,
+				limit: 1000, // Get all orders for the date
+			})
+
+			if (response.orders.length === 0) {
+				toast.error('No orders found for the selected date')
+				return
+			}
+
+			// Generate PDF using the new PDFGenerator
+			await PDFGenerator.generateOrdersPDF(response.orders, {
+				title: `Orders Report - ${selectedDate}${
+					branchFilter !== 'all' ? ` (${branchFilter} Branch)` : ''
+				}`,
+				orientation: 'portrait',
+				format: 'a4',
+			})
+
+			toast.success(
+				`PDF generated successfully with ${response.orders.length} orders`
 			)
-			const url = window.URL.createObjectURL(blob)
-			const a = document.createElement('a')
-			a.href = url
-			a.download = `orders-${selectedDate}${
-				branchFilter !== 'all' ? `-${branchFilter}` : ''
-			}.pdf`
-			document.body.appendChild(a)
-			a.click()
-			window.URL.revokeObjectURL(url)
-			document.body.removeChild(a)
-			toast.success('PDF downloaded successfully')
 		} catch (err: unknown) {
 			const error = err as { response?: { data?: { message?: string } } }
-			toast.error(error.response?.data?.message || 'Failed to download PDF')
+			toast.error(error.response?.data?.message || 'Failed to generate PDF')
+			console.error('PDF generation error:', err)
+		}
+	}
+
+	const handleDownloadOrderPDF = async (order: Order) => {
+		try {
+			await PDFGenerator.generateOrderDetailPDF(order)
+			toast.success(`PDF generated for order ${order.orderNumber}`)
+		} catch (error) {
+			console.error('Order PDF generation error:', error)
+			toast.error('Failed to generate order PDF')
 		}
 	}
 
@@ -502,6 +523,14 @@ const OrdersManagement: React.FC = () => {
 																		>
 																			<FileText className='h-4 w-4 mr-2' />
 																			Update Status
+																		</DropdownMenuItem>
+																		<DropdownMenuItem
+																			onClick={() =>
+																				handleDownloadOrderPDF(order)
+																			}
+																		>
+																			<Download className='h-4 w-4 mr-2' />
+																			Download Order PDF
 																		</DropdownMenuItem>
 																	</DropdownMenuContent>
 																</DropdownMenu>

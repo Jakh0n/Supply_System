@@ -7,8 +7,28 @@ import './globals.css'
 const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
-	title: 'RestaurantSupply - Supply Management System',
-	description: 'A comprehensive supply management system for restaurants',
+	metadataBase: new URL('https://flami.org/'),
+	title: 'King Kebab Supply System',
+	description: 'Restaurant Supply Syztems',
+	authors: [
+		{
+			name: 'Jakhon Yokubov',
+			url: 'https://flami.org',
+		},
+	],
+	icons: { icon: '/crown.png' },
+	openGraph: {
+		title: "FLAMI | Koreyada eng arzon kitoblar do'koni",
+		description:
+			"King Kebab Supply System - Streamline your restaurant's supply chain with our comprehensive management solution. Track inventory, manage orders, and analyze data across multiple branches.",
+		type: 'website',
+		url: 'https://flami.org',
+		locale: 'kr-KR',
+		images: '/working_hours.jpg',
+		countryName: 'Korea',
+		siteName: 'King Suplly System',
+		emails: 'info@flami.org',
+	},
 }
 
 export default function RootLayout({

@@ -12,7 +12,8 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { useAuth } from '@/contexts/AuthContext'
 import { RegisterData } from '@/types'
-import { AlertCircle, Eye, EyeOff, Package } from 'lucide-react'
+import { AlertCircle, Eye, EyeOff } from 'lucide-react'
+import Image from 'next/image'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import React, { useState } from 'react'
@@ -114,12 +115,20 @@ const RegisterForm: React.FC = () => {
 				{/* Logo and title */}
 				<div className='text-center'>
 					<div className='flex justify-center'>
-						<Package className='h-12 w-12 text-blue-600' />
+						<Image
+							src='/crown.png'
+							alt='King Kebab Supply'
+							width={48}
+							height={48}
+							className='h-12 w-12'
+						/>
 					</div>
 					<h2 className='mt-6 text-3xl font-extrabold text-gray-900'>
-						RestaurantSupply
+						Create Account
 					</h2>
-					<p className='mt-2 text-sm text-gray-600'>Create your account</p>
+					<p className='mt-2 text-sm text-gray-600'>
+						Join King Kebab Supply to manage your orders
+					</p>
 				</div>
 
 				{/* Registration form */}
@@ -127,7 +136,7 @@ const RegisterForm: React.FC = () => {
 					<CardHeader>
 						<CardTitle>Get started</CardTitle>
 						<CardDescription>
-							Create your worker account to access the system
+							Create your worker account to access King Kebab Supply
 						</CardDescription>
 					</CardHeader>
 					<CardContent>

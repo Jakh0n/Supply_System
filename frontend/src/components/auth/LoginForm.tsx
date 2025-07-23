@@ -12,7 +12,8 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { useAuth } from '@/contexts/AuthContext'
 import { LoginCredentials } from '@/types'
-import { AlertCircle, Eye, EyeOff, Package } from 'lucide-react'
+import { AlertCircle, Eye, EyeOff } from 'lucide-react'
+import Image from 'next/image'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import React, { useEffect, useState } from 'react'
@@ -74,10 +75,16 @@ const LoginForm: React.FC = () => {
 				{/* Logo and title */}
 				<div className='text-center'>
 					<div className='flex justify-center'>
-						<Package className='h-12 w-12 text-blue-600' />
+						<Image
+							src='/crown.png'
+							alt='King Kebab Supply'
+							width={48}
+							height={48}
+							className='h-12 w-12'
+						/>
 					</div>
-					<h2 className='mt-6 text-3xl font-extrabold text-gray-900'>
-						RestaurantSupply
+					<h2 className='mt-6 text-3xl font-extrabold text-blue-500'>
+						<span className='text-red-600'>King Kebab</span> Supply
 					</h2>
 					<p className='mt-2 text-sm text-gray-600'>Sign in to your account</p>
 				</div>

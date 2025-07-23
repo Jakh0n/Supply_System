@@ -1,7 +1,7 @@
 'use client'
 
 import { useAuth } from '@/contexts/AuthContext'
-import { Package } from 'lucide-react'
+import Image from 'next/image'
 import { useRouter } from 'next/navigation'
 import { useEffect } from 'react'
 
@@ -30,9 +30,15 @@ export default function HomePage() {
 		return (
 			<div className='min-h-screen flex items-center justify-center bg-gray-50'>
 				<div className='text-center'>
-					<Package className='h-12 w-12 text-blue-600 mx-auto animate-pulse' />
-					<h2 className='mt-4 text-xl font-semibold text-gray-900'>
-						RestaurantSupply
+					<Image
+						src='/crown.png'
+						alt='King Kebab Supply'
+						width={48}
+						height={48}
+						className='h-12 w-12 mx-auto animate-pulse'
+					/>
+					<h2 className='mt-4 text-xl font-semibold text-blue-500'>
+						<span className='text-red-600'>King Kebab</span> Supply
 					</h2>
 					<p className='mt-2 text-gray-600'>Loading...</p>
 				</div>
@@ -44,9 +50,15 @@ export default function HomePage() {
 	return (
 		<div className='min-h-screen flex items-center justify-center bg-gray-50'>
 			<div className='text-center'>
-				<Package className='h-12 w-12 text-blue-600 mx-auto' />
-				<h2 className='mt-4 text-xl font-semibold text-gray-900'>
-					RestaurantSupply
+				<Image
+					src='/crown.png'
+					alt='King Kebab Supply'
+					width={48}
+					height={48}
+					className='h-12 w-12 mx-auto'
+				/>
+				<h2 className='mt-4 text-xl font-semibold text-blue-500'>
+					<span className='text-red-600'>King Kebab</span> Supply
 				</h2>
 				<p className='mt-2 text-gray-600'>Redirecting...</p>
 			</div>

@@ -21,6 +21,7 @@ import {
 } from '@/components/ui/select'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { ordersApi } from '@/lib/api'
+import { BranchReportData, PDFGenerator } from '@/lib/pdfGenerator'
 import { BranchAnalytics, BranchFilter } from '@/types'
 import {
 	Activity,
@@ -168,6 +169,37 @@ const BranchPerformancePage: React.FC = () => {
 		return { level: 'Needs Improvement', color: 'bg-red-100 text-red-800' }
 	}
 
+	const handleExportReport = async () => {
+		try {
+			if (branchAnalytics.length === 0) {
+				return
+			}
+
+			const branchReportData: BranchReportData[] = branchAnalytics.map(
+				branch => ({
+					branch: branch.branch,
+					totalOrders: branch.totalOrders,
+					totalValue: branch.totalValue,
+					avgOrderValue: branch.avgOrderValue,
+					pendingOrders: branch.pendingOrders,
+					weeklyTrend: branch.weeklyTrend,
+				})
+			)
+
+			await PDFGenerator.generateBranchReportPDF(branchReportData, {
+				title: `Branch Performance Report - ${
+					monthOptions.find(m => m.value === selectedMonth)?.label
+				} ${selectedYear}`,
+				orientation: 'landscape',
+				format: 'a4',
+			})
+
+			console.log('Branch report exported successfully')
+		} catch (error) {
+			console.error('Error exporting branch report:', error)
+		}
+	}
+
 	if (loading) {
 		return (
 			<ProtectedRoute requiredRole='admin'>
@@ -205,7 +237,7 @@ const BranchPerformancePage: React.FC = () => {
 								<RefreshCw className='h-4 w-4 mr-2' />
 								Refresh
 							</Button>
-							<Button variant='outline' size='sm'>
+							<Button variant='outline' size='sm' onClick={handleExportReport}>
 								<Download className='h-4 w-4 mr-2' />
 								Export Report
 							</Button>

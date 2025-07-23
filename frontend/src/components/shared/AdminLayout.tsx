@@ -25,6 +25,7 @@ import {
 	Users,
 	X,
 } from 'lucide-react'
+import Image from 'next/image'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import React, { useState } from 'react'
@@ -86,11 +87,17 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
 					collapsed ? 'justify-center px-4' : ''
 				}`}
 			>
-				<Package className='h-8 w-8 text-blue-600 flex-shrink-0' />
+				<Image
+					src='/crown.png'
+					alt='King Kebab Supply'
+					width={32}
+					height={32}
+					className='h-8 w-8 flex-shrink-0'
+				/>
 				{!collapsed && (
-					<span className='ml-2 text-xl font-bold text-gray-900'>
-						RestaurantSupply
-					</span>
+					<h1 className='ml-2 text-xl font-bold text-blue-500'>
+						<span className='text-red-600'>King Kebab</span>
+					</h1>
 				)}
 			</div>
 
@@ -245,10 +252,16 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
 						>
 							<Menu className='h-5 w-5' />
 						</Button>
-						<Package className='h-6 w-6 text-blue-600' />
-						<span className='ml-2 text-lg font-bold text-gray-900'>
-							Admin Panel
-						</span>
+						<Image
+							src='/crown.png'
+							alt='King Kebab Supply'
+							width={24}
+							height={24}
+							className='h-6 w-6'
+						/>
+						<h1 className='ml-2 text-lg font-bold text-blue-500'>
+							<span className='text-red-600'>King Kebab</span> Supply
+						</h1>
 					</div>
 				</div>
 

@@ -1,5 +1,10 @@
 'use client'
 
+import EditorHeader from '@/components/editor/EditorHeader'
+import EditorSkeleton from '@/components/editor/EditorSkeleton'
+import OrdersFilters from '@/components/editor/OrdersFilters'
+import OrdersTable from '@/components/editor/OrdersTable'
+import StatsCards from '@/components/editor/StatsCards'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import {
@@ -8,13 +13,6 @@ import {
 	DialogHeader,
 	DialogTitle,
 } from '@/components/ui/dialog'
-import {
-	DropdownMenu,
-	DropdownMenuContent,
-	DropdownMenuItem,
-	DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
-import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import {
 	Select,
@@ -34,17 +32,6 @@ import {
 import { useAuth } from '@/contexts/AuthContext'
 import { ordersApi } from '@/lib/api'
 import { Order, OrderFilters, OrderStatus } from '@/types'
-import {
-	Calendar,
-	Download,
-	Edit,
-	Eye,
-	FileText,
-	LogOut,
-	MoreHorizontal,
-	Package,
-	Printer,
-} from 'lucide-react'
 import { useCallback, useEffect, useState } from 'react'
 import { toast } from 'sonner'
 
@@ -65,6 +52,7 @@ export default function EditorDashboard() {
 	const [orders, setOrders] = useState<Order[]>([])
 	const [stats, setStats] = useState<DashboardStats | null>(null)
 	const [loading, setLoading] = useState(true)
+	const [initialLoading, setInitialLoading] = useState(true)
 	const [selectedOrder, setSelectedOrder] = useState<Order | null>(null)
 	const [showOrderDialog, setShowOrderDialog] = useState(false)
 	const [showStatusDialog, setShowStatusDialog] = useState(false)
@@ -74,7 +62,7 @@ export default function EditorDashboard() {
 	const [filters, setFilters] = useState<OrderFilters>({
 		date: '',
 		branch: '',
-		status: 'all',
+		status: 'all' as OrderStatus | 'all',
 		page: 1,
 		limit: 10,
 	})
@@ -93,6 +81,7 @@ export default function EditorDashboard() {
 			toast.error('Failed to load orders')
 		} finally {
 			setLoading(false)
+			setInitialLoading(false)
 		}
 	}, [filters])
 
@@ -133,9 +122,7 @@ export default function EditorDashboard() {
 				adminNotes
 			)
 
-			// Refresh orders
 			await fetchOrders()
-
 			setShowStatusDialog(false)
 			toast.success('Order status updated successfully')
 		} catch (error) {
@@ -344,13 +331,10 @@ export default function EditorDashboard() {
 					</div>
 
 					<script>
-						// Auto-focus the window
 						window.focus();
-						
-						// Optional: Auto-print after a short delay
-						// setTimeout(() => {
-						//     window.print();
-						// }, 500);
+						setTimeout(() => {
+							printWindow.focus()
+						}, 100);
 					</script>
 				</body>
 				</html>
@@ -359,7 +343,6 @@ export default function EditorDashboard() {
 			printWindow.document.write(printContent)
 			printWindow.document.close()
 
-			// Wait for content to load before focusing
 			setTimeout(() => {
 				printWindow.focus()
 			}, 100)
@@ -376,7 +359,7 @@ export default function EditorDashboard() {
 	const handleDownloadAllOrders = async () => {
 		try {
 			setLoading(true)
-			const response = await ordersApi.getOrders({ ...filters, limit: 1000 }) // Get all orders
+			const response = await ordersApi.getOrders({ ...filters, limit: 1000 })
 
 			if (response.orders.length === 0) {
 				toast.error('No orders found to download')
@@ -445,21 +428,6 @@ export default function EditorDashboard() {
 			.join('\n')
 	}
 
-	const getStatusBadgeColor = (status: string) => {
-		switch (status) {
-			case 'pending':
-				return 'bg-yellow-100 text-yellow-800'
-			case 'approved':
-				return 'bg-green-100 text-green-800'
-			case 'rejected':
-				return 'bg-red-100 text-red-800'
-			case 'completed':
-				return 'bg-blue-100 text-blue-800'
-			default:
-				return 'bg-gray-100 text-gray-800'
-		}
-	}
-
 	const formatDate = (dateString: string) => {
 		return new Date(dateString).toLocaleDateString()
 	}
@@ -487,7 +455,6 @@ export default function EditorDashboard() {
 	}
 
 	const generatePDFReport = (orders: Order[]) => {
-		// Group orders by branch
 		const ordersByBranch = orders.reduce((acc, order) => {
 			if (!acc[order.branch]) {
 				acc[order.branch] = []
@@ -653,306 +620,143 @@ export default function EditorDashboard() {
 
 	return (
 		<div className='min-h-screen bg-gray-50'>
-			{/* Header */}
-			<header className='bg-white shadow-sm border-b'>
-				<div className='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8'>
-					<div className='flex justify-between items-center h-16'>
-						<div className='flex items-center'>
-							<Package className='h-8 w-8 text-blue-600 mr-3' />
-							<div>
-								<h1 className='text-xl font-semibold text-gray-900'>
-									Editor Dashboard
-								</h1>
-								<p className='text-sm text-gray-500'>
-									Welcome back, {user.username}
-								</p>
-							</div>
-						</div>
-						<Button
-							variant='outline'
-							onClick={logout}
-							className='flex items-center gap-2'
-						>
-							<LogOut className='h-4 w-4' />
-							Logout
-						</Button>
-					</div>
-				</div>
-			</header>
+			<EditorHeader username={user.username} onLogout={logout} />
 
-			{/* Main Content */}
-			<main className='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8'>
-				{/* Stats Cards */}
-				{stats && (
-					<div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8'>
-						<Card>
-							<CardHeader className='flex flex-row items-center justify-between space-y-0 pb-2'>
-								<CardTitle className='text-sm font-medium'>
-									Today&apos;s Orders
-								</CardTitle>
-								<Calendar className='h-4 w-4 text-muted-foreground' />
-							</CardHeader>
-							<CardContent>
-								<div className='text-2xl font-bold'>{stats.todayOrders}</div>
-							</CardContent>
-						</Card>
+			<main className='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6 lg:py-8'>
+				{initialLoading ? (
+					<EditorSkeleton />
+				) : (
+					<>
+						{stats && <StatsCards stats={stats} />}
 
 						<Card>
-							<CardHeader className='flex flex-row items-center justify-between space-y-0 pb-2'>
-								<CardTitle className='text-sm font-medium'>
-									Total Orders
+							<CardHeader className='pb-4'>
+								<CardTitle className='text-lg sm:text-xl'>
+									All Branch Orders
 								</CardTitle>
-								<FileText className='h-4 w-4 text-muted-foreground' />
+								<OrdersFilters
+									filters={filters}
+									loading={loading}
+									onFiltersChange={setFilters}
+									onDownloadCSV={handleDownloadAllOrders}
+									onDownloadPDF={handleDownloadPDF}
+								/>
 							</CardHeader>
-							<CardContent>
-								<div className='text-2xl font-bold'>{stats.totalOrders}</div>
+							<CardContent className='pt-0'>
+								<OrdersTable
+									orders={orders}
+									loading={loading}
+									onViewOrder={handleViewOrder}
+									onUpdateStatus={handleUpdateStatus}
+									onPrintOrder={handlePrintOrder}
+								/>
 							</CardContent>
 						</Card>
-
-						<Card>
-							<CardHeader className='flex flex-row items-center justify-between space-y-0 pb-2'>
-								<CardTitle className='text-sm font-medium'>
-									Pending Orders
-								</CardTitle>
-								<FileText className='h-4 w-4 text-yellow-500' />
-							</CardHeader>
-							<CardContent>
-								<div className='text-2xl font-bold'>{stats.pendingOrders}</div>
-							</CardContent>
-						</Card>
-
-						<Card>
-							<CardHeader className='flex flex-row items-center justify-between space-y-0 pb-2'>
-								<CardTitle className='text-sm font-medium'>
-									Completed Orders
-								</CardTitle>
-								<FileText className='h-4 w-4 text-green-500' />
-							</CardHeader>
-							<CardContent>
-								<div className='text-2xl font-bold'>
-									{stats.completedOrders || 0}
-								</div>
-							</CardContent>
-						</Card>
-					</div>
+					</>
 				)}
-
-				{/* Orders Section */}
-				<Card>
-					<CardHeader>
-						<CardTitle>All Branch Orders</CardTitle>
-						<div className='flex flex-col sm:flex-row gap-4 mt-4'>
-							<Input
-								placeholder='Filter by date (YYYY-MM-DD)'
-								value={filters.date || ''}
-								onChange={e =>
-									setFilters(prev => ({ ...prev, date: e.target.value }))
-								}
-								className='max-w-xs'
-							/>
-							<Input
-								placeholder='Filter by branch'
-								value={filters.branch || ''}
-								onChange={e =>
-									setFilters(prev => ({ ...prev, branch: e.target.value }))
-								}
-								className='max-w-xs'
-							/>
-							<Select
-								value={filters.status || 'all'}
-								onValueChange={value =>
-									setFilters(prev => ({
-										...prev,
-										status: value as OrderStatus | 'all',
-									}))
-								}
-							>
-								<SelectTrigger className='max-w-xs'>
-									<SelectValue placeholder='Filter by status' />
-								</SelectTrigger>
-								<SelectContent>
-									<SelectItem value='all'>All Status</SelectItem>
-									<SelectItem value='pending'>Pending</SelectItem>
-									<SelectItem value='approved'>Approved</SelectItem>
-									<SelectItem value='rejected'>Rejected</SelectItem>
-									<SelectItem value='completed'>Completed</SelectItem>
-								</SelectContent>
-							</Select>
-							<Button
-								onClick={handleDownloadAllOrders}
-								disabled={loading}
-								className='flex items-center gap-2'
-							>
-								<Download className='h-4 w-4' />
-								Download CSV
-							</Button>
-							<Button
-								onClick={handleDownloadPDF}
-								disabled={loading}
-								className='flex items-center gap-2'
-								variant='outline'
-							>
-								<FileText className='h-4 w-4' />
-								Download PDF
-							</Button>
-						</div>
-					</CardHeader>
-					<CardContent>
-						{loading ? (
-							<div className='text-center py-8'>Loading orders...</div>
-						) : orders.length === 0 ? (
-							<div className='text-center py-8 text-gray-500'>
-								No orders found
-							</div>
-						) : (
-							<Table>
-								<TableHeader>
-									<TableRow>
-										<TableHead>Order #</TableHead>
-										<TableHead>Worker</TableHead>
-										<TableHead>Branch</TableHead>
-										<TableHead>Requested Date</TableHead>
-										<TableHead>Status</TableHead>
-										<TableHead>Items</TableHead>
-										<TableHead>Actions</TableHead>
-									</TableRow>
-								</TableHeader>
-								<TableBody>
-									{orders.map(order => (
-										<TableRow key={order._id}>
-											<TableCell className='font-medium'>
-												{order.orderNumber}
-											</TableCell>
-											<TableCell>{order.worker.username}</TableCell>
-											<TableCell>{order.branch}</TableCell>
-											<TableCell>{formatDate(order.requestedDate)}</TableCell>
-											<TableCell>
-												<span className={getStatusBadgeColor(order.status)}>
-													{order.status}
-												</span>
-											</TableCell>
-											<TableCell>{order.items.length} items</TableCell>
-											<TableCell>
-												<div className='flex gap-2'>
-													<Button
-														variant='outline'
-														size='sm'
-														onClick={() => handleViewOrder(order)}
-													>
-														<Eye className='h-4 w-4 mr-1' />
-														View
-													</Button>
-													<Button
-														variant='outline'
-														size='sm'
-														onClick={() => handlePrintOrder(order)}
-													>
-														<Printer className='h-4 w-4 mr-1' />
-														Print
-													</Button>
-													<DropdownMenu>
-														<DropdownMenuTrigger asChild>
-															<Button variant='outline' size='sm'>
-																<MoreHorizontal className='h-4 w-4' />
-															</Button>
-														</DropdownMenuTrigger>
-														<DropdownMenuContent>
-															<DropdownMenuItem
-																onClick={() => handleUpdateStatus(order)}
-															>
-																<Edit className='h-4 w-4 mr-2' />
-																Update Status
-															</DropdownMenuItem>
-														</DropdownMenuContent>
-													</DropdownMenu>
-												</div>
-											</TableCell>
-										</TableRow>
-									))}
-								</TableBody>
-							</Table>
-						)}
-					</CardContent>
-				</Card>
 			</main>
 
 			{/* Order Details Dialog */}
 			<Dialog open={showOrderDialog} onOpenChange={setShowOrderDialog}>
-				<DialogContent className='max-w-4xl max-h-[80vh] overflow-y-auto'>
+				<DialogContent className='max-w-4xl max-h-[90vh] overflow-y-auto'>
 					<DialogHeader>
-						<DialogTitle>
+						<DialogTitle className='text-lg sm:text-xl'>
 							Order Details - {selectedOrder?.orderNumber}
 						</DialogTitle>
 					</DialogHeader>
 					{selectedOrder && (
 						<div className='space-y-6'>
-							<div className='grid grid-cols-2 gap-4'>
+							<div className='grid grid-cols-1 sm:grid-cols-2 gap-4'>
 								<div>
-									<h3 className='font-semibold mb-2'>Order Information</h3>
-									<p>
-										<strong>Worker:</strong> {selectedOrder.worker.username}
-									</p>
-									<p>
-										<strong>Branch:</strong> {selectedOrder.branch}
-									</p>
-									<p>
-										<strong>Requested Date:</strong>{' '}
-										{formatDate(selectedOrder.requestedDate)}
-									</p>
-									<p>
-										<strong>Status:</strong>{' '}
-										<span className={getStatusBadgeColor(selectedOrder.status)}>
-											{selectedOrder.status}
-										</span>
-									</p>
+									<h3 className='font-semibold mb-2 text-sm sm:text-base'>
+										Order Information
+									</h3>
+									<div className='space-y-1 text-sm'>
+										<p>
+											<strong>Worker:</strong> {selectedOrder.worker.username}
+										</p>
+										<p>
+											<strong>Branch:</strong> {selectedOrder.branch}
+										</p>
+										<p>
+											<strong>Requested Date:</strong>{' '}
+											{formatDate(selectedOrder.requestedDate)}
+										</p>
+										<p>
+											<strong>Status:</strong>{' '}
+											<span className='inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800'>
+												{selectedOrder.status}
+											</span>
+										</p>
+									</div>
 								</div>
 								<div>
-									<h3 className='font-semibold mb-2'>Processing Information</h3>
-									{selectedOrder.processedBy && (
-										<p>
-											<strong>Processed By:</strong>{' '}
-											{selectedOrder.processedBy.username}
-										</p>
-									)}
-									{selectedOrder.processedAt && (
-										<p>
-											<strong>Processed At:</strong>{' '}
-											{formatDate(selectedOrder.processedAt)}
-										</p>
-									)}
+									<h3 className='font-semibold mb-2 text-sm sm:text-base'>
+										Processing Information
+									</h3>
+									<div className='space-y-1 text-sm'>
+										{selectedOrder.processedBy && (
+											<p>
+												<strong>Processed By:</strong>{' '}
+												{selectedOrder.processedBy.username}
+											</p>
+										)}
+										{selectedOrder.processedAt && (
+											<p>
+												<strong>Processed At:</strong>{' '}
+												{formatDate(selectedOrder.processedAt)}
+											</p>
+										)}
+									</div>
 								</div>
 							</div>
 
 							<div>
-								<h3 className='font-semibold mb-2'>Order Items</h3>
-								<Table>
-									<TableHeader>
-										<TableRow>
-											<TableHead>Product</TableHead>
-											<TableHead>Category</TableHead>
-											<TableHead>Quantity</TableHead>
-											<TableHead>Unit</TableHead>
-											<TableHead>Notes</TableHead>
-										</TableRow>
-									</TableHeader>
-									<TableBody>
-										{selectedOrder.items.map(item => (
-											<TableRow key={item.product._id}>
-												<TableCell>{item.product.name}</TableCell>
-												<TableCell>{item.product.category}</TableCell>
-												<TableCell>{item.quantity}</TableCell>
-												<TableCell>{item.product.unit}</TableCell>
-												<TableCell>{item.notes || '-'}</TableCell>
+								<h3 className='font-semibold mb-2 text-sm sm:text-base'>
+									Order Items
+								</h3>
+								<div className='overflow-x-auto'>
+									<Table>
+										<TableHeader>
+											<TableRow>
+												<TableHead className='text-xs'>Product</TableHead>
+												<TableHead className='text-xs'>Category</TableHead>
+												<TableHead className='text-xs'>Quantity</TableHead>
+												<TableHead className='text-xs'>Unit</TableHead>
+												<TableHead className='text-xs'>Notes</TableHead>
 											</TableRow>
-										))}
-									</TableBody>
-								</Table>
+										</TableHeader>
+										<TableBody>
+											{selectedOrder.items.map(item => (
+												<TableRow key={item.product._id}>
+													<TableCell className='text-sm'>
+														{item.product.name}
+													</TableCell>
+													<TableCell className='text-sm'>
+														{item.product.category}
+													</TableCell>
+													<TableCell className='text-sm'>
+														{item.quantity}
+													</TableCell>
+													<TableCell className='text-sm'>
+														{item.product.unit}
+													</TableCell>
+													<TableCell className='text-sm'>
+														{item.notes || '-'}
+													</TableCell>
+												</TableRow>
+											))}
+										</TableBody>
+									</Table>
+								</div>
 							</div>
 
 							{selectedOrder.notes && (
 								<div>
-									<h3 className='font-semibold mb-2'>Order Notes</h3>
-									<p className='text-gray-700 bg-gray-50 p-3 rounded'>
+									<h3 className='font-semibold mb-2 text-sm sm:text-base'>
+										Order Notes
+									</h3>
+									<p className='text-sm text-gray-700 bg-gray-50 p-3 rounded'>
 										{selectedOrder.notes}
 									</p>
 								</div>
@@ -960,8 +764,10 @@ export default function EditorDashboard() {
 
 							{selectedOrder.adminNotes && (
 								<div>
-									<h3 className='font-semibold mb-2'>Admin Notes</h3>
-									<p className='text-gray-700 bg-blue-50 p-3 rounded'>
+									<h3 className='font-semibold mb-2 text-sm sm:text-base'>
+										Admin Notes
+									</h3>
+									<p className='text-sm text-gray-700 bg-blue-50 p-3 rounded border border-blue-200'>
 										{selectedOrder.adminNotes}
 									</p>
 								</div>
@@ -975,18 +781,20 @@ export default function EditorDashboard() {
 			<Dialog open={showStatusDialog} onOpenChange={setShowStatusDialog}>
 				<DialogContent className='max-w-md'>
 					<DialogHeader>
-						<DialogTitle>
+						<DialogTitle className='text-lg'>
 							Update Order Status - {selectedOrder?.orderNumber}
 						</DialogTitle>
 					</DialogHeader>
 					<div className='space-y-4'>
 						<div>
-							<Label htmlFor='status'>Status</Label>
+							<Label htmlFor='status' className='text-sm font-medium'>
+								Status
+							</Label>
 							<Select
 								value={newStatus}
 								onValueChange={(value: OrderStatus) => setNewStatus(value)}
 							>
-								<SelectTrigger>
+								<SelectTrigger className='mt-1'>
 									<SelectValue placeholder='Select status' />
 								</SelectTrigger>
 								<SelectContent>
@@ -998,24 +806,31 @@ export default function EditorDashboard() {
 							</Select>
 						</div>
 						<div>
-							<Label htmlFor='adminNotes'>Admin Notes (Optional)</Label>
+							<Label htmlFor='adminNotes' className='text-sm font-medium'>
+								Admin Notes (Optional)
+							</Label>
 							<textarea
 								id='adminNotes'
 								value={adminNotes}
 								onChange={e => setAdminNotes(e.target.value)}
 								placeholder='Add notes about this status update...'
-								className='w-full p-2 border rounded-md min-h-[80px] resize-none'
+								className='w-full p-2 border rounded-md min-h-[80px] resize-none mt-1 text-sm'
 							/>
 						</div>
-						<div className='flex justify-end space-x-2'>
+						<div className='flex flex-col sm:flex-row justify-end gap-2'>
 							<Button
 								variant='outline'
 								onClick={() => setShowStatusDialog(false)}
 								disabled={updatingStatus}
+								className='w-full sm:w-auto'
 							>
 								Cancel
 							</Button>
-							<Button onClick={handleStatusUpdate} disabled={updatingStatus}>
+							<Button
+								onClick={handleStatusUpdate}
+								disabled={updatingStatus}
+								className='w-full sm:w-auto'
+							>
 								{updatingStatus ? 'Updating...' : 'Update Status'}
 							</Button>
 						</div>

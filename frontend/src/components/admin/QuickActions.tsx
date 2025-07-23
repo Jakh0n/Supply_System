@@ -8,21 +8,36 @@ import {
 	DropdownMenuItem,
 	DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
+import {
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from '@/components/ui/select'
 import { DashboardStats } from '@/types'
 import {
 	BarChart3,
+	Calendar,
+	CalendarDays,
 	Download,
 	FileSpreadsheet,
 	FileText,
 	FileType,
 	Settings,
+	TrendingUp,
 } from 'lucide-react'
 import { useRouter } from 'next/navigation'
+import { useState } from 'react'
 
 interface QuickActionsProps {
 	actionLoading: string | null
 	stats: DashboardStats | null
-	onQuickAction: (action: string, format?: string) => Promise<void>
+	onQuickAction: (
+		action: string,
+		format?: string,
+		timeframe?: string
+	) => Promise<void>
 }
 
 const QuickActions: React.FC<QuickActionsProps> = ({
@@ -31,27 +46,36 @@ const QuickActions: React.FC<QuickActionsProps> = ({
 	onQuickAction,
 }) => {
 	const router = useRouter()
+	const [selectedTimeframe, setSelectedTimeframe] = useState('daily')
+
+	const timeframeOptions = [
+		{ value: 'daily', label: 'Daily', icon: Calendar },
+		{ value: 'weekly', label: 'Weekly', icon: CalendarDays },
+		{ value: 'monthly', label: 'Monthly', icon: Calendar },
+		{ value: '6months', label: '6 Months', icon: TrendingUp },
+		{ value: 'yearly', label: 'Yearly', icon: TrendingUp },
+	]
 
 	const quickActions = [
 		{
-			title: 'Generate Report',
-			description: 'Create comprehensive analytics report',
-			icon: FileText,
-			action: 'generate-report',
+			title: 'Download Statistics',
+			description: `Download ${selectedTimeframe} performance data`,
+			icon: Download,
+			action: 'download-statistics',
 			hasDropdown: true,
 		},
 		{
-			title: 'Export Orders',
-			description: 'Download order data for analysis',
-			icon: Download,
-			action: 'export-orders',
+			title: 'Generate Report',
+			description: `Create ${selectedTimeframe} analytics report`,
+			icon: FileText,
+			action: 'generate-report',
 			hasDropdown: true,
 		},
 		{
 			title: 'View Analytics',
 			description: 'Detailed performance metrics',
 			icon: BarChart3,
-			action: () => router.push('/admin/analytics'),
+			action: () => router.push('/admin/branches'),
 			hasDropdown: false,
 		},
 		{
@@ -64,8 +88,8 @@ const QuickActions: React.FC<QuickActionsProps> = ({
 	]
 
 	const exportFormats = [
+		{ label: 'PDF Report', value: 'pdf', icon: FileText },
 		{ label: 'Excel (.csv)', value: 'excel', icon: FileSpreadsheet },
-		{ label: 'PDF (.html)', value: 'pdf', icon: FileText },
 		{ label: 'Word (.rtf)', value: 'doc', icon: FileType },
 	]
 
@@ -76,7 +100,7 @@ const QuickActions: React.FC<QuickActionsProps> = ({
 		if (typeof action === 'function') {
 			action()
 		} else {
-			await onQuickAction(action, format)
+			await onQuickAction(action, format, selectedTimeframe)
 		}
 	}
 
@@ -84,7 +108,36 @@ const QuickActions: React.FC<QuickActionsProps> = ({
 		<div className='grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6'>
 			<Card>
 				<CardHeader className='pb-4'>
-					<CardTitle className='text-base sm:text-lg'>Quick Actions</CardTitle>
+					<div className='flex flex-col space-y-3'>
+						<CardTitle className='text-base sm:text-lg'>
+							Quick Actions
+						</CardTitle>
+
+						{/* Timeframe Selector */}
+						<div className='flex flex-col space-y-2'>
+							<label className='text-xs font-medium text-gray-600'>
+								Statistics Period:
+							</label>
+							<Select
+								value={selectedTimeframe}
+								onValueChange={setSelectedTimeframe}
+							>
+								<SelectTrigger className='w-full h-8 text-xs'>
+									<SelectValue placeholder='Select timeframe' />
+								</SelectTrigger>
+								<SelectContent>
+									{timeframeOptions.map(option => (
+										<SelectItem key={option.value} value={option.value}>
+											<div className='flex items-center gap-2'>
+												<option.icon className='h-3 w-3' />
+												{option.label}
+											</div>
+										</SelectItem>
+									))}
+								</SelectContent>
+							</Select>
+						</div>
+					</div>
 				</CardHeader>
 				<CardContent className='pt-0'>
 					<div className='space-y-3'>
@@ -95,7 +148,7 @@ const QuickActions: React.FC<QuickActionsProps> = ({
 										<DropdownMenuTrigger asChild>
 											<Button
 												variant='outline'
-												className='w-full justify-start h-auto p-3'
+												className='w-full justify-start h-auto p-3 cursor-pointer'
 												disabled={actionLoading === action.action}
 											>
 												<div className='flex items-center gap-3'>
@@ -118,7 +171,7 @@ const QuickActions: React.FC<QuickActionsProps> = ({
 													onClick={() =>
 														handleActionClick(action.action, format.value)
 													}
-													className='flex items-center gap-2'
+													className='flex items-center gap-2 cursor-pointer'
 												>
 													<format.icon className='h-4 w-4' />
 													{format.label}
@@ -129,7 +182,7 @@ const QuickActions: React.FC<QuickActionsProps> = ({
 								) : (
 									<Button
 										variant='outline'
-										className='w-full justify-start h-auto p-3'
+										className='w-full justify-start h-auto p-3 cursor-pointer'
 										onClick={() => handleActionClick(action.action)}
 									>
 										<div className='flex items-center gap-3'>
