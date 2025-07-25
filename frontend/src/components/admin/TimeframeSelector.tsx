@@ -58,23 +58,26 @@ const TimeframeSelector: React.FC<TimeframeSelectorProps> = ({
 	]
 
 	return (
-		<div className='flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between p-4 sm:p-6 bg-white rounded-lg border'>
-			<div className='flex flex-col sm:flex-row gap-4 items-start sm:items-center'>
-				<h2 className='text-xl sm:text-2xl font-bold text-gray-900'>
+		<div className='flex flex-col sm:flex-row gap-3 sm:gap-4 items-start sm:items-center justify-between p-3 sm:p-4 bg-white rounded-lg border shadow-sm'>
+			<div className='flex flex-col sm:flex-row gap-3 sm:gap-4 items-start sm:items-center w-full sm:w-auto'>
+				<h2 className='text-lg sm:text-xl lg:text-2xl font-bold text-gray-900 truncate'>
 					Admin Dashboard
 				</h2>
-				<div className='flex gap-2 items-center'>
+				<div className='flex gap-2 items-center w-full sm:w-auto'>
 					<Select
 						value={selectedMonth.toString()}
 						onValueChange={value => onMonthChange(parseInt(value))}
 					>
-						<SelectTrigger className='w-32'>
+						<SelectTrigger className='w-full sm:w-32 h-9'>
 							<SelectValue placeholder='Month' />
 						</SelectTrigger>
 						<SelectContent>
 							{monthOptions.map(month => (
 								<SelectItem key={month.value} value={month.value.toString()}>
-									{month.label}
+									<span className='block sm:hidden'>
+										{month.label.slice(0, 3)}
+									</span>
+									<span className='hidden sm:block'>{month.label}</span>
 								</SelectItem>
 							))}
 						</SelectContent>
@@ -83,7 +86,7 @@ const TimeframeSelector: React.FC<TimeframeSelectorProps> = ({
 						value={selectedYear.toString()}
 						onValueChange={value => onYearChange(parseInt(value))}
 					>
-						<SelectTrigger className='w-24'>
+						<SelectTrigger className='w-20 sm:w-24 h-9'>
 							<SelectValue placeholder='Year' />
 						</SelectTrigger>
 						<SelectContent>
@@ -101,10 +104,10 @@ const TimeframeSelector: React.FC<TimeframeSelectorProps> = ({
 				disabled={loading}
 				variant='outline'
 				size='sm'
-				className='flex items-center gap-2'
+				className='flex items-center gap-2 w-full sm:w-auto flex-shrink-0'
 			>
 				<RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
-				Refresh
+				<span className='sm:inline'>Refresh</span>
 			</Button>
 		</div>
 	)

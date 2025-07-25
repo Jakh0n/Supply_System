@@ -57,7 +57,7 @@ const ProductInsights: React.FC<ProductInsightsProps> = ({
 
 	if (loading) {
 		return (
-			<Card>
+			<Card className='h-fit'>
 				<CardHeader>
 					<div className='h-6 bg-gray-200 rounded w-1/3 animate-pulse'></div>
 				</CardHeader>
@@ -86,11 +86,11 @@ const ProductInsights: React.FC<ProductInsightsProps> = ({
 	}
 
 	return (
-		<Card>
+		<Card className='h-fit'>
 			<CardHeader className='pb-4'>
 				<CardTitle className='flex items-center gap-2 text-lg sm:text-xl'>
-					<Package className='h-5 w-5' />
-					Product Performance Insights
+					<Package className='h-5 w-5 flex-shrink-0' />
+					<span className='truncate'>Product Performance Insights</span>
 				</CardTitle>
 			</CardHeader>
 			<CardContent className='pt-0'>
@@ -99,14 +99,26 @@ const ProductInsights: React.FC<ProductInsightsProps> = ({
 						No product data available for the selected timeframe
 					</div>
 				) : (
-					<>
+					<div
+						className={`${
+							productInsights.length > 5 ? 'max-h-96 overflow-y-auto pr-2' : ''
+						}`}
+					>
 						{/* Mobile Card Layout */}
 						<div className='block sm:hidden space-y-4'>
 							{productInsights.map((product, idx) => (
-								<div key={idx} className='border rounded-lg p-4 bg-gray-50'>
+								<div
+									key={idx}
+									className='border rounded-lg p-4 bg-gray-50 hover:shadow-sm transition-shadow'
+								>
 									<div className='flex justify-between items-start mb-3'>
-										<h4 className='font-medium text-sm'>{product.name}</h4>
-										<div className='flex items-center gap-1'>
+										<h4
+											className='font-medium text-sm truncate mr-2 flex-1'
+											title={product.name}
+										>
+											{product.name}
+										</h4>
+										<div className='flex items-center gap-1 flex-shrink-0'>
 											{getTrendIcon(product.trend)}
 										</div>
 									</div>
@@ -117,7 +129,10 @@ const ProductInsights: React.FC<ProductInsightsProps> = ({
 										</div>
 										<div className='bg-white p-2 rounded'>
 											<p className='text-gray-600 mb-1'>Total Value</p>
-											<p className='font-semibold'>
+											<p
+												className='font-semibold truncate'
+												title={formatKRW(product.totalValue)}
+											>
 												{formatKRW(product.totalValue)}
 											</p>
 										</div>
@@ -129,7 +144,10 @@ const ProductInsights: React.FC<ProductInsightsProps> = ({
 										</div>
 										<div className='bg-white p-2 rounded'>
 											<p className='text-gray-600 mb-1'>Avg Price</p>
-											<p className='font-semibold'>
+											<p
+												className='font-semibold truncate'
+												title={formatKRW(product.avgPrice)}
+											>
 												{formatKRW(product.avgPrice)}
 											</p>
 										</div>
@@ -175,20 +193,32 @@ const ProductInsights: React.FC<ProductInsightsProps> = ({
 											key={idx}
 											className='border-b hover:bg-gray-50 transition-colors'
 										>
-											<td className='p-3 font-medium text-sm'>
-												{product.name}
+											<td className='p-3 font-medium text-sm max-w-48'>
+												<div className='truncate' title={product.name}>
+													{product.name}
+												</div>
 											</td>
 											<td className='p-3 text-sm'>{product.totalOrdered}</td>
-											<td className='p-3 text-sm font-medium'>
-												{formatKRW(product.totalValue)}
+											<td className='p-3 text-sm font-medium max-w-32'>
+												<div
+													className='truncate'
+													title={formatKRW(product.totalValue)}
+												>
+													{formatKRW(product.totalValue)}
+												</div>
 											</td>
 											<td className='p-3'>
 												<Badge variant='secondary' className='text-xs'>
 													{product.frequency}%
 												</Badge>
 											</td>
-											<td className='p-3 text-sm font-medium'>
-												{formatKRW(product.avgPrice)}
+											<td className='p-3 text-sm font-medium max-w-32'>
+												<div
+													className='truncate'
+													title={formatKRW(product.avgPrice)}
+												>
+													{formatKRW(product.avgPrice)}
+												</div>
 											</td>
 											<td className='p-3'>
 												<div className='flex items-center gap-2'>
@@ -206,7 +236,7 @@ const ProductInsights: React.FC<ProductInsightsProps> = ({
 								</tbody>
 							</table>
 						</div>
-					</>
+					</div>
 				)}
 			</CardContent>
 		</Card>

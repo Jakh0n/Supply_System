@@ -541,53 +541,74 @@ const AdminDashboard: React.FC = () => {
 	return (
 		<ProtectedRoute requiredRole='admin'>
 			<AdminLayout>
-				<div className='space-y-6'>
-					{/* Header with timeframe selector */}
-					<TimeframeSelector
-						selectedMonth={selectedMonth}
-						selectedYear={selectedYear}
-						onMonthChange={setSelectedMonth}
-						onYearChange={setSelectedYear}
-						onRefresh={fetchDashboardData}
-						loading={loading}
-					/>
+				{/* Scrollable container for the entire dashboard */}
+				<div className='h-full overflow-y-auto'>
+					<div className='min-h-full p-4 sm:p-6 space-y-4 sm:space-y-6'>
+						{/* Header with timeframe selector */}
+						<div className='sticky top-0 z-10 bg-gray-50/95 backdrop-blur-sm -mx-4 sm:-mx-6 px-4 sm:px-6 py-2'>
+							<TimeframeSelector
+								selectedMonth={selectedMonth}
+								selectedYear={selectedYear}
+								onMonthChange={setSelectedMonth}
+								onYearChange={setSelectedYear}
+								onRefresh={fetchDashboardData}
+								loading={loading}
+							/>
+						</div>
 
-					{/* Dashboard Stats */}
-					<DashboardStats
-						stats={stats}
-						formatKRW={formatKRW}
-						loading={loading}
-					/>
+						{/* Dashboard Stats - Always visible */}
+						<div className='w-full'>
+							<DashboardStats
+								stats={stats}
+								formatKRW={formatKRW}
+								loading={loading}
+							/>
+						</div>
 
-					{/* Financial Metrics */}
-					<FinancialMetrics
-						financialMetrics={financialMetrics}
-						loading={loading}
-						formatKRW={formatKRW}
-					/>
+						{/* Financial Metrics */}
+						<div className='w-full'>
+							<FinancialMetrics
+								financialMetrics={financialMetrics}
+								loading={loading}
+								formatKRW={formatKRW}
+							/>
+						</div>
 
-					{/* Branch Analytics */}
-					<BranchAnalytics
-						loading={loading}
-						branchAnalytics={branchAnalytics}
-						showAllBranches={showAllBranches}
-						onToggleShowAll={() => setShowAllBranches(!showAllBranches)}
-						formatKRW={formatKRW}
-					/>
+						{/* Main content grid - responsive layout */}
+						<div className='grid grid-cols-1 xl:grid-cols-3 gap-4 sm:gap-6'>
+							{/* Left column - Branch Analytics (takes 2 columns on xl screens) */}
+							<div className='xl:col-span-2 w-full order-2 xl:order-1'>
+								<BranchAnalytics
+									loading={loading}
+									branchAnalytics={branchAnalytics}
+									showAllBranches={showAllBranches}
+									onToggleShowAll={() => setShowAllBranches(!showAllBranches)}
+									formatKRW={formatKRW}
+								/>
+							</div>
 
-					{/* Product Insights */}
-					<ProductInsights
-						productInsights={productInsights}
-						loading={loading}
-						formatKRW={formatKRW}
-					/>
+							{/* Right column - Quick Actions (1 column on xl screens) */}
+							<div className='xl:col-span-1 w-full order-1 xl:order-2'>
+								<QuickActions
+									actionLoading={actionLoading}
+									stats={stats}
+									onQuickAction={handleQuickAction}
+								/>
+							</div>
+						</div>
 
-					{/* Quick Actions */}
-					<QuickActions
-						actionLoading={actionLoading}
-						stats={stats}
-						onQuickAction={handleQuickAction}
-					/>
+						{/* Product Insights - Full width with scroll */}
+						<div className='w-full'>
+							<ProductInsights
+								productInsights={productInsights}
+								loading={loading}
+								formatKRW={formatKRW}
+							/>
+						</div>
+
+						{/* Bottom spacing for mobile navigation */}
+						<div className='h-4 sm:h-0'></div>
+					</div>
 				</div>
 			</AdminLayout>
 		</ProtectedRoute>

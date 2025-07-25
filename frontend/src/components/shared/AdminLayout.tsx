@@ -237,12 +237,12 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
 
 			{/* Main Content */}
 			<div
-				className={`flex-1 transition-all duration-300 ${
+				className={`flex-1 flex flex-col transition-all duration-300 ${
 					isSidebarCollapsed ? 'lg:ml-16' : 'lg:ml-64'
 				}`}
 			>
 				{/* Mobile Header */}
-				<div className='lg:hidden flex items-center justify-between px-4 py-3 bg-white border-b border-gray-200'>
+				<div className='lg:hidden flex items-center justify-between px-4 py-3 bg-white border-b border-gray-200 flex-shrink-0'>
 					<div className='flex items-center'>
 						<Button
 							variant='ghost'
@@ -266,9 +266,7 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
 				</div>
 
 				{/* Page Content */}
-				<main className='flex-1 overflow-y-auto'>
-					<div className='p-4 sm:p-6'>{children}</div>
-				</main>
+				<main className='flex-1 min-h-0 bg-gray-50'>{children}</main>
 			</div>
 		</div>
 	)
