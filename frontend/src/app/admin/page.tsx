@@ -6,6 +6,8 @@ import {
 	FinancialMetrics,
 	ProductInsights,
 	QuickActions,
+	RecentActions,
+	SystemStatus,
 	TimeframeSelector,
 } from '@/components/admin'
 import AdminLayout from '@/components/shared/AdminLayout'
@@ -574,26 +576,35 @@ const AdminDashboard: React.FC = () => {
 							/>
 						</div>
 
-						{/* Main content grid - responsive layout */}
-						<div className='grid grid-cols-1 xl:grid-cols-3 gap-4 sm:gap-6'>
-							{/* Left column - Branch Analytics (takes 2 columns on xl screens) */}
-							<div className='xl:col-span-2 w-full order-2 xl:order-1'>
-								<BranchAnalytics
-									loading={loading}
-									branchAnalytics={branchAnalytics}
-									showAllBranches={showAllBranches}
-									onToggleShowAll={() => setShowAllBranches(!showAllBranches)}
-									formatKRW={formatKRW}
+						{/* Branch Analytics - Full width for better visibility */}
+						<div className='w-full'>
+							<BranchAnalytics
+								loading={loading}
+								branchAnalytics={branchAnalytics}
+								showAllBranches={showAllBranches}
+								onToggleShowAll={() => setShowAllBranches(!showAllBranches)}
+								formatKRW={formatKRW}
+							/>
+						</div>
+
+						{/* Three column layout for actions and status */}
+						<div className='grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6'>
+							{/* Quick Actions */}
+							<div className='w-full'>
+								<QuickActions
+									actionLoading={actionLoading}
+									onQuickAction={handleQuickAction}
 								/>
 							</div>
 
-							{/* Right column - Quick Actions (1 column on xl screens) */}
-							<div className='xl:col-span-1 w-full order-1 xl:order-2'>
-								<QuickActions
-									actionLoading={actionLoading}
-									stats={stats}
-									onQuickAction={handleQuickAction}
-								/>
+							{/* System Status */}
+							<div className='w-full'>
+								<SystemStatus stats={stats} />
+							</div>
+
+							{/* Recent Actions */}
+							<div className='w-full'>
+								<RecentActions />
 							</div>
 						</div>
 

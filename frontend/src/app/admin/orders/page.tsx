@@ -1,15 +1,11 @@
 'use client'
 
+import OrdersFilters from '@/components/admin/orders/OrdersFilters'
+import OrdersHeader from '@/components/admin/orders/OrdersHeader'
+import OrdersTable from '@/components/admin/orders/OrdersTable'
 import AdminLayout from '@/components/shared/AdminLayout'
 import ProtectedRoute from '@/components/shared/ProtectedRoute'
 import { Button } from '@/components/ui/button'
-import {
-	Card,
-	CardContent,
-	CardDescription,
-	CardHeader,
-	CardTitle,
-} from '@/components/ui/card'
 import {
 	Dialog,
 	DialogContent,
@@ -17,14 +13,6 @@ import {
 	DialogHeader,
 	DialogTitle,
 } from '@/components/ui/dialog'
-import {
-	DropdownMenu,
-	DropdownMenuContent,
-	DropdownMenuItem,
-	DropdownMenuLabel,
-	DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
-import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import {
 	Select,
@@ -40,12 +28,7 @@ import {
 	AlertCircle,
 	CheckCircle,
 	Clock,
-	Download,
-	Eye,
-	FileText,
-	MoreHorizontal,
 	Package,
-	ShoppingCart,
 	Truck,
 	XCircle,
 } from 'lucide-react'
@@ -256,15 +239,33 @@ const OrdersManagement: React.FC = () => {
 		setIsDetailDialogOpen(true)
 	}
 
-	const getTotalQuantity = (order: Order): number => {
-		return order.items.reduce((total, item) => total + item.quantity, 0)
-	}
-
 	const getTotalValue = (order: Order): number => {
 		return order.items.reduce(
 			(total, item) => total + item.quantity * item.product.price,
 			0
 		)
+	}
+
+	const handleClearFilters = () => {
+		setSelectedDate('')
+		setBranchFilter('all')
+		setStatusFilter('all')
+		setCurrentPage(1)
+	}
+
+	const handleDateChange = (date: string) => {
+		setSelectedDate(date)
+		setCurrentPage(1)
+	}
+
+	const handleBranchChange = (branch: string) => {
+		setBranchFilter(branch)
+		setCurrentPage(1)
+	}
+
+	const handleStatusChange = (status: OrderStatus | 'all') => {
+		setStatusFilter(status)
+		setCurrentPage(1)
 	}
 
 	if (loading && orders.length === 0) {
@@ -285,32 +286,18 @@ const OrdersManagement: React.FC = () => {
 	return (
 		<ProtectedRoute requiredRole='admin'>
 			<AdminLayout>
-				<div className='space-y-6'>
+				<div className='space-y-4 sm:space-y-6 p-4 sm:p-6'>
 					{/* Header */}
-					<div className='flex justify-between items-center'>
-						<div>
-							<h1 className='text-2xl font-bold text-gray-900'>
-								Orders Management
-							</h1>
-							<p className='mt-2 text-gray-600'>
-								Manage and track all restaurant supply orders
-							</p>
-						</div>
-						<Button
-							onClick={handleDownloadPDF}
-							disabled={!selectedDate}
-							variant='outline'
-						>
-							<Download className='h-4 w-4 mr-2' />
-							Download PDF
-						</Button>
-					</div>
+					<OrdersHeader
+						onDownloadPDF={handleDownloadPDF}
+						selectedDate={selectedDate}
+					/>
 
 					{/* Error message */}
 					{error && (
 						<div className='bg-red-50 border border-red-200 rounded-md p-4'>
 							<div className='flex'>
-								<AlertCircle className='h-5 w-5 text-red-400' />
+								<AlertCircle className='h-5 w-5 text-red-400 flex-shrink-0' />
 								<div className='ml-3'>
 									<p className='text-sm text-red-800'>{error}</p>
 								</div>
@@ -319,269 +306,42 @@ const OrdersManagement: React.FC = () => {
 					)}
 
 					{/* Filters */}
-					<Card>
-						<CardHeader>
-							<CardTitle>Filters</CardTitle>
-						</CardHeader>
-						<CardContent>
-							<div className='grid grid-cols-1 md:grid-cols-4 gap-4'>
-								<div>
-									<Label htmlFor='date-filter'>Date</Label>
-									<Input
-										id='date-filter'
-										type='date'
-										value={selectedDate}
-										onChange={e => {
-											setSelectedDate(e.target.value)
-											setCurrentPage(1)
-										}}
-									/>
-								</div>
-								<div>
-									<Label htmlFor='branch-filter'>Branch</Label>
-									<Select
-										value={branchFilter}
-										onValueChange={value => {
-											setBranchFilter(value)
-											setCurrentPage(1)
-										}}
-									>
-										<SelectTrigger>
-											<SelectValue placeholder='All branches' />
-										</SelectTrigger>
-										<SelectContent>
-											<SelectItem value='all'>All Branches</SelectItem>
-											{branches.map(branch => (
-												<SelectItem key={branch} value={branch}>
-													{branch}
-												</SelectItem>
-											))}
-										</SelectContent>
-									</Select>
-								</div>
-								<div>
-									<Label htmlFor='status-filter'>Status</Label>
-									<Select
-										value={statusFilter}
-										onValueChange={(value: OrderStatus | 'all') => {
-											setStatusFilter(value)
-											setCurrentPage(1)
-										}}
-									>
-										<SelectTrigger>
-											<SelectValue placeholder='All statuses' />
-										</SelectTrigger>
-										<SelectContent>
-											<SelectItem value='all'>All Status</SelectItem>
-											<SelectItem value='pending'>Pending</SelectItem>
-											<SelectItem value='approved'>Approved</SelectItem>
-											<SelectItem value='rejected'>Rejected</SelectItem>
-											<SelectItem value='completed'>Completed</SelectItem>
-										</SelectContent>
-									</Select>
-								</div>
-								<div className='flex items-end'>
-									<Button
-										variant='outline'
-										onClick={() => {
-											setSelectedDate('')
-											setBranchFilter('all')
-											setStatusFilter('all')
-											setCurrentPage(1)
-										}}
-									>
-										Clear Filters
-									</Button>
-								</div>
-							</div>
-						</CardContent>
-					</Card>
+					<OrdersFilters
+						selectedDate={selectedDate}
+						branchFilter={branchFilter}
+						statusFilter={statusFilter}
+						branches={branches}
+						onDateChange={handleDateChange}
+						onBranchChange={handleBranchChange}
+						onStatusChange={handleStatusChange}
+						onClearFilters={handleClearFilters}
+					/>
 
 					{/* Orders Table */}
-					<Card>
-						<CardHeader>
-							<CardTitle>Orders ({totalOrders})</CardTitle>
-							<CardDescription>
-								Manage order requests from all branches
-							</CardDescription>
-						</CardHeader>
-						<CardContent>
-							{orders.length === 0 ? (
-								<div className='text-center py-8'>
-									<ShoppingCart className='h-12 w-12 text-gray-400 mx-auto mb-4' />
-									<p className='text-gray-500'>No orders found</p>
-									<p className='text-sm text-gray-400 mt-1'>
-										{selectedDate ||
-										branchFilter !== 'all' ||
-										statusFilter !== 'all'
-											? 'Try adjusting your filters'
-											: 'No orders have been created yet'}
-									</p>
-								</div>
-							) : (
-								<div className='overflow-x-auto'>
-									<div className='max-h-[600px] overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100'>
-										<table className='w-full'>
-											<thead className='bg-gray-50 sticky top-0 z-10'>
-												<tr className='border-b'>
-													<th className='text-left py-3 px-4 font-medium bg-gray-50'>
-														Order #
-													</th>
-													<th className='text-left py-3 px-4 font-medium bg-gray-50'>
-														Worker
-													</th>
-													<th className='text-left py-3 px-4 font-medium bg-gray-50'>
-														Branch
-													</th>
-													<th className='text-left py-3 px-4 font-medium bg-gray-50'>
-														Requested Date
-													</th>
-													<th className='text-left py-3 px-4 font-medium bg-gray-50'>
-														Items
-													</th>
-													<th className='text-left py-3 px-4 font-medium bg-gray-50'>
-														Total Value
-													</th>
-													<th className='text-left py-3 px-4 font-medium bg-gray-50'>
-														Status
-													</th>
-													<th className='text-left py-3 px-4 font-medium bg-gray-50'>
-														Created
-													</th>
-													<th className='text-right py-3 px-4 font-medium bg-gray-50'>
-														Actions
-													</th>
-												</tr>
-											</thead>
-											<tbody>
-												{orders.map(order => {
-													const statusDisplay = getStatusDisplay(order.status)
-													return (
-														<tr
-															key={order._id}
-															className='border-b hover:bg-gray-50 transition-colors'
-														>
-															<td className='py-3 px-4'>
-																<div className='font-mono text-sm'>
-																	{order.orderNumber}
-																</div>
-															</td>
-															<td className='py-3 px-4'>
-																<div>
-																	<p className='font-medium'>
-																		{order.worker.username}
-																	</p>
-																</div>
-															</td>
-															<td className='py-3 px-4'>
-																<span className='inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800'>
-																	{order.branch}
-																</span>
-															</td>
-															<td className='py-3 px-4 text-sm text-gray-600'>
-																{formatDate(order.requestedDate)}
-															</td>
-															<td className='py-3 px-4 text-sm text-gray-600'>
-																{order.items.length} items (
-																{getTotalQuantity(order)} total)
-															</td>
-															<td className='py-3 px-4 text-sm text-gray-600'>
-																{formatKRW(getTotalValue(order))}
-															</td>
-															<td className='py-3 px-4'>
-																<span
-																	className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${statusDisplay.color}`}
-																>
-																	{statusDisplay.icon}
-																	<span className='ml-1'>
-																		{statusDisplay.label}
-																	</span>
-																</span>
-															</td>
-															<td className='py-3 px-4 text-sm text-gray-600'>
-																{formatDate(order.createdAt)}
-															</td>
-															<td className='py-3 px-4 text-right'>
-																<DropdownMenu>
-																	<DropdownMenuTrigger asChild>
-																		<Button variant='ghost' size='sm'>
-																			<MoreHorizontal className='h-4 w-4' />
-																		</Button>
-																	</DropdownMenuTrigger>
-																	<DropdownMenuContent align='end'>
-																		<DropdownMenuLabel>
-																			Actions
-																		</DropdownMenuLabel>
-																		<DropdownMenuItem
-																			onClick={() => openDetailDialog(order)}
-																		>
-																			<Eye className='h-4 w-4 mr-2' />
-																			View Details
-																		</DropdownMenuItem>
-																		<DropdownMenuItem
-																			onClick={() => openStatusDialog(order)}
-																		>
-																			<FileText className='h-4 w-4 mr-2' />
-																			Update Status
-																		</DropdownMenuItem>
-																		<DropdownMenuItem
-																			onClick={() =>
-																				handleDownloadOrderPDF(order)
-																			}
-																		>
-																			<Download className='h-4 w-4 mr-2' />
-																			Download Order PDF
-																		</DropdownMenuItem>
-																	</DropdownMenuContent>
-																</DropdownMenu>
-															</td>
-														</tr>
-													)
-												})}
-											</tbody>
-										</table>
-									</div>
-
-									{/* Pagination */}
-									{totalPages > 1 && (
-										<div className='flex items-center justify-between px-4 py-3 border-t'>
-											<div className='text-sm text-gray-500'>
-												Showing page {currentPage} of {totalPages} (
-												{totalOrders} total orders)
-											</div>
-											<div className='flex space-x-2'>
-												<Button
-													variant='outline'
-													size='sm'
-													disabled={currentPage === 1}
-													onClick={() => setCurrentPage(currentPage - 1)}
-												>
-													Previous
-												</Button>
-												<Button
-													variant='outline'
-													size='sm'
-													disabled={currentPage === totalPages}
-													onClick={() => setCurrentPage(currentPage + 1)}
-												>
-													Next
-												</Button>
-											</div>
-										</div>
-									)}
-								</div>
-							)}
-						</CardContent>
-					</Card>
+					<OrdersTable
+						orders={orders}
+						totalOrders={totalOrders}
+						currentPage={currentPage}
+						totalPages={totalPages}
+						selectedDate={selectedDate}
+						branchFilter={branchFilter}
+						statusFilter={statusFilter}
+						onViewDetails={openDetailDialog}
+						onUpdateStatus={openStatusDialog}
+						onDownloadOrderPDF={handleDownloadOrderPDF}
+						onPageChange={setCurrentPage}
+					/>
 
 					{/* Order Detail Dialog */}
 					<Dialog
 						open={isDetailDialogOpen}
 						onOpenChange={setIsDetailDialogOpen}
 					>
-						<DialogContent className='sm:max-w-[600px] max-h-[80vh] overflow-y-auto'>
+						<DialogContent className='sm:max-w-[600px] max-h-[80vh] overflow-y-auto mx-4'>
 							<DialogHeader>
-								<DialogTitle>Order Details</DialogTitle>
+								<DialogTitle className='text-lg sm:text-xl'>
+									Order Details
+								</DialogTitle>
 								<DialogDescription>
 									{selectedOrder && `Order ${selectedOrder.orderNumber}`}
 								</DialogDescription>
@@ -589,7 +349,7 @@ const OrdersManagement: React.FC = () => {
 							{selectedOrder && (
 								<div className='space-y-4'>
 									{/* Order Info */}
-									<div className='grid grid-cols-2 gap-4'>
+									<div className='grid grid-cols-1 sm:grid-cols-2 gap-4'>
 										<div>
 											<Label className='text-sm font-medium text-gray-500'>
 												Worker
@@ -632,14 +392,16 @@ const OrdersManagement: React.FC = () => {
 										<Label className='text-sm font-medium text-gray-500'>
 											Items
 										</Label>
-										<div className='mt-2 space-y-2'>
+										<div className='mt-2 space-y-2 max-h-60 overflow-y-auto'>
 											{selectedOrder.items.map(item => (
 												<div
 													key={item.product._id}
-													className='flex justify-between items-center p-2 bg-gray-50 rounded'
+													className='flex flex-col sm:flex-row sm:justify-between sm:items-center p-2 bg-gray-50 rounded gap-2'
 												>
-													<div>
-														<p className='font-medium'>{item.product.name}</p>
+													<div className='flex-1'>
+														<p className='font-medium text-sm'>
+															{item.product.name}
+														</p>
 														<p className='text-sm text-gray-500'>
 															{item.quantity} {item.product.unit} ×{' '}
 															{formatKRW(item.product.price)}
@@ -651,7 +413,7 @@ const OrdersManagement: React.FC = () => {
 														)}
 													</div>
 													<div className='text-right'>
-														<p className='font-medium'>
+														<p className='font-medium text-sm'>
 															{formatKRW(item.quantity * item.product.price)}
 														</p>
 													</div>
@@ -692,7 +454,7 @@ const OrdersManagement: React.FC = () => {
 
 									{/* Processing Info */}
 									{selectedOrder.processedBy && (
-										<div className='grid grid-cols-2 gap-4'>
+										<div className='grid grid-cols-1 sm:grid-cols-2 gap-4'>
 											<div>
 												<Label className='text-sm font-medium text-gray-500'>
 													Processed By
@@ -722,9 +484,11 @@ const OrdersManagement: React.FC = () => {
 						open={isStatusDialogOpen}
 						onOpenChange={setIsStatusDialogOpen}
 					>
-						<DialogContent className='sm:max-w-[425px]'>
+						<DialogContent className='sm:max-w-[425px] mx-4'>
 							<DialogHeader>
-								<DialogTitle>Update Order Status</DialogTitle>
+								<DialogTitle className='text-lg sm:text-xl'>
+									Update Order Status
+								</DialogTitle>
 								<DialogDescription>
 									{selectedOrder &&
 										`Update status for order ${selectedOrder.orderNumber}`}
@@ -732,12 +496,14 @@ const OrdersManagement: React.FC = () => {
 							</DialogHeader>
 							<div className='space-y-4'>
 								<div>
-									<Label htmlFor='status'>Status</Label>
+									<Label htmlFor='status' className='text-sm font-medium'>
+										Status
+									</Label>
 									<Select
 										value={newStatus}
 										onValueChange={(value: OrderStatus) => setNewStatus(value)}
 									>
-										<SelectTrigger>
+										<SelectTrigger className='mt-1'>
 											<SelectValue placeholder='Select status' />
 										</SelectTrigger>
 										<SelectContent>
@@ -749,27 +515,31 @@ const OrdersManagement: React.FC = () => {
 									</Select>
 								</div>
 								<div>
-									<Label htmlFor='admin-notes'>Admin Notes</Label>
+									<Label htmlFor='admin-notes' className='text-sm font-medium'>
+										Admin Notes
+									</Label>
 									<textarea
 										id='admin-notes'
 										value={adminNotes}
 										onChange={e => setAdminNotes(e.target.value)}
 										placeholder='Add notes about this status change...'
 										rows={3}
-										className='flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50'
+										className='flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 mt-1'
 									/>
 								</div>
-								<div className='flex justify-end space-x-2'>
+								<div className='flex flex-col sm:flex-row justify-end space-y-2 sm:space-y-0 sm:space-x-2'>
 									<Button
 										type='button'
 										variant='outline'
 										onClick={() => setIsStatusDialogOpen(false)}
+										className='w-full sm:w-auto'
 									>
 										Cancel
 									</Button>
 									<Button
 										onClick={handleStatusUpdate}
 										disabled={updatingStatus}
+										className='w-full sm:w-auto'
 									>
 										{updatingStatus ? 'Updating...' : 'Update Status'}
 									</Button>

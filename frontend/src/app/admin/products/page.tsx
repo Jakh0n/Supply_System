@@ -1,31 +1,18 @@
 'use client'
 
+import ProductsFilters from '@/components/admin/products/ProductsFilters'
+import ProductsHeader from '@/components/admin/products/ProductsHeader'
+import ProductsTable from '@/components/admin/products/ProductsTable'
 import AdminLayout from '@/components/shared/AdminLayout'
 import ProtectedRoute from '@/components/shared/ProtectedRoute'
 import { Button } from '@/components/ui/button'
-import {
-	Card,
-	CardContent,
-	CardDescription,
-	CardHeader,
-	CardTitle,
-} from '@/components/ui/card'
 import {
 	Dialog,
 	DialogContent,
 	DialogDescription,
 	DialogHeader,
 	DialogTitle,
-	DialogTrigger,
 } from '@/components/ui/dialog'
-import {
-	DropdownMenu,
-	DropdownMenuContent,
-	DropdownMenuItem,
-	DropdownMenuLabel,
-	DropdownMenuSeparator,
-	DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import {
@@ -37,17 +24,7 @@ import {
 } from '@/components/ui/select'
 import { productsApi } from '@/lib/api'
 import { Product, ProductCategory, ProductFormData, ProductUnit } from '@/types'
-import {
-	AlertCircle,
-	Edit,
-	Eye,
-	EyeOff,
-	MoreHorizontal,
-	Package,
-	Plus,
-	Search,
-	Trash2,
-} from 'lucide-react'
+import { AlertCircle } from 'lucide-react'
 import React, { useCallback, useEffect, useState } from 'react'
 import { toast } from 'sonner'
 
@@ -140,14 +117,7 @@ const ProductsManagement: React.FC = () => {
 			const response = await productsApi.createProduct(formData)
 			setProducts(prev => [response.product, ...prev])
 			setIsCreateDialogOpen(false)
-			setFormData({
-				name: '',
-				category: 'other',
-				unit: 'pieces',
-				description: '',
-				supplier: '',
-				price: 0,
-			})
+			resetForm()
 			toast.success('Product created successfully')
 		} catch (err: unknown) {
 			const error = err as { response?: { data?: { message?: string } } }
@@ -235,14 +205,6 @@ const ProductsManagement: React.FC = () => {
 		})
 	}
 
-	const getCategoryLabel = (category: string) => {
-		return CATEGORIES.find(c => c.value === category)?.label || category
-	}
-
-	const getUnitLabel = (unit: string) => {
-		return UNITS.find(u => u.value === unit)?.label || unit
-	}
-
 	if (loading && products.length === 0) {
 		return (
 			<ProtectedRoute requiredRole='admin'>
@@ -261,172 +223,23 @@ const ProductsManagement: React.FC = () => {
 	return (
 		<ProtectedRoute requiredRole='admin'>
 			<AdminLayout>
-				<div className='space-y-6'>
+				<div className='space-y-4 sm:space-y-6 p-4 sm:p-6'>
 					{/* Header */}
-					<div className='flex justify-between items-center'>
-						<div>
-							<h1 className='text-2xl font-bold text-gray-900'>
-								Product Management
-							</h1>
-							<p className='mt-2 text-gray-600'>
-								Manage your restaurant supply products
-							</p>
-						</div>
-						<Dialog
-							open={isCreateDialogOpen}
-							onOpenChange={setIsCreateDialogOpen}
-						>
-							<DialogTrigger asChild>
-								<Button onClick={resetForm}>
-									<Plus className='h-4 w-4 mr-2' />
-									Add Product
-								</Button>
-							</DialogTrigger>
-							<DialogContent className='sm:max-w-[425px]'>
-								<DialogHeader>
-									<DialogTitle>Create New Product</DialogTitle>
-									<DialogDescription>
-										Add a new product to your inventory catalog.
-									</DialogDescription>
-								</DialogHeader>
-								<form onSubmit={handleCreateProduct} className='space-y-4'>
-									<div>
-										<Label htmlFor='name' className='pb-2'>
-											Product Name *
-										</Label>
-										<Input
-											id='name'
-											value={formData.name}
-											onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-												setFormData(prev => ({ ...prev, name: e.target.value }))
-											}
-											placeholder='Enter product name'
-											required
-										/>
-									</div>
-									<div className='grid grid-cols-2 gap-4'>
-										<div>
-											<Label htmlFor='category' className='pb-2'>
-												Category *
-											</Label>
-											<Select
-												value={formData.category}
-												onValueChange={(value: ProductCategory) =>
-													setFormData(prev => ({ ...prev, category: value }))
-												}
-											>
-												<SelectTrigger>
-													<SelectValue placeholder='Select category' />
-												</SelectTrigger>
-												<SelectContent>
-													{CATEGORIES.map(category => (
-														<SelectItem
-															key={category.value}
-															value={category.value}
-														>
-															{category.label}
-														</SelectItem>
-													))}
-												</SelectContent>
-											</Select>
-										</div>
-										<div>
-											<Label htmlFor='unit' className='pb-2'>
-												Unit *
-											</Label>
-											<Select
-												value={formData.unit}
-												onValueChange={(value: ProductUnit) =>
-													setFormData(prev => ({ ...prev, unit: value }))
-												}
-											>
-												<SelectTrigger>
-													<SelectValue placeholder='Select unit' />
-												</SelectTrigger>
-												<SelectContent>
-													{UNITS.map(unit => (
-														<SelectItem key={unit.value} value={unit.value}>
-															{unit.label}
-														</SelectItem>
-													))}
-												</SelectContent>
-											</Select>
-										</div>
-									</div>
-									<div>
-										<Label htmlFor='supplier' className='pb-2'>
-											Supplier
-										</Label>
-										<Input
-											id='supplier'
-											value={formData.supplier}
-											onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-												setFormData(prev => ({
-													...prev,
-													supplier: e.target.value,
-												}))
-											}
-											placeholder='Enter supplier name'
-										/>
-									</div>
-									<div>
-										<Label htmlFor='price' className='pb-2'>
-											Price (KRW) *
-										</Label>
-										<Input
-											id='price'
-											type='text'
-											value={formData.price ? formatKRW(formData.price) : ''}
-											onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-												setFormData(prev => ({
-													...prev,
-													price: parseKRWInput(e.target.value),
-												}))
-											}
-											placeholder='₩0 (Korean Won)'
-											required
-										/>
-									</div>
-									<div>
-										<Label htmlFor='description' className='pb-2'>
-											Description
-										</Label>
-										<textarea
-											id='description'
-											value={formData.description}
-											onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) =>
-												setFormData(prev => ({
-													...prev,
-													description: e.target.value,
-												}))
-											}
-											placeholder='Enter product description'
-											rows={3}
-											className='flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50'
-										/>
-									</div>
-									<div className='flex justify-end space-x-2'>
-										<Button
-											type='button'
-											variant='outline'
-											onClick={() => setIsCreateDialogOpen(false)}
-										>
-											Cancel
-										</Button>
-										<Button type='submit' disabled={formLoading}>
-											{formLoading ? 'Creating...' : 'Create Product'}
-										</Button>
-									</div>
-								</form>
-							</DialogContent>
-						</Dialog>
-					</div>
+					<ProductsHeader
+						isCreateDialogOpen={isCreateDialogOpen}
+						setIsCreateDialogOpen={setIsCreateDialogOpen}
+						formData={formData}
+						setFormData={setFormData}
+						onCreateProduct={handleCreateProduct}
+						formLoading={formLoading}
+						resetForm={resetForm}
+					/>
 
 					{/* Error message */}
 					{error && (
 						<div className='bg-red-50 border border-red-200 rounded-md p-4'>
 							<div className='flex'>
-								<AlertCircle className='h-5 w-5 text-red-400' />
+								<AlertCircle className='h-5 w-5 text-red-400 flex-shrink-0' />
 								<div className='ml-3'>
 									<p className='text-sm text-red-800'>{error}</p>
 								</div>
@@ -435,243 +248,42 @@ const ProductsManagement: React.FC = () => {
 					)}
 
 					{/* Filters */}
-					<Card>
-						<CardHeader>
-							<CardTitle>Filters</CardTitle>
-						</CardHeader>
-						<CardContent>
-							<div className='grid grid-cols-1 md:grid-cols-3 gap-4'>
-								<div>
-									<Label htmlFor='search' className='pb-2'>
-										Search Products
-									</Label>
-									<div className='relative '>
-										<Search className='absolute left-2 top-2.5 h-4 w-4 text-muted-foreground' />
-										<Input
-											id='search'
-											placeholder='Search by name, description, or supplier'
-											value={searchTerm}
-											onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-												setSearchTerm(e.target.value)
-											}
-											className='pl-8'
-										/>
-									</div>
-								</div>
-								<div>
-									<Label htmlFor='category-filter' className='pb-2'>
-										Category
-									</Label>
-									<Select
-										value={categoryFilter}
-										onValueChange={(value: ProductCategory | 'all') =>
-											setCategoryFilter(value)
-										}
-									>
-										<SelectTrigger>
-											<SelectValue placeholder='All categories' />
-										</SelectTrigger>
-										<SelectContent>
-											<SelectItem value='all'>All Categories</SelectItem>
-											{CATEGORIES.map(category => (
-												<SelectItem key={category.value} value={category.value}>
-													{category.label}
-												</SelectItem>
-											))}
-										</SelectContent>
-									</Select>
-								</div>
-								<div>
-									<Label htmlFor='status-filter' className='pb-2'>
-										Status
-									</Label>
-									<Select
-										value={statusFilter}
-										onValueChange={(value: 'true' | 'false' | 'all') =>
-											setStatusFilter(value)
-										}
-									>
-										<SelectTrigger>
-											<SelectValue placeholder='All statuses' />
-										</SelectTrigger>
-										<SelectContent>
-											<SelectItem value='all'>All Products</SelectItem>
-											<SelectItem value='true'>Active Only</SelectItem>
-											<SelectItem value='false'>Inactive Only</SelectItem>
-										</SelectContent>
-									</Select>
-								</div>
-							</div>
-						</CardContent>
-					</Card>
+					<ProductsFilters
+						searchTerm={searchTerm}
+						categoryFilter={categoryFilter}
+						statusFilter={statusFilter}
+						onSearchChange={setSearchTerm}
+						onCategoryChange={setCategoryFilter}
+						onStatusChange={setStatusFilter}
+					/>
 
 					{/* Products Table */}
-					<Card>
-						<CardHeader>
-							<CardTitle>Products ({products.length})</CardTitle>
-							<CardDescription>
-								Manage your product catalog and inventory
-							</CardDescription>
-						</CardHeader>
-						<CardContent>
-							{products.length === 0 ? (
-								<div className='text-center py-8'>
-									<Package className='h-12 w-12 text-gray-400 mx-auto mb-4' />
-									<p className='text-gray-500'>No products found</p>
-									<p className='text-sm text-gray-400 mt-1'>
-										{searchTerm ||
-										categoryFilter !== 'all' ||
-										statusFilter !== 'all'
-											? 'Try adjusting your filters'
-											: 'Add your first product to get started'}
-									</p>
-								</div>
-							) : (
-								<div className='overflow-x-auto'>
-									<div className='max-h-[600px] overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100'>
-										<table className='w-full'>
-											<thead className='bg-gray-50 sticky top-0 z-10'>
-												<tr className='border-b'>
-													<th className='text-left py-3 px-4 font-medium bg-gray-50'>
-														Name
-													</th>
-													<th className='text-left py-3 px-4 font-medium bg-gray-50'>
-														Category
-													</th>
-													<th className='text-left py-3 px-4 font-medium bg-gray-50'>
-														Unit
-													</th>
-													<th className='text-left py-3 px-4 font-medium bg-gray-50'>
-														Supplier
-													</th>
-													<th className='text-left py-3 px-4 font-medium bg-gray-50'>
-														Price
-													</th>
-													<th className='text-left py-3 px-4 font-medium bg-gray-50'>
-														Status
-													</th>
-													<th className='text-left py-3 px-4 font-medium bg-gray-50'>
-														Created
-													</th>
-													<th className='text-right py-3 px-4 font-medium bg-gray-50'>
-														Actions
-													</th>
-												</tr>
-											</thead>
-											<tbody>
-												{products.map(product => (
-													<tr
-														key={product._id}
-														className='border-b hover:bg-gray-50 transition-colors'
-													>
-														<td className='py-3 px-4'>
-															<div>
-																<p className='font-medium'>{product.name}</p>
-																{product.description && (
-																	<p className='text-sm text-gray-500 truncate max-w-xs'>
-																		{product.description}
-																	</p>
-																)}
-															</div>
-														</td>
-														<td className='py-3 px-4'>
-															<span className='inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800'>
-																{getCategoryLabel(product.category)}
-															</span>
-														</td>
-														<td className='py-3 px-4 text-sm text-gray-600'>
-															{getUnitLabel(product.unit)}
-														</td>
-														<td className='py-3 px-4 text-sm text-gray-600'>
-															{product.supplier || '-'}
-														</td>
-														<td className='py-3 px-4 text-sm text-gray-600'>
-															{product.price
-																? formatKRW(product.price)
-																: formatKRW(0)}
-														</td>
-														<td className='py-3 px-4'>
-															<span
-																className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-																	product.isActive
-																		? 'bg-green-100 text-green-800'
-																		: 'bg-red-100 text-red-800'
-																}`}
-															>
-																{product.isActive ? 'Active' : 'Inactive'}
-															</span>
-														</td>
-														<td className='py-3 px-4 text-sm text-gray-600'>
-															{new Date(product.createdAt).toLocaleDateString()}
-														</td>
-														<td className='py-3 px-4 text-right'>
-															<DropdownMenu>
-																<DropdownMenuTrigger asChild>
-																	<Button variant='ghost' size='sm'>
-																		<MoreHorizontal className='h-4 w-4' />
-																	</Button>
-																</DropdownMenuTrigger>
-																<DropdownMenuContent align='end'>
-																	<DropdownMenuLabel>Actions</DropdownMenuLabel>
-																	<DropdownMenuItem
-																		onClick={() => openEditDialog(product)}
-																	>
-																		<Edit className='h-4 w-4 mr-2' />
-																		Edit
-																	</DropdownMenuItem>
-																	<DropdownMenuItem
-																		onClick={() => handleToggleStatus(product)}
-																	>
-																		{product.isActive ? (
-																			<>
-																				<EyeOff className='h-4 w-4 mr-2' />
-																				Deactivate
-																			</>
-																		) : (
-																			<>
-																				<Eye className='h-4 w-4 mr-2' />
-																				Activate
-																			</>
-																		)}
-																	</DropdownMenuItem>
-																	<DropdownMenuSeparator />
-																	<DropdownMenuItem
-																		onClick={() => handleDeleteProduct(product)}
-																		className='text-red-600'
-																	>
-																		<Trash2 className='h-4 w-4 mr-2' />
-																		Delete
-																	</DropdownMenuItem>
-																</DropdownMenuContent>
-															</DropdownMenu>
-														</td>
-													</tr>
-												))}
-											</tbody>
-										</table>
-									</div>
-									{products.length > 10 && (
-										<div className='text-center py-2 text-sm text-gray-500 bg-gray-50 border-t'>
-											Showing {products.length} products - Scroll to see more
-										</div>
-									)}
-								</div>
-							)}
-						</CardContent>
-					</Card>
+					<ProductsTable
+						products={products}
+						searchTerm={searchTerm}
+						categoryFilter={categoryFilter}
+						statusFilter={statusFilter}
+						onEditProduct={openEditDialog}
+						onToggleStatus={handleToggleStatus}
+						onDeleteProduct={handleDeleteProduct}
+					/>
 
 					{/* Edit Dialog */}
 					<Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-						<DialogContent className='sm:max-w-[425px]'>
+						<DialogContent className='sm:max-w-[425px] mx-4 max-h-[90vh] overflow-y-auto'>
 							<DialogHeader>
-								<DialogTitle>Edit Product</DialogTitle>
+								<DialogTitle className='text-lg sm:text-xl'>
+									Edit Product
+								</DialogTitle>
 								<DialogDescription>
 									Update the product information.
 								</DialogDescription>
 							</DialogHeader>
 							<form onSubmit={handleEditProduct} className='space-y-4'>
 								<div>
-									<Label htmlFor='edit-name'>Product Name *</Label>
+									<Label htmlFor='edit-name' className='text-sm font-medium'>
+										Product Name *
+									</Label>
 									<Input
 										id='edit-name'
 										value={formData.name}
@@ -680,18 +292,24 @@ const ProductsManagement: React.FC = () => {
 										}
 										placeholder='Enter product name'
 										required
+										className='mt-1'
 									/>
 								</div>
-								<div className='grid grid-cols-2 gap-4'>
+								<div className='grid grid-cols-1 sm:grid-cols-2 gap-4'>
 									<div>
-										<Label htmlFor='edit-category'>Category *</Label>
+										<Label
+											htmlFor='edit-category'
+											className='text-sm font-medium'
+										>
+											Category *
+										</Label>
 										<Select
 											value={formData.category}
 											onValueChange={(value: ProductCategory) =>
 												setFormData(prev => ({ ...prev, category: value }))
 											}
 										>
-											<SelectTrigger>
+											<SelectTrigger className='mt-1'>
 												<SelectValue placeholder='Select category' />
 											</SelectTrigger>
 											<SelectContent>
@@ -707,14 +325,16 @@ const ProductsManagement: React.FC = () => {
 										</Select>
 									</div>
 									<div>
-										<Label htmlFor='edit-unit'>Unit *</Label>
+										<Label htmlFor='edit-unit' className='text-sm font-medium'>
+											Unit *
+										</Label>
 										<Select
 											value={formData.unit}
 											onValueChange={(value: ProductUnit) =>
 												setFormData(prev => ({ ...prev, unit: value }))
 											}
 										>
-											<SelectTrigger>
+											<SelectTrigger className='mt-1'>
 												<SelectValue placeholder='Select unit' />
 											</SelectTrigger>
 											<SelectContent>
@@ -728,7 +348,12 @@ const ProductsManagement: React.FC = () => {
 									</div>
 								</div>
 								<div>
-									<Label htmlFor='edit-supplier'>Supplier</Label>
+									<Label
+										htmlFor='edit-supplier'
+										className='text-sm font-medium'
+									>
+										Supplier
+									</Label>
 									<Input
 										id='edit-supplier'
 										value={formData.supplier}
@@ -739,10 +364,13 @@ const ProductsManagement: React.FC = () => {
 											}))
 										}
 										placeholder='Enter supplier name'
+										className='mt-1'
 									/>
 								</div>
 								<div>
-									<Label htmlFor='edit-price'>Price (KRW) *</Label>
+									<Label htmlFor='edit-price' className='text-sm font-medium'>
+										Price (KRW) *
+									</Label>
 									<Input
 										id='edit-price'
 										type='text'
@@ -755,10 +383,16 @@ const ProductsManagement: React.FC = () => {
 										}
 										placeholder='₩0 (Korean Won)'
 										required
+										className='mt-1'
 									/>
 								</div>
 								<div>
-									<Label htmlFor='edit-description'>Description</Label>
+									<Label
+										htmlFor='edit-description'
+										className='text-sm font-medium'
+									>
+										Description
+									</Label>
 									<textarea
 										id='edit-description'
 										value={formData.description}
@@ -770,18 +404,23 @@ const ProductsManagement: React.FC = () => {
 										}
 										placeholder='Enter product description'
 										rows={3}
-										className='flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50'
+										className='flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 mt-1'
 									/>
 								</div>
-								<div className='flex justify-end space-x-2'>
+								<div className='flex flex-col sm:flex-row justify-end space-y-2 sm:space-y-0 sm:space-x-2'>
 									<Button
 										type='button'
 										variant='outline'
 										onClick={() => setIsEditDialogOpen(false)}
+										className='w-full sm:w-auto'
 									>
 										Cancel
 									</Button>
-									<Button type='submit' disabled={formLoading}>
+									<Button
+										type='submit'
+										disabled={formLoading}
+										className='w-full sm:w-auto'
+									>
 										{formLoading ? 'Updating...' : 'Update Product'}
 									</Button>
 								</div>
