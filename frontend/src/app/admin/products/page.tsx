@@ -4,6 +4,7 @@ import ProductsFilters from '@/components/admin/products/ProductsFilters'
 import ProductsHeader from '@/components/admin/products/ProductsHeader'
 import ProductsTable from '@/components/admin/products/ProductsTable'
 import AdminLayout from '@/components/shared/AdminLayout'
+import ImageUpload from '@/components/shared/ImageUpload'
 import ProtectedRoute from '@/components/shared/ProtectedRoute'
 import { Button } from '@/components/ui/button'
 import {
@@ -86,6 +87,7 @@ const ProductsManagement: React.FC = () => {
 		description: '',
 		supplier: '',
 		price: 0,
+		images: [],
 	})
 	const [formLoading, setFormLoading] = useState(false)
 
@@ -190,6 +192,7 @@ const ProductsManagement: React.FC = () => {
 			description: product.description || '',
 			supplier: product.supplier || '',
 			price: product.price,
+			images: product.images || [],
 		})
 		setIsEditDialogOpen(true)
 	}
@@ -202,6 +205,7 @@ const ProductsManagement: React.FC = () => {
 			description: '',
 			supplier: '',
 			price: 0,
+			images: [],
 		})
 	}
 
@@ -407,6 +411,19 @@ const ProductsManagement: React.FC = () => {
 										className='flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 mt-1'
 									/>
 								</div>
+
+								{/* Image Upload */}
+								<ImageUpload
+									images={formData.images || []}
+									onImagesChange={images =>
+										setFormData(prev => ({
+											...prev,
+											images,
+										}))
+									}
+									maxImages={5}
+									disabled={formLoading}
+								/>
 								<div className='flex flex-col sm:flex-row justify-end space-y-2 sm:space-y-0 sm:space-x-2'>
 									<Button
 										type='button'

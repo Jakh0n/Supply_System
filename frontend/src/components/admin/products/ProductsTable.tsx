@@ -19,10 +19,12 @@ import {
 	Edit,
 	Eye,
 	EyeOff,
+	ImageIcon,
 	MoreHorizontal,
 	Package,
 	Trash2,
 } from 'lucide-react'
+import Image from 'next/image'
 
 const CATEGORIES = [
 	{ value: 'food' as ProductCategory, label: 'Food' },
@@ -82,6 +84,10 @@ const ProductsTable: React.FC<ProductsTableProps> = ({
 		return UNITS.find(u => u.value === unit)?.label || unit
 	}
 
+	const getPrimaryImage = (product: Product) => {
+		return product.images?.find(img => img.isPrimary) || product.images?.[0]
+	}
+
 	if (products.length === 0) {
 		return (
 			<Card>
@@ -127,7 +133,7 @@ const ProductsTable: React.FC<ProductsTableProps> = ({
 								<thead className='bg-gray-50 sticky top-0 z-10 shadow-sm'>
 									<tr className='border-b border-gray-200'>
 										<th className='text-left py-3 px-4 font-medium bg-gray-50 text-sm whitespace-nowrap'>
-											Name
+											Product
 										</th>
 										<th className='text-left py-3 px-4 font-medium bg-gray-50 text-sm whitespace-nowrap'>
 											Category
@@ -159,13 +165,38 @@ const ProductsTable: React.FC<ProductsTableProps> = ({
 											className='border-b border-gray-100 hover:bg-gray-50 transition-colors'
 										>
 											<td className='py-3 px-4'>
-												<div>
-													<p className='font-medium text-sm'>{product.name}</p>
-													{product.description && (
-														<p className='text-xs text-gray-500 truncate max-w-xs'>
-															{product.description}
+												<div className='flex items-center gap-3'>
+													<div className='w-10 h-10 rounded-lg overflow-hidden bg-gray-100 flex-shrink-0'>
+														{getPrimaryImage(product) ? (
+															<Image
+																src={getPrimaryImage(product)!.url}
+																alt={product.name}
+																width={40}
+																height={40}
+																className='w-full h-full object-cover'
+															/>
+														) : (
+															<div className='w-full h-full flex items-center justify-center'>
+																<ImageIcon className='w-5 h-5 text-gray-400' />
+															</div>
+														)}
+													</div>
+													<div>
+														<p className='font-medium text-sm'>
+															{product.name}
 														</p>
-													)}
+														{product.description && (
+															<p className='text-xs text-gray-500 truncate max-w-xs'>
+																{product.description}
+															</p>
+														)}
+														{product.images && product.images.length > 0 && (
+															<p className='text-xs text-blue-600'>
+																{product.images.length} image
+																{product.images.length > 1 ? 's' : ''}
+															</p>
+														)}
+													</div>
 												</div>
 											</td>
 											<td className='py-3 px-4'>
@@ -263,7 +294,22 @@ const ProductsTable: React.FC<ProductsTableProps> = ({
 							className='hover:shadow-md transition-shadow border border-gray-200'
 						>
 							<CardContent className='p-4'>
-								<div className='flex items-start justify-between mb-3'>
+								<div className='flex items-start gap-3 mb-3'>
+									<div className='w-12 h-12 rounded-lg overflow-hidden bg-gray-100 flex-shrink-0'>
+										{getPrimaryImage(product) ? (
+											<Image
+												src={getPrimaryImage(product)!.url}
+												alt={product.name}
+												width={48}
+												height={48}
+												className='w-full h-full object-cover'
+											/>
+										) : (
+											<div className='w-full h-full flex items-center justify-center'>
+												<ImageIcon className='w-6 h-6 text-gray-400' />
+											</div>
+										)}
+									</div>
 									<div className='flex-1'>
 										<div className='font-medium text-sm text-gray-900'>
 											{product.name}
@@ -271,6 +317,12 @@ const ProductsTable: React.FC<ProductsTableProps> = ({
 										{product.description && (
 											<div className='text-xs text-gray-500 mt-1 line-clamp-2'>
 												{product.description}
+											</div>
+										)}
+										{product.images && product.images.length > 0 && (
+											<div className='text-xs text-blue-600 mt-1'>
+												{product.images.length} image
+												{product.images.length > 1 ? 's' : ''}
 											</div>
 										)}
 									</div>

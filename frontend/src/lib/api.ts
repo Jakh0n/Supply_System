@@ -90,60 +90,6 @@ export const authApi = {
 	},
 }
 
-// Products API
-export const productsApi = {
-	getProducts: async (filters?: ProductFilters): Promise<ProductsResponse> => {
-		const params = new URLSearchParams()
-		if (filters?.category && filters.category !== 'all')
-			params.append('category', filters.category)
-		if (filters?.search) params.append('search', filters.search)
-		if (filters?.active && filters.active !== 'all')
-			params.append('active', filters.active)
-
-		const response = await api.get(`/products?${params.toString()}`)
-		return response.data
-	},
-
-	getProduct: async (id: string): Promise<{ product: Product }> => {
-		const response = await api.get(`/products/${id}`)
-		return response.data
-	},
-
-	createProduct: async (
-		data: ProductFormData
-	): Promise<{ product: Product }> => {
-		const response = await api.post('/products', data)
-		return response.data
-	},
-
-	updateProduct: async (
-		id: string,
-		data: Partial<ProductFormData>
-	): Promise<{ product: Product }> => {
-		const response = await api.put(`/products/${id}`, data)
-		return response.data
-	},
-
-	toggleProductStatus: async (id: string): Promise<{ product: Product }> => {
-		const response = await api.patch(`/products/${id}/toggle-status`)
-		return response.data
-	},
-
-	deleteProduct: async (id: string): Promise<void> => {
-		await api.delete(`/products/${id}`)
-	},
-
-	getCategories: async (): Promise<CategoriesResponse> => {
-		const response = await api.get('/products/meta/categories')
-		return response.data
-	},
-
-	getUnits: async (): Promise<UnitsResponse> => {
-		const response = await api.get('/products/meta/units')
-		return response.data
-	},
-}
-
 // Orders API
 export const ordersApi = {
 	getOrders: async (filters?: OrderFilters): Promise<OrdersResponse> => {
@@ -374,6 +320,88 @@ export const branchesApi = {
 
 	deleteBranch: async (name: string): Promise<void> => {
 		await api.delete(`/branches/${encodeURIComponent(name)}`)
+	},
+}
+
+// Products API
+export const productsApi = {
+	getProducts: async (filters?: ProductFilters): Promise<ProductsResponse> => {
+		const params = new URLSearchParams()
+		if (filters?.category && filters.category !== 'all')
+			params.append('category', filters.category)
+		if (filters?.search) params.append('search', filters.search)
+		if (filters?.active && filters.active !== 'all')
+			params.append('active', filters.active)
+
+		const response = await api.get(`/products?${params.toString()}`)
+		return response.data
+	},
+
+	getProduct: async (id: string): Promise<{ product: Product }> => {
+		const response = await api.get(`/products/${id}`)
+		return response.data
+	},
+
+	uploadImages: async (
+		images: File[]
+	): Promise<{
+		images: Array<{ url: string; publicId: string; isPrimary: boolean }>
+	}> => {
+		const formData = new FormData()
+		images.forEach(image => {
+			formData.append('images', image)
+		})
+
+		const response = await api.post('/products/upload-images', formData, {
+			headers: {
+				'Content-Type': 'multipart/form-data',
+			},
+		})
+		return response.data
+	},
+
+	createProduct: async (
+		data: ProductFormData
+	): Promise<{ product: Product }> => {
+		const response = await api.post('/products', data)
+		return response.data
+	},
+
+	updateProduct: async (
+		id: string,
+		data: Partial<ProductFormData>
+	): Promise<{ product: Product }> => {
+		const response = await api.put(`/products/${id}`, data)
+		return response.data
+	},
+
+	toggleProductStatus: async (id: string): Promise<{ product: Product }> => {
+		const response = await api.patch(`/products/${id}/toggle-status`)
+		return response.data
+	},
+
+	deleteProduct: async (id: string): Promise<void> => {
+		await api.delete(`/products/${id}`)
+	},
+
+	deleteProductImage: async (
+		productId: string,
+		publicId: string
+	): Promise<{ product: Product }> => {
+		const response = await api.delete(
+			`/products/${productId}/images/${publicId}`
+		)
+		return response.data
+	},
+
+	getCategories: async (): Promise<CategoriesResponse> => {
+		const response = await api.get('/products/meta/categories')
+		return response.data
+	},
+
+	getUnits: async (): Promise<UnitsResponse> => {
+		const response = await api.get('/products/meta/units')
+		return response.data
 	},
 }
 

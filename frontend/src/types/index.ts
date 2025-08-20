@@ -27,6 +27,12 @@ export interface RegisterData {
 	branch?: string
 }
 
+export interface ProductImage {
+	url: string
+	publicId: string
+	isPrimary: boolean
+}
+
 export interface Product {
 	_id: string
 	name: string
@@ -35,6 +41,7 @@ export interface Product {
 	description?: string
 	supplier?: string
 	price: number
+	images: ProductImage[]
 	isActive: boolean
 	createdBy: {
 		_id: string
@@ -70,6 +77,7 @@ export interface ProductFormData {
 	description?: string
 	supplier?: string
 	price: number
+	images?: ProductImage[]
 }
 
 export interface OrderItem {
