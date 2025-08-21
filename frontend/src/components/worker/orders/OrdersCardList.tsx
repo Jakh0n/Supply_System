@@ -1,9 +1,15 @@
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
-import { Order } from '@/types'
+import { Order, Product } from '@/types'
 import { Calendar, Eye, Package, Trash2 } from 'lucide-react'
+import Image from 'next/image'
 import React from 'react'
+
+// Helper function to get primary image
+const getPrimaryImage = (product: Product) => {
+	return product.images?.find(img => img.isPrimary) || product.images?.[0]
+}
 
 interface OrdersCardListProps {
 	orders: Order[]
@@ -74,15 +80,32 @@ const OrdersCardList: React.FC<OrdersCardListProps> = ({
 
 						{/* Items Preview */}
 						<div className='mb-3'>
-							<div className='text-xs text-gray-500 mb-1'>Items:</div>
-							<div className='space-y-1'>
+							<div className='text-xs text-gray-500 mb-2'>Items:</div>
+							<div className='space-y-2'>
 								{order.items.slice(0, 2).map((item, index) => (
-									<div key={index} className='text-sm'>
-										{item.product.name} (x{item.quantity})
+									<div key={index} className='flex items-center gap-2'>
+										<div className='w-6 h-6 rounded overflow-hidden bg-gray-100 flex-shrink-0'>
+											{getPrimaryImage(item.product) ? (
+												<Image
+													src={getPrimaryImage(item.product)!.url}
+													alt={item.product.name}
+													width={24}
+													height={24}
+													className='w-full h-full object-cover'
+												/>
+											) : (
+												<div className='w-full h-full flex items-center justify-center'>
+													<Package className='w-3 h-3 text-gray-400' />
+												</div>
+											)}
+										</div>
+										<div className='text-sm truncate flex-1'>
+											{item.product.name} (x{item.quantity})
+										</div>
 									</div>
 								))}
 								{order.items.length > 2 && (
-									<div className='text-xs text-gray-500'>
+									<div className='text-xs text-gray-500 ml-8'>
 										+{order.items.length - 2} more items
 									</div>
 								)}

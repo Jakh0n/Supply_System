@@ -9,6 +9,7 @@ import {
 } from '@/components/ui/dialog'
 import { Order } from '@/types'
 import { Calendar, MapPin, Package, User, X } from 'lucide-react'
+import Image from 'next/image'
 import React from 'react'
 
 interface OrderDetailModalProps {
@@ -47,6 +48,13 @@ const formatDate = (dateString: string): string => {
 // Helper function to get total quantity
 const getTotalQuantity = (items: Array<{ quantity: number }>): number => {
 	return items.reduce((total, item) => total + item.quantity, 0)
+}
+
+// Helper function to get primary image
+const getPrimaryImage = (product: any) => {
+	return (
+		product.images?.find((img: any) => img.isPrimary) || product.images?.[0]
+	)
 }
 
 const OrderDetailModal: React.FC<OrderDetailModalProps> = ({
@@ -136,16 +144,33 @@ const OrderDetailModal: React.FC<OrderDetailModalProps> = ({
 									key={index}
 									className='flex items-center justify-between p-3 bg-gray-50 rounded-lg'
 								>
-									<div className='flex-1'>
-										<div className='font-medium'>{item.product.name}</div>
-										<div className='text-sm text-gray-600'>
-											{item.product.category} • {item.product.unit}
+									<div className='flex items-center flex-1'>
+										<div className='w-10 h-10 rounded-lg overflow-hidden bg-gray-100 flex-shrink-0 mr-3'>
+											{getPrimaryImage(item.product) ? (
+												<Image
+													src={getPrimaryImage(item.product)!.url}
+													alt={item.product.name}
+													width={40}
+													height={40}
+													className='w-full h-full object-cover'
+												/>
+											) : (
+												<div className='w-full h-full flex items-center justify-center'>
+													<Package className='w-5 h-5 text-gray-400' />
+												</div>
+											)}
 										</div>
-										{item.notes && (
-											<div className='text-sm text-gray-500 mt-1'>
-												Note: {item.notes}
+										<div className='flex-1'>
+											<div className='font-medium'>{item.product.name}</div>
+											<div className='text-sm text-gray-600'>
+												{item.product.category} • {item.product.unit}
 											</div>
-										)}
+											{item.notes && (
+												<div className='text-sm text-gray-500 mt-1'>
+													Note: {item.notes}
+												</div>
+											)}
+										</div>
 									</div>
 									<div className='text-right'>
 										<div className='font-medium'>x{item.quantity}</div>
