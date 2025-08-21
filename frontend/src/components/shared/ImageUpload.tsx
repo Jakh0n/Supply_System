@@ -2,10 +2,15 @@
 
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
+import ProductImageComponent from '@/components/ui/ProductImage'
+import {
+	createImagePreviewUrl,
+	revokeImagePreviewUrl,
+	validateImageFiles,
+} from '@/lib/imageUtils'
 import { ProductImage } from '@/types'
-import { ImageIcon, Upload, X } from 'lucide-react'
-import Image from 'next/image'
-import React, { useCallback, useState } from 'react'
+import { Upload, X } from 'lucide-react'
+import React, { useCallback, useEffect, useState } from 'react'
 import { toast } from 'sonner'
 
 interface ImageUploadProps {
@@ -24,6 +29,16 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
 	const [dragActive, setDragActive] = useState(false)
 	const [uploading, setUploading] = useState(false)
 
+	// Cleanup blob URLs when component unmounts or images change
+	useEffect(() => {
+		return () => {
+			// Clean up any remaining blob URLs when component unmounts
+			images.forEach(image => {
+				revokeImagePreviewUrl(image.url)
+			})
+		}
+	}, [images])
+
 	const handleDrag = useCallback((e: React.DragEvent) => {
 		e.preventDefault()
 		e.stopPropagation()
@@ -34,36 +49,92 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
 		}
 	}, [])
 
-	const validateFiles = (files: FileList) => {
-		const validFiles: File[] = []
-		const maxFileSize = 5 * 1024 * 1024 // 5MB
+	const validateFiles = useCallback(
+		(files: FileList) => {
+			const { validFiles, errors } = validateImageFiles(files, {
+				maxFiles: maxImages - images.length,
+				maxFileSize: 5 * 1024 * 1024, // 5MB
+				allowedTypes: [
+					'image/jpeg',
+					'image/jpg',
+					'image/png',
+					'image/webp',
+					'image/gif',
+				],
+			})
 
-		for (let i = 0; i < files.length; i++) {
-			const file = files[i]
+			// Show any validation errors
+			errors.forEach(error => {
+				toast.error(error)
+			})
 
-			// Check file type
-			if (!file.type.startsWith('image/')) {
-				toast.error(`${file.name} is not a valid image file`)
-				continue
+			return validFiles
+		},
+		[maxImages, images.length]
+	)
+
+	const uploadFiles = useCallback(
+		async (files: File[]) => {
+			try {
+				setUploading(true)
+
+				// Create preview URLs for immediate display
+				const previewImages: ProductImage[] = files.map((file, index) => ({
+					url: createImagePreviewUrl(file),
+					publicId: `temp-${Date.now()}-${index}`,
+					isPrimary: images.length === 0 && index === 0, // First image is primary if no existing images
+				}))
+
+				// Add preview images immediately
+				const imagesWithPreviews = [...images, ...previewImages]
+				onImagesChange(imagesWithPreviews)
+
+				// Upload to backend
+				const { productsApi } = await import('@/lib/api')
+				const response = await productsApi.uploadImages(files)
+
+				// Replace preview images with actual uploaded images
+				const newImages = [...imagesWithPreviews] // Use the updated state with previews
+				response.images.forEach((uploadedImage, index) => {
+					const previewIndex = newImages.findIndex(
+						img => img.publicId === previewImages[index].publicId
+					)
+					if (previewIndex !== -1) {
+						// Revoke the preview URL
+						revokeImagePreviewUrl(newImages[previewIndex].url)
+						// Replace with actual uploaded image
+						newImages[previewIndex] = uploadedImage
+					}
+				})
+
+				onImagesChange(newImages)
+				toast.success(
+					`${files.length} image${
+						files.length > 1 ? 's' : ''
+					} uploaded successfully`
+				)
+			} catch (error) {
+				console.error('Upload error:', error)
+				toast.error('Failed to upload images')
+
+				// Clean up preview URLs and remove preview images on error
+				const previewImagesInState = images.filter(img =>
+					img.publicId.startsWith('temp-')
+				)
+				previewImagesInState.forEach(img => {
+					revokeImagePreviewUrl(img.url)
+				})
+
+				const filteredImages = images.filter(
+					img => !img.publicId.startsWith('temp-')
+				)
+				onImagesChange(filteredImages)
+			} finally {
+				setUploading(false)
 			}
-
-			// Check file size
-			if (file.size > maxFileSize) {
-				toast.error(`${file.name} is too large. Maximum size is 5MB`)
-				continue
-			}
-
-			// Check if we're at the limit
-			if (images.length + validFiles.length >= maxImages) {
-				toast.error(`Maximum ${maxImages} images allowed`)
-				break
-			}
-
-			validFiles.push(file)
-		}
-
-		return validFiles
-	}
+		},
+		[images, onImagesChange]
+	)
 
 	const handleDrop = useCallback(
 		async (e: React.DragEvent) => {
@@ -81,7 +152,7 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
 				}
 			}
 		},
-		[disabled, uploading, images, maxImages]
+		[disabled, uploading, validateFiles, uploadFiles]
 	)
 
 	const handleFileSelect = useCallback(
@@ -99,70 +170,15 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
 			// Reset the input
 			e.target.value = ''
 		},
-		[disabled, uploading, images, maxImages]
+		[disabled, uploading, validateFiles, uploadFiles]
 	)
-
-	const uploadFiles = async (files: File[]) => {
-		try {
-			setUploading(true)
-
-			// Create preview URLs for immediate display
-			const previewImages: ProductImage[] = files.map((file, index) => ({
-				url: URL.createObjectURL(file),
-				publicId: `temp-${Date.now()}-${index}`,
-				isPrimary: images.length === 0 && index === 0, // First image is primary if no existing images
-			}))
-
-			// Add preview images immediately
-			const imagesWithPreviews = [...images, ...previewImages]
-			onImagesChange(imagesWithPreviews)
-
-			// Upload to backend
-			const { productsApi } = await import('@/lib/api')
-			const response = await productsApi.uploadImages(files)
-
-			// Replace preview images with actual uploaded images
-			const newImages = [...imagesWithPreviews] // Use the updated state with previews
-			response.images.forEach((uploadedImage, index) => {
-				const previewIndex = newImages.findIndex(
-					img => img.publicId === previewImages[index].publicId
-				)
-				if (previewIndex !== -1) {
-					// Revoke the preview URL
-					URL.revokeObjectURL(newImages[previewIndex].url)
-					// Replace with actual uploaded image
-					newImages[previewIndex] = uploadedImage
-				}
-			})
-
-			onImagesChange(newImages)
-			toast.success(
-				`${files.length} image${
-					files.length > 1 ? 's' : ''
-				} uploaded successfully`
-			)
-		} catch (error) {
-			console.error('Upload error:', error)
-			toast.error('Failed to upload images')
-
-			// Remove preview images on error
-			const filteredImages = images.filter(
-				img => !img.publicId.startsWith('temp-')
-			)
-			onImagesChange(filteredImages)
-		} finally {
-			setUploading(false)
-		}
-	}
 
 	const removeImage = (index: number) => {
 		const newImages = [...images]
 		const removedImage = newImages[index]
 
 		// Revoke object URL if it's a preview
-		if (removedImage.url.startsWith('blob:')) {
-			URL.revokeObjectURL(removedImage.url)
-		}
+		revokeImagePreviewUrl(removedImage.url)
 
 		newImages.splice(index, 1)
 
@@ -243,24 +259,20 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
 							className='relative group rounded-lg overflow-hidden border border-gray-200'
 						>
 							{/* Image */}
-							<div className='aspect-square relative bg-gray-100'>
-								{image.url.startsWith('blob:') ||
-								image.url.includes('cloudinary.com') ? (
-									<Image
-										src={image.url}
-										alt={`Product image ${index + 1}`}
-										fill
-										className='object-cover'
-									/>
-								) : (
-									<div className='w-full h-full flex items-center justify-center'>
-										<ImageIcon className='w-8 h-8 text-gray-400' />
-									</div>
-								)}
+							<div className='aspect-square relative'>
+								<ProductImageComponent
+									src={image}
+									alt={`Product image ${index + 1}`}
+									fill
+									className='object-cover'
+									showLoading={true}
+									showError={true}
+									containerClassName='w-full h-full'
+								/>
 
-								{/* Loading overlay */}
+								{/* Loading overlay for temp images */}
 								{image.publicId.startsWith('temp-') && (
-									<div className='absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center'>
+									<div className='absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center z-10'>
 										<div className='w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin' />
 									</div>
 								)}

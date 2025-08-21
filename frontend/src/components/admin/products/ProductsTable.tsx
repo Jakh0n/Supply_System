@@ -14,17 +14,17 @@ import {
 	DropdownMenuSeparator,
 	DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
+import { ProductThumbnail } from '@/components/ui/ProductImage'
+import { getPrimaryImage } from '@/lib/imageUtils'
 import { Product, ProductCategory, ProductUnit } from '@/types'
 import {
 	Edit,
 	Eye,
 	EyeOff,
-	ImageIcon,
 	MoreHorizontal,
 	Package,
 	Trash2,
 } from 'lucide-react'
-import Image from 'next/image'
 
 const CATEGORIES = [
 	{ value: 'food' as ProductCategory, label: 'Food' },
@@ -84,9 +84,7 @@ const ProductsTable: React.FC<ProductsTableProps> = ({
 		return UNITS.find(u => u.value === unit)?.label || unit
 	}
 
-	const getPrimaryImage = (product: Product) => {
-		return product.images?.find(img => img.isPrimary) || product.images?.[0]
-	}
+	// getPrimaryImage function is now imported from imageUtils
 
 	if (products.length === 0) {
 		return (
@@ -166,20 +164,13 @@ const ProductsTable: React.FC<ProductsTableProps> = ({
 										>
 											<td className='py-3 px-4'>
 												<div className='flex items-center gap-3'>
-													<div className='w-10 h-10 rounded-lg overflow-hidden bg-gray-100 flex-shrink-0'>
-														{getPrimaryImage(product) ? (
-															<Image
-																src={getPrimaryImage(product)!.url}
-																alt={product.name}
-																width={40}
-																height={40}
-																className='w-full h-full object-cover'
-															/>
-														) : (
-															<div className='w-full h-full flex items-center justify-center'>
-																<ImageIcon className='w-5 h-5 text-gray-400' />
-															</div>
-														)}
+													<div className='w-10 h-10 flex-shrink-0'>
+														<ProductThumbnail
+															src={getPrimaryImage(product)}
+															alt={product.name}
+															size='sm'
+															priority={false}
+														/>
 													</div>
 													<div>
 														<p className='font-medium text-sm'>
@@ -295,20 +286,13 @@ const ProductsTable: React.FC<ProductsTableProps> = ({
 						>
 							<CardContent className='p-4'>
 								<div className='flex items-start gap-3 mb-3'>
-									<div className='w-12 h-12 rounded-lg overflow-hidden bg-gray-100 flex-shrink-0'>
-										{getPrimaryImage(product) ? (
-											<Image
-												src={getPrimaryImage(product)!.url}
-												alt={product.name}
-												width={48}
-												height={48}
-												className='w-full h-full object-cover'
-											/>
-										) : (
-											<div className='w-full h-full flex items-center justify-center'>
-												<ImageIcon className='w-6 h-6 text-gray-400' />
-											</div>
-										)}
+									<div className='w-12 h-12 flex-shrink-0'>
+										<ProductThumbnail
+											src={getPrimaryImage(product)}
+											alt={product.name}
+											size='md'
+											priority={false}
+										/>
 									</div>
 									<div className='flex-1'>
 										<div className='font-medium text-sm text-gray-900'>

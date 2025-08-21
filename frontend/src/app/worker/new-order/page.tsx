@@ -20,6 +20,7 @@ import {
 } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { ProductThumbnail } from '@/components/ui/ProductImage'
 import {
 	Select,
 	SelectContent,
@@ -29,6 +30,7 @@ import {
 } from '@/components/ui/select'
 import { useAuth } from '@/contexts/AuthContext'
 import { branchesApi, ordersApi, productsApi } from '@/lib/api'
+import { getPrimaryImage } from '@/lib/imageUtils'
 import { Product, ProductCategory } from '@/types'
 import {
 	AlertCircle,
@@ -43,7 +45,6 @@ import {
 	Trash2,
 	X,
 } from 'lucide-react'
-import Image from 'next/image'
 import { useRouter } from 'next/navigation'
 import React, { useCallback, useEffect, useState } from 'react'
 import { toast } from 'sonner'
@@ -220,10 +221,7 @@ const NewOrder: React.FC = () => {
 		return products.filter(product => !addedProductIds.includes(product._id))
 	}
 
-	// Get primary image for product
-	const getPrimaryImage = (product: Product) => {
-		return product.images?.find(img => img.isPrimary) || product.images?.[0]
-	}
+	// getPrimaryImage function is now imported from imageUtils
 
 	// Handle showing suggestions modal
 	const handleShowSuggestions = () => {
@@ -475,20 +473,13 @@ const NewOrder: React.FC = () => {
 													>
 														<div className='flex items-start justify-between mb-2'>
 															<div className='flex items-start flex-1 min-w-0'>
-																<div className='w-10 h-10 rounded-lg overflow-hidden bg-gray-100 flex-shrink-0 mr-3'>
-																	{getPrimaryImage(product) ? (
-																		<Image
-																			src={getPrimaryImage(product)!.url}
-																			alt={product.name}
-																			width={40}
-																			height={40}
-																			className='w-full h-full object-cover'
-																		/>
-																	) : (
-																		<div className='w-full h-full flex items-center justify-center'>
-																			<Package className='w-5 h-5 text-gray-400' />
-																		</div>
-																	)}
+																<div className='w-10 h-10 flex-shrink-0 mr-3'>
+																	<ProductThumbnail
+																		src={getPrimaryImage(product)}
+																		alt={product.name}
+																		size='sm'
+																		priority={false}
+																	/>
 																</div>
 																<div className='min-w-0 flex-1'>
 																	<p className='font-medium text-sm text-gray-900 mb-1 line-clamp-2'>
@@ -549,20 +540,13 @@ const NewOrder: React.FC = () => {
 															>
 																<td className='p-3'>
 																	<div className='flex items-start'>
-																		<div className='w-10 h-10 rounded-lg overflow-hidden bg-gray-100 flex-shrink-0 mr-3'>
-																			{getPrimaryImage(product) ? (
-																				<Image
-																					src={getPrimaryImage(product)!.url}
-																					alt={product.name}
-																					width={40}
-																					height={40}
-																					className='w-full h-full object-cover'
-																				/>
-																			) : (
-																				<div className='w-full h-full flex items-center justify-center'>
-																					<Package className='w-5 h-5 text-gray-400' />
-																				</div>
-																			)}
+																		<div className='w-10 h-10 flex-shrink-0 mr-3'>
+																			<ProductThumbnail
+																				src={getPrimaryImage(product)}
+																				alt={product.name}
+																				size='sm'
+																				priority={false}
+																			/>
 																		</div>
 																		<div className='min-w-0 flex-1'>
 																			<p className='font-medium text-sm text-gray-900 mb-1 truncate'>
@@ -961,20 +945,13 @@ const NewOrder: React.FC = () => {
 													{/* Mobile Layout */}
 													<div className='block sm:hidden'>
 														<div className='flex items-start mb-2'>
-															<div className='w-10 h-10 rounded-lg overflow-hidden bg-gray-100 flex-shrink-0 mr-3'>
-																{getPrimaryImage(product) ? (
-																	<Image
-																		src={getPrimaryImage(product)!.url}
-																		alt={product.name}
-																		width={40}
-																		height={40}
-																		className='w-full h-full object-cover'
-																	/>
-																) : (
-																	<div className='w-full h-full flex items-center justify-center'>
-																		<Package className='w-5 h-5 text-gray-400' />
-																	</div>
-																)}
+															<div className='w-10 h-10 flex-shrink-0 mr-3'>
+																<ProductThumbnail
+																	src={getPrimaryImage(product)}
+																	alt={product.name}
+																	size='sm'
+																	priority={false}
+																/>
 															</div>
 															<div className='flex-1 min-w-0'>
 																<p className='font-medium text-sm text-gray-900 mb-1 line-clamp-2'>
@@ -1013,20 +990,13 @@ const NewOrder: React.FC = () => {
 													{/* Desktop Layout */}
 													<div className='hidden sm:flex items-center justify-between'>
 														<div className='flex items-center flex-1 min-w-0 mr-3'>
-															<div className='w-10 h-10 rounded-lg overflow-hidden bg-gray-100 flex-shrink-0 mr-3'>
-																{getPrimaryImage(product) ? (
-																	<Image
-																		src={getPrimaryImage(product)!.url}
-																		alt={product.name}
-																		width={40}
-																		height={40}
-																		className='w-full h-full object-cover'
-																	/>
-																) : (
-																	<div className='w-full h-full flex items-center justify-center'>
-																		<Package className='w-5 h-5 text-gray-400' />
-																	</div>
-																)}
+															<div className='w-10 h-10 flex-shrink-0 mr-3'>
+																<ProductThumbnail
+																	src={getPrimaryImage(product)}
+																	alt={product.name}
+																	size='sm'
+																	priority={false}
+																/>
 															</div>
 															<div className='min-w-0 flex-1'>
 																<p className='font-medium text-sm text-gray-900 truncate mb-1'>
