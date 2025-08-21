@@ -3,7 +3,6 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Order, Product } from '@/types'
 import { Calendar, Eye, Package, Trash2 } from 'lucide-react'
-import Image from 'next/image'
 import React from 'react'
 
 // Helper function to get primary image
@@ -84,20 +83,14 @@ const OrdersCardList: React.FC<OrdersCardListProps> = ({
 							<div className='space-y-2'>
 								{order.items.slice(0, 2).map((item, index) => (
 									<div key={index} className='flex items-center gap-2'>
-										<div className='w-6 h-6 rounded overflow-hidden bg-gray-100 flex-shrink-0'>
-											{getPrimaryImage(item.product) ? (
-												<Image
-													src={getPrimaryImage(item.product)!.url}
-													alt={item.product.name}
-													width={24}
-													height={24}
-													className='w-full h-full object-cover'
-												/>
-											) : (
-												<div className='w-full h-full flex items-center justify-center'>
-													<Package className='w-3 h-3 text-gray-400' />
-												</div>
-											)}
+										<div className='w-6 h-6 rounded overflow-hidden flex-shrink-0'>
+											<ProductThumbnail
+												src={getPrimaryImage(item.product)}
+												alt={item.product.name}
+												category={item.product.category}
+												size='sm'
+												className='rounded w-6 h-6'
+											/>
 										</div>
 										<div className='text-sm truncate flex-1'>
 											{item.product.name} (x{item.quantity})

@@ -26,6 +26,7 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { ProductThumbnail } from '@/components/ui/ProductImage'
 import {
 	Select,
 	SelectContent,
@@ -35,6 +36,7 @@ import {
 } from '@/components/ui/select'
 import { useAuth } from '@/contexts/AuthContext'
 import { ordersApi } from '@/lib/api'
+import { getPrimaryImage } from '@/lib/imageUtils'
 import { Order, OrderStatus } from '@/types'
 import {
 	AlertCircle,
@@ -807,7 +809,15 @@ const MyOrders: React.FC = () => {
 												>
 													<div className='flex-1 min-w-0'>
 														<div className='flex items-center'>
-															<Package className='h-3 w-3 sm:h-4 sm:w-4 text-gray-400 mr-2 flex-shrink-0' />
+															<div className='w-8 h-8 sm:w-10 sm:h-10 flex-shrink-0 mr-2'>
+																<ProductThumbnail
+																	src={getPrimaryImage(item.product)}
+																	alt={item.product.name}
+																	category={item.product.category}
+																	size='sm'
+																	className='rounded-lg'
+																/>
+															</div>
 															<div className='min-w-0 flex-1'>
 																<p className='font-medium text-xs sm:text-sm truncate'>
 																	{item.product.name}

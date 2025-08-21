@@ -59,7 +59,7 @@ const DashboardStats: React.FC<DashboardStatsProps> = ({
 
 	const statsData = [
 		{
-			title: 'Today Orders',
+			title: "Today's Orders",
 			value: stats.todayOrders,
 			icon: ShoppingCart,
 			color: 'text-blue-600',
@@ -89,6 +89,9 @@ const DashboardStats: React.FC<DashboardStatsProps> = ({
 			color: 'text-purple-600',
 			bgColor: 'bg-purple-50',
 			description: 'All time revenue',
+			subValue: stats.todayRevenue
+				? `Today: ${formatKRW(stats.todayRevenue)}`
+				: '',
 		},
 	]
 
@@ -120,6 +123,11 @@ const DashboardStats: React.FC<DashboardStatsProps> = ({
 								: stat.value}
 						</div>
 						<p className='text-xs text-gray-500 truncate'>{stat.description}</p>
+						{stat.subValue && (
+							<p className='text-xs text-green-600 font-medium mt-1 truncate'>
+								{stat.subValue}
+							</p>
+						)}
 					</CardContent>
 				</Card>
 			))}

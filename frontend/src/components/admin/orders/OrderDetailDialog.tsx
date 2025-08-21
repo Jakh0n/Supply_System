@@ -6,9 +6,10 @@ import {
 	DialogTitle,
 } from '@/components/ui/dialog'
 import { Label } from '@/components/ui/label'
-import { Order, OrderStatus, Product } from '@/types'
+import { ProductThumbnail } from '@/components/ui/ProductImage'
+import { getPrimaryImage } from '@/lib/imageUtils'
+import { Order, OrderStatus } from '@/types'
 import { CheckCircle, Clock, Package, Truck, XCircle } from 'lucide-react'
-import Image from 'next/image'
 
 // Helper function to format date
 const formatDate = (dateString: string): string => {
@@ -27,11 +28,6 @@ const formatKRW = (price: number): string => {
 		minimumFractionDigits: 0,
 		maximumFractionDigits: 0,
 	}).format(price)
-}
-
-// Helper function to get primary image
-const getPrimaryImage = (product: Product) => {
-	return product.images?.find(img => img.isPrimary) || product.images?.[0]
 }
 
 // Helper function to get status color and icon
@@ -150,20 +146,14 @@ const OrderDetailDialog: React.FC<OrderDetailDialogProps> = ({
 									className='flex flex-col sm:flex-row sm:justify-between sm:items-start p-3 bg-gray-50 rounded-lg space-y-2 sm:space-y-0'
 								>
 									<div className='flex items-start gap-3 flex-1'>
-										<div className='w-10 h-10 rounded-lg overflow-hidden bg-gray-100 flex-shrink-0'>
-											{getPrimaryImage(item.product) ? (
-												<Image
-													src={getPrimaryImage(item.product)!.url}
-													alt={item.product.name}
-													width={40}
-													height={40}
-													className='w-full h-full object-cover'
-												/>
-											) : (
-												<div className='w-full h-full flex items-center justify-center'>
-													<Package className='w-5 h-5 text-gray-400' />
-												</div>
-											)}
+										<div className='w-10 h-10 rounded-lg overflow-hidden flex-shrink-0'>
+											<ProductThumbnail
+												src={getPrimaryImage(item.product)}
+												alt={item.product.name}
+												category={item.product.category}
+												size='sm'
+												className='rounded-lg'
+											/>
 										</div>
 										<div className='min-w-0 flex-1'>
 											<p className='font-medium text-sm'>{item.product.name}</p>

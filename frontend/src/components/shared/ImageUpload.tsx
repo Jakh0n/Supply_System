@@ -266,7 +266,6 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
 									fill
 									className='object-cover'
 									showLoading={true}
-									showError={true}
 									containerClassName='w-full h-full'
 								/>
 

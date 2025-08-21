@@ -4,5 +4,6 @@ export { default as FinancialMetrics } from './FinancialMetrics'
 export { default as ProductInsights } from './ProductInsights'
 export { default as QuickActions } from './QuickActions'
 export { default as RecentActions } from './RecentActions'
+
 export { default as SystemStatus } from './SystemStatus'
 export { default as TimeframeSelector } from './TimeframeSelector'

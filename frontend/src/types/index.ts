@@ -181,6 +181,8 @@ export interface DashboardStats {
 	totalProducts?: number
 	completedOrders?: number
 	totalRevenue?: number
+	todayRevenue?: number
+	totalItems?: number
 	branchStats: Array<{
 		_id: string
 		totalOrders: number
@@ -262,10 +264,39 @@ export interface FinancialMetrics {
 	weeklySpending: number
 	monthlySpending: number
 	avgOrderValue: number
+
+	// Growth metrics (real historical data)
+	dailyGrowth?: number
+	weeklyGrowth?: number
+	monthlyGrowth?: number
+	avgOrderGrowth?: number
+
+	// Previous period data for comparison
+	previousPeriod?: {
+		dailySpending: number
+		weeklySpending: number
+		monthlySpending: number
+		avgOrderValue?: number
+	}
+
+	// Additional insights
+	totalOrders?: number
+	totalItems?: number
+
+	// Enhanced branch spending data
 	topSpendingBranches: Array<{
 		branch: string
 		spending: number
+		orderCount?: number
+		itemCount?: number
+		avgOrderValue?: number
 	}>
+
+	// Status breakdown
+	statusBreakdown?: {
+		completed: number
+		pending: number
+	}
 }
 
 export interface BranchAnalyticsResponse {

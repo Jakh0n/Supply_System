@@ -1,7 +1,7 @@
 import { isValidImageUrl, optimizeImageUrl } from '@/lib/imageUtils'
 import { cn } from '@/lib/utils'
 import { ProductImage as ProductImageType } from '@/types'
-import { AlertCircle, ImageIcon } from 'lucide-react'
+import { Coffee, ImageIcon, Package, ShoppingBag, Utensils } from 'lucide-react'
 import Image from 'next/image'
 import React, { useCallback, useState } from 'react'
 
@@ -10,6 +10,14 @@ interface ProductImageProps {
 	src: string | ProductImageType | null | undefined
 	/** Alternative text for the image */
 	alt: string
+	/** Product category for fallback icon */
+	category?:
+		| 'food'
+		| 'beverages'
+		| 'cleaning'
+		| 'equipment'
+		| 'packaging'
+		| 'other'
 	/** Image width */
 	width?: number
 	/** Image height */
@@ -24,8 +32,6 @@ interface ProductImageProps {
 	objectFit?: 'contain' | 'cover' | 'fill' | 'none' | 'scale-down'
 	/** Show loading state */
 	showLoading?: boolean
-	/** Show error state */
-	showError?: boolean
 	/** Custom placeholder component */
 	placeholder?: React.ReactNode
 	/** Custom error component */
@@ -54,6 +60,7 @@ interface ProductImageProps {
 const ProductImage: React.FC<ProductImageProps> = ({
 	src,
 	alt,
+	category,
 	width,
 	height,
 	className,
@@ -61,7 +68,6 @@ const ProductImage: React.FC<ProductImageProps> = ({
 	fill = false,
 	objectFit = 'cover',
 	showLoading = true,
-	showError = true,
 	placeholder,
 	errorComponent,
 	optimize,
@@ -72,7 +78,6 @@ const ProductImage: React.FC<ProductImageProps> = ({
 }) => {
 	const [isLoading, setIsLoading] = useState(true)
 	const [hasError, setHasError] = useState(false)
-	const [errorMessage, setErrorMessage] = useState<string>('')
 
 	// Extract URL from src prop
 	const imageUrl = typeof src === 'string' ? src : src?.url
@@ -87,57 +92,53 @@ const ProductImage: React.FC<ProductImageProps> = ({
 	const handleLoad = useCallback(() => {
 		setIsLoading(false)
 		setHasError(false)
-		setErrorMessage('')
 		onLoad?.()
 	}, [onLoad])
 
 	const handleError = useCallback(() => {
 		setIsLoading(false)
 		setHasError(true)
-		const error = 'Failed to load image'
-		setErrorMessage(error)
-		onError?.(error)
+		onError?.('Failed to load image')
 	}, [onError])
 
-	// Default placeholder component
+	// Get category-specific icon
+	const getCategoryIcon = () => {
+		switch (category) {
+			case 'food':
+				return <Utensils className='w-6 h-6 text-orange-400' />
+			case 'beverages':
+				return <Coffee className='w-6 h-6 text-blue-400' />
+			case 'cleaning':
+				return <ShoppingBag className='w-6 h-6 text-green-400' />
+			case 'equipment':
+				return <Package className='w-6 h-6 text-purple-400' />
+			case 'packaging':
+				return <Package className='w-6 h-6 text-indigo-400' />
+			default:
+				return <ImageIcon className='w-6 h-6 text-gray-400' />
+		}
+	}
+
+	// Default placeholder component with category-specific icon
 	const DefaultPlaceholder = () => (
-		<div className='w-full h-full flex items-center justify-center bg-gray-100'>
-			{showLoading && isLoading ? (
-				<div className='flex flex-col items-center gap-2'>
-					<div className='w-6 h-6 border-2 border-gray-300 border-t-gray-600 rounded-full animate-spin' />
-					<span className='text-xs text-gray-500'>Loading...</span>
-				</div>
-			) : (
-				<ImageIcon className='w-8 h-8 text-gray-400' />
-			)}
+		<div className='w-full h-full flex items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100 border border-gray-200 rounded-md'>
+			{getCategoryIcon()}
 		</div>
 	)
 
-	// Default error component
+	// Default error component - show category icon like placeholder
 	const DefaultError = () => (
-		<div className='w-full h-full flex items-center justify-center bg-gray-50 border border-gray-200'>
-			{showError ? (
-				<div className='flex flex-col items-center gap-2 text-center p-2'>
-					<AlertCircle className='w-6 h-6 text-red-400' />
-					<span className='text-xs text-red-600'>Image failed to load</span>
-					{errorMessage && (
-						<span className='text-xs text-gray-500 max-w-full truncate'>
-							{errorMessage}
-						</span>
-					)}
-				</div>
-			) : (
-				<ImageIcon className='w-6 h-6 text-gray-400' />
-			)}
+		<div className='w-full h-full flex items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100 border border-gray-200 rounded-md'>
+			{getCategoryIcon()}
 		</div>
 	)
 
-	// If no valid URL, show placeholder or error
+	// If no valid URL, show placeholder immediately (no loading state)
 	if (!isValidUrl) {
 		return (
 			<div
 				className={cn(
-					'relative overflow-hidden bg-gray-100',
+					'relative overflow-hidden',
 					fill ? 'w-full h-full' : '',
 					containerClassName
 				)}
@@ -213,7 +214,7 @@ export const ProductThumbnail: React.FC<
 	Omit<ProductImageProps, 'fill' | 'width' | 'height'> & {
 		size?: 'sm' | 'md' | 'lg' | 'xl'
 	}
-> = ({ size = 'md', className, ...props }) => {
+> = ({ size = 'md', className, category, ...props }) => {
 	const sizeMap = {
 		sm: { width: 40, height: 40 },
 		md: { width: 64, height: 64 },
@@ -227,6 +228,7 @@ export const ProductThumbnail: React.FC<
 		<ProductImage
 			{...props}
 			{...dimensions}
+			category={category}
 			className={cn('rounded-lg', className)}
 			optimize={{
 				width: dimensions.width * 2, // 2x for retina displays

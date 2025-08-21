@@ -6,16 +6,11 @@ import {
 	DialogTitle,
 } from '@/components/ui/dialog'
 import { Label } from '@/components/ui/label'
-import { Order, Product } from '@/types'
-import { Package } from 'lucide-react'
-import Image from 'next/image'
+import { ProductThumbnail } from '@/components/ui/ProductImage'
+import { getPrimaryImage } from '@/lib/imageUtils'
+import { Order } from '@/types'
 import React from 'react'
 import { formatDate, getStatusDisplay, getTotalQuantity } from './utils'
-
-// Helper function to get primary image
-const getPrimaryImage = (product: Product) => {
-	return product.images?.find(img => img.isPrimary) || product.images?.[0]
-}
 
 interface OrderDetailsModalProps {
 	order: Order | null
@@ -141,20 +136,14 @@ const OrderDetailsModal: React.FC<OrderDetailsModalProps> = ({
 								>
 									<div className='flex-1 min-w-0'>
 										<div className='flex items-center'>
-											<div className='w-8 h-8 sm:w-10 sm:h-10 rounded-lg overflow-hidden bg-gray-100 flex-shrink-0 mr-2'>
-												{getPrimaryImage(item.product) ? (
-													<Image
-														src={getPrimaryImage(item.product)!.url}
-														alt={item.product.name}
-														width={40}
-														height={40}
-														className='w-full h-full object-cover'
-													/>
-												) : (
-													<div className='w-full h-full flex items-center justify-center'>
-														<Package className='w-3 h-3 sm:w-4 sm:h-4 text-gray-400' />
-													</div>
-												)}
+											<div className='w-8 h-8 sm:w-10 sm:h-10 flex-shrink-0 mr-2'>
+												<ProductThumbnail
+													src={getPrimaryImage(item.product)}
+													alt={item.product.name}
+													category={item.product.category}
+													size='sm'
+													className='rounded-lg'
+												/>
 											</div>
 											<div className='min-w-0 flex-1'>
 												<p className='font-medium text-xs sm:text-sm truncate'>

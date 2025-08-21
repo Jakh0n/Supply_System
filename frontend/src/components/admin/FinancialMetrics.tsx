@@ -80,44 +80,36 @@ const FinancialMetrics: React.FC<FinancialMetricsProps> = ({
 		)
 	}
 
-	// Calculate mock trend data since the API doesn't provide growth percentages
-	const calculateTrend = (current: number, previous: number) => {
-		if (previous === 0) return 0
-		return ((current - previous) / previous) * 100
-	}
-
-	// Mock previous values for trend calculation (in a real app, these would come from the API)
-	const mockPreviousDaily = financialMetrics.dailySpending * 0.9
-	const mockPreviousWeekly = financialMetrics.weeklySpending * 0.85
-	const mockPreviousMonthly = financialMetrics.monthlySpending * 0.92
-	const mockPreviousAvgOrder = financialMetrics.avgOrderValue * 0.95
-
+	// Use real growth data from the API
 	const metrics = [
 		{
-			title: 'Daily Spending',
+			title: 'Daily Revenue',
 			value: formatKRW(financialMetrics.dailySpending),
-			change: calculateTrend(financialMetrics.dailySpending, mockPreviousDaily),
+			change: financialMetrics.dailyGrowth || 0,
+			previousValue: formatKRW(
+				financialMetrics.previousPeriod?.dailySpending || 0
+			),
 			icon: Calendar,
 			color: 'text-green-600',
 			bgColor: 'bg-green-50',
 		},
 		{
-			title: 'Weekly Spending',
+			title: 'Weekly Revenue',
 			value: formatKRW(financialMetrics.weeklySpending),
-			change: calculateTrend(
-				financialMetrics.weeklySpending,
-				mockPreviousWeekly
+			change: financialMetrics.weeklyGrowth || 0,
+			previousValue: formatKRW(
+				financialMetrics.previousPeriod?.weeklySpending || 0
 			),
 			icon: CalendarDays,
 			color: 'text-blue-600',
 			bgColor: 'bg-blue-50',
 		},
 		{
-			title: 'Monthly Spending',
+			title: 'Monthly Revenue',
 			value: formatKRW(financialMetrics.monthlySpending),
-			change: calculateTrend(
-				financialMetrics.monthlySpending,
-				mockPreviousMonthly
+			change: financialMetrics.monthlyGrowth || 0,
+			previousValue: formatKRW(
+				financialMetrics.previousPeriod?.monthlySpending || 0
 			),
 			icon: DollarSign,
 			color: 'text-purple-600',
@@ -126,9 +118,9 @@ const FinancialMetrics: React.FC<FinancialMetricsProps> = ({
 		{
 			title: 'Avg Order Value',
 			value: formatKRW(financialMetrics.avgOrderValue),
-			change: calculateTrend(
-				financialMetrics.avgOrderValue,
-				mockPreviousAvgOrder
+			change: financialMetrics.avgOrderGrowth || 0,
+			previousValue: formatKRW(
+				financialMetrics.previousPeriod?.avgOrderValue || 0
 			),
 			icon: CreditCard,
 			color: 'text-orange-600',

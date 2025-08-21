@@ -168,6 +168,7 @@ const ProductsTable: React.FC<ProductsTableProps> = ({
 														<ProductThumbnail
 															src={getPrimaryImage(product)}
 															alt={product.name}
+															category={product.category}
 															size='sm'
 															priority={false}
 														/>

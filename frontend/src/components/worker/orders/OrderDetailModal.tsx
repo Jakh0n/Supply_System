@@ -145,6 +145,7 @@ const OrderDetailModal: React.FC<OrderDetailModalProps> = ({
 											<ProductThumbnail
 												src={getPrimaryImage(item.product)}
 												alt={item.product.name}
+												category={item.product.category}
 												size='sm'
 												priority={false}
 											/>

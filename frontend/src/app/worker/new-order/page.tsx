@@ -92,6 +92,9 @@ const NewOrder: React.FC = () => {
 	const [showSuggestionsModal, setShowSuggestionsModal] = useState(false)
 	const [suggestedProducts, setSuggestedProducts] = useState<Product[]>([])
 	const [modalSearchTerm, setModalSearchTerm] = useState('')
+	const [modalQuantities, setModalQuantities] = useState<{
+		[key: string]: number
+	}>({})
 
 	// Fetch branches
 	const fetchBranches = useCallback(async () => {
@@ -244,6 +247,54 @@ const NewOrder: React.FC = () => {
 		setSuggestedProducts(suggestions)
 		setModalSearchTerm('')
 		setShowSuggestionsModal(true)
+
+		// Initialize quantities for suggested products
+		const initialQuantities: { [key: string]: number } = {}
+		suggestions.forEach(product => {
+			initialQuantities[product._id] = 1
+		})
+		setModalQuantities(initialQuantities)
+	}
+
+	// Modal quantity control functions
+	const updateModalQuantity = (productId: string, quantity: number) => {
+		if (quantity < 1) return
+		setModalQuantities(prev => ({
+			...prev,
+			[productId]: quantity,
+		}))
+	}
+
+	const addProductFromModal = (product: Product) => {
+		const quantity = modalQuantities[product._id] || 1
+
+		// Add the product with the specified quantity
+		const newOrderItem: OrderItem = {
+			product,
+			quantity,
+			notes: '',
+		}
+
+		setOrderItems(prev => {
+			const existingItemIndex = prev.findIndex(
+				item => item.product._id === product._id
+			)
+
+			if (existingItemIndex >= 0) {
+				// Update existing item
+				const updated = [...prev]
+				updated[existingItemIndex].quantity += quantity
+				return updated
+			} else {
+				// Add new item
+				return [...prev, newOrderItem]
+			}
+		})
+
+		// Remove from suggested products
+		setSuggestedProducts(prev => prev.filter(p => p._id !== product._id))
+
+		toast.success(`Added ${quantity} ${product.unit} of ${product.name}`)
 	}
 
 	// Submit order directly (called from modal or when skipping suggestions)
@@ -477,6 +528,7 @@ const NewOrder: React.FC = () => {
 																	<ProductThumbnail
 																		src={getPrimaryImage(product)}
 																		alt={product.name}
+																		category={product.category}
 																		size='sm'
 																		priority={false}
 																	/>
@@ -544,6 +596,7 @@ const NewOrder: React.FC = () => {
 																			<ProductThumbnail
 																				src={getPrimaryImage(product)}
 																				alt={product.name}
+																				category={product.category}
 																				size='sm'
 																				priority={false}
 																			/>
@@ -704,16 +757,25 @@ const NewOrder: React.FC = () => {
 														className='bg-white border rounded-lg p-3 sm:p-4 space-y-2 sm:space-y-3 shadow-sm hover:shadow-md transition-shadow'
 													>
 														<div className='flex items-start justify-between'>
-															<div className='flex-1 min-w-0'>
-																<div className='flex items-center mb-1 sm:mb-2'>
-																	<Package className='h-3 w-3 sm:h-4 sm:w-4 text-gray-400 mr-2 flex-shrink-0' />
-																	<p className='font-semibold text-xs sm:text-sm text-gray-900 truncate'>
+															<div className='flex items-start flex-1 min-w-0'>
+																<div className='w-10 h-10 sm:w-12 sm:h-12 flex-shrink-0 mr-3'>
+																	<ProductThumbnail
+																		src={getPrimaryImage(item.product)}
+																		alt={item.product.name}
+																		category={item.product.category}
+																		size='sm'
+																		priority={false}
+																	/>
+																</div>
+																<div className='flex-1 min-w-0'>
+																	<p className='font-semibold text-xs sm:text-sm text-gray-900 truncate mb-1'>
 																		{item.product.name}
 																	</p>
+																	<p className='text-xs text-gray-500'>
+																		{item.product.category} •{' '}
+																		{item.product.unit}
+																	</p>
 																</div>
-																<p className='text-xs text-gray-500 ml-5 sm:ml-6'>
-																	{item.product.category} • {item.product.unit}
-																</p>
 															</div>
 															<Button
 																variant='ghost'
@@ -949,6 +1011,7 @@ const NewOrder: React.FC = () => {
 																<ProductThumbnail
 																	src={getPrimaryImage(product)}
 																	alt={product.name}
+																	category={product.category}
 																	size='sm'
 																	priority={false}
 																/>
@@ -972,19 +1035,51 @@ const NewOrder: React.FC = () => {
 																)}
 															</div>
 														</div>
-														<Button
-															size='sm'
-															onClick={() => {
-																addProductToOrder(product)
-																setSuggestedProducts(prev =>
-																	prev.filter(p => p._id !== product._id)
-																)
-															}}
-															className='w-full bg-green-600 hover:bg-green-700 text-white h-8 text-xs'
-														>
-															<Plus className='h-3 w-3 mr-1' />
-															Add to Order
-														</Button>
+
+														{/* Quantity Controls - Mobile */}
+														<div className='flex items-center justify-between gap-2'>
+															<div className='flex items-center bg-gray-100 rounded-lg'>
+																<Button
+																	variant='ghost'
+																	size='sm'
+																	onClick={() =>
+																		updateModalQuantity(
+																			product._id,
+																			(modalQuantities[product._id] || 1) - 1
+																		)
+																	}
+																	disabled={modalQuantities[product._id] <= 1}
+																	className='h-8 w-8 p-0 text-gray-600 hover:text-gray-800 hover:bg-gray-200'
+																>
+																	<Minus className='h-3 w-3' />
+																</Button>
+																<span className='px-3 py-1 text-sm font-medium text-gray-700 min-w-[40px] text-center'>
+																	{modalQuantities[product._id] || 1}
+																</span>
+																<Button
+																	variant='ghost'
+																	size='sm'
+																	onClick={() =>
+																		updateModalQuantity(
+																			product._id,
+																			(modalQuantities[product._id] || 1) + 1
+																		)
+																	}
+																	className='h-8 w-8 p-0 text-gray-600 hover:text-gray-800 hover:bg-gray-200'
+																>
+																	<Plus className='h-3 w-3' />
+																</Button>
+															</div>
+															<Button
+																size='sm'
+																onClick={() => addProductFromModal(product)}
+																className='flex-1 bg-green-600 hover:bg-green-700 text-white h-8 text-xs'
+															>
+																<Check className='h-3 w-3 mr-1' />
+																Add {modalQuantities[product._id] || 1}{' '}
+																{product.unit}
+															</Button>
+														</div>
 													</div>
 
 													{/* Desktop Layout */}
@@ -994,6 +1089,7 @@ const NewOrder: React.FC = () => {
 																<ProductThumbnail
 																	src={getPrimaryImage(product)}
 																	alt={product.name}
+																	category={product.category}
 																	size='sm'
 																	priority={false}
 																/>
@@ -1017,19 +1113,50 @@ const NewOrder: React.FC = () => {
 																)}
 															</div>
 														</div>
-														<Button
-															size='sm'
-															onClick={() => {
-																addProductToOrder(product)
-																setSuggestedProducts(prev =>
-																	prev.filter(p => p._id !== product._id)
-																)
-															}}
-															className='bg-green-600 hover:bg-green-700 text-white whitespace-nowrap text-xs px-3'
-														>
-															<Plus className='h-3 w-3 mr-1' />
-															Add
-														</Button>
+
+														{/* Quantity Controls - Desktop */}
+														<div className='flex items-center gap-3'>
+															<div className='flex items-center bg-gray-100 rounded-lg'>
+																<Button
+																	variant='ghost'
+																	size='sm'
+																	onClick={() =>
+																		updateModalQuantity(
+																			product._id,
+																			(modalQuantities[product._id] || 1) - 1
+																		)
+																	}
+																	disabled={modalQuantities[product._id] <= 1}
+																	className='h-8 w-8 p-0 text-gray-600 hover:text-gray-800 hover:bg-gray-200'
+																>
+																	<Minus className='h-3 w-3' />
+																</Button>
+																<span className='px-3 py-1 text-sm font-medium text-gray-700 min-w-[50px] text-center'>
+																	{modalQuantities[product._id] || 1}
+																</span>
+																<Button
+																	variant='ghost'
+																	size='sm'
+																	onClick={() =>
+																		updateModalQuantity(
+																			product._id,
+																			(modalQuantities[product._id] || 1) + 1
+																		)
+																	}
+																	className='h-8 w-8 p-0 text-gray-600 hover:text-gray-800 hover:bg-gray-200'
+																>
+																	<Plus className='h-3 w-3' />
+																</Button>
+															</div>
+															<Button
+																size='sm'
+																onClick={() => addProductFromModal(product)}
+																className='bg-green-600 hover:bg-green-700 text-white whitespace-nowrap text-xs px-4'
+															>
+																<Check className='h-3 w-3 mr-1' />
+																Add {modalQuantities[product._id] || 1}
+															</Button>
+														</div>
 													</div>
 												</div>
 											))}
