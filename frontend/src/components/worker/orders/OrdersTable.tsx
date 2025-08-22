@@ -76,11 +76,11 @@ const OrdersTable: React.FC<OrdersTableProps> = ({
 								<TableCell>{formatDate(order.createdAt)}</TableCell>
 								<TableCell>
 									<div className='space-y-1'>
-										{order.items.slice(0, 2).map((item, index) => (
-											<div key={index} className='text-sm'>
-												{item.product.name} (x{item.quantity})
-											</div>
-										))}
+																					{order.items.slice(0, 2).map((item, index) => (
+												<div key={index} className='text-sm'>
+													{item.product?.name || 'Product Deleted'} (x{item.quantity})
+												</div>
+											))}
 										{order.items.length > 2 && (
 											<div className='text-xs text-gray-500'>
 												+{order.items.length - 2} more items

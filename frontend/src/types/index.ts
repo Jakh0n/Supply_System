@@ -52,12 +52,11 @@ export interface Product {
 }
 
 export type ProductCategory =
-	| 'food'
-	| 'beverages'
-	| 'cleaning'
-	| 'equipment'
-	| 'packaging'
-	| 'other'
+	| 'frozen-products'
+	| 'main-products'
+	| 'desserts-drinks'
+	| 'packaging-materials'
+	| 'cleaning-materials'
 
 export type ProductUnit =
 	| 'kg'

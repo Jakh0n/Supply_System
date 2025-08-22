@@ -802,7 +802,43 @@ const MyOrders: React.FC = () => {
 													: ''
 											}`}
 										>
-											{selectedOrder.items.map(item => (
+																					{selectedOrder.items.map((item, index) => {
+											if (!item.product) {
+												return (
+													<div
+														key={`deleted-${index}`}
+														className='flex items-center justify-between p-2 sm:p-3 bg-red-50 rounded-lg border border-red-200'
+													>
+														<div className='flex-1 min-w-0'>
+															<div className='flex items-center'>
+																<div className='w-8 h-8 sm:w-10 sm:h-10 flex-shrink-0 mr-2 bg-red-100 rounded-lg flex items-center justify-center'>
+																	<Package className='h-4 w-4 text-red-500' />
+																</div>
+																<div className='min-w-0 flex-1'>
+																	<p className='font-medium text-xs sm:text-sm truncate text-red-600'>
+																		Product Deleted
+																	</p>
+																	<p className='text-xs text-red-500 truncate'>
+																		Product no longer available
+																	</p>
+																	{item.notes && (
+																		<p className='text-xs text-red-600 mt-1 italic line-clamp-2'>
+																			Note: {item.notes}
+																		</p>
+																	)}
+																</div>
+															</div>
+														</div>
+														<div className='text-right flex-shrink-0 ml-2'>
+															<p className='font-medium text-xs sm:text-sm text-red-600'>
+																{item.quantity} unit
+															</p>
+														</div>
+													</div>
+												)
+											}
+
+											return (
 												<div
 													key={item.product._id}
 													className='flex items-center justify-between p-2 sm:p-3 bg-gray-50 rounded-lg'
@@ -839,7 +875,8 @@ const MyOrders: React.FC = () => {
 														</p>
 													</div>
 												</div>
-											))}
+											)
+										})}
 										</div>
 									</div>
 

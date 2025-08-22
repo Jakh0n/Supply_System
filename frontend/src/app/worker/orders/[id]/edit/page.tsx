@@ -95,9 +95,11 @@ const EditOrder: React.FC = () => {
 				setRequestedDate(order.requestedDate.split('T')[0])
 				setOrderNotes(order.notes || '')
 
-				// Convert order items to form format
-				const formItems: OrderItem[] = order.items.map(item => ({
-					product: item.product,
+							// Convert order items to form format (skip items with deleted products)
+			const formItems: OrderItem[] = order.items
+				.filter(item => item.product !== null)
+				.map(item => ({
+					product: item.product!,
 					quantity: item.quantity,
 					notes: item.notes || '',
 				}))
@@ -222,10 +224,10 @@ const EditOrder: React.FC = () => {
 		if (orderItems.length !== originalOrder.items.length) return true
 
 		for (let i = 0; i < orderItems.length; i++) {
-			const formItem = orderItems[i]
-			const originalItem = originalOrder.items.find(
-				item => item.product._id === formItem.product._id
-			)
+					const formItem = orderItems[i]
+		const originalItem = originalOrder.items.find(
+			item => item.product?._id === formItem.product._id
+		)
 
 			if (!originalItem) return true
 			if (formItem.quantity !== originalItem.quantity) return true

@@ -489,12 +489,21 @@ const NewOrder: React.FC = () => {
 												</SelectTrigger>
 												<SelectContent>
 													<SelectItem value='all'>All Categories</SelectItem>
-													<SelectItem value='food'>Food</SelectItem>
-													<SelectItem value='beverages'>Beverages</SelectItem>
-													<SelectItem value='cleaning'>Cleaning</SelectItem>
-													<SelectItem value='equipment'>Equipment</SelectItem>
-													<SelectItem value='packaging'>Packaging</SelectItem>
-													<SelectItem value='other'>Other</SelectItem>
+													<SelectItem value='frozen-products'>
+														Frozen Products
+													</SelectItem>
+													<SelectItem value='main-products'>
+														Main Products
+													</SelectItem>
+													<SelectItem value='desserts-drinks'>
+														Desserts and Drinks
+													</SelectItem>
+													<SelectItem value='packaging-materials'>
+														Packaging Materials
+													</SelectItem>
+													<SelectItem value='cleaning-materials'>
+														Cleaning Materials
+													</SelectItem>
 												</SelectContent>
 											</Select>
 										</div>

@@ -12,12 +12,17 @@ import { ProductCategory } from '@/types'
 import { Search } from 'lucide-react'
 
 const CATEGORIES = [
-	{ value: 'food' as ProductCategory, label: 'Food' },
-	{ value: 'beverages' as ProductCategory, label: 'Beverages' },
-	{ value: 'cleaning' as ProductCategory, label: 'Cleaning' },
-	{ value: 'equipment' as ProductCategory, label: 'Equipment' },
-	{ value: 'packaging' as ProductCategory, label: 'Packaging' },
-	{ value: 'other' as ProductCategory, label: 'Other' },
+	{ value: 'frozen-products' as ProductCategory, label: 'Frozen Products' },
+	{ value: 'main-products' as ProductCategory, label: 'Main Products' },
+	{ value: 'desserts-drinks' as ProductCategory, label: 'Desserts and Drinks' },
+	{
+		value: 'packaging-materials' as ProductCategory,
+		label: 'Packaging Materials',
+	},
+	{
+		value: 'cleaning-materials' as ProductCategory,
+		label: 'Cleaning Materials',
+	},
 ]
 
 interface ProductsFiltersProps {

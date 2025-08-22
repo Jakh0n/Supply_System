@@ -115,7 +115,8 @@ const OrdersTable: React.FC<OrdersTableProps> = ({
 
 	const getTotalValue = (order: Order): number => {
 		return order.items.reduce(
-			(total, item) => total + item.quantity * item.product.price,
+			(total, item) =>
+				total + (item.product?.price ? item.quantity * item.product.price : 0),
 			0
 		)
 	}

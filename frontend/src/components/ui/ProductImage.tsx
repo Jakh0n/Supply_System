@@ -12,12 +12,11 @@ interface ProductImageProps {
 	alt: string
 	/** Product category for fallback icon */
 	category?:
-		| 'food'
-		| 'beverages'
-		| 'cleaning'
-		| 'equipment'
-		| 'packaging'
-		| 'other'
+		| 'frozen-products'
+		| 'main-products'
+		| 'desserts-drinks'
+		| 'packaging-materials'
+		| 'cleaning-materials'
 	/** Image width */
 	width?: number
 	/** Image height */
@@ -104,16 +103,16 @@ const ProductImage: React.FC<ProductImageProps> = ({
 	// Get category-specific icon
 	const getCategoryIcon = () => {
 		switch (category) {
-			case 'food':
+			case 'frozen-products':
+				return <Package className='w-6 h-6 text-blue-400' />
+			case 'main-products':
 				return <Utensils className='w-6 h-6 text-orange-400' />
-			case 'beverages':
-				return <Coffee className='w-6 h-6 text-blue-400' />
-			case 'cleaning':
-				return <ShoppingBag className='w-6 h-6 text-green-400' />
-			case 'equipment':
-				return <Package className='w-6 h-6 text-purple-400' />
-			case 'packaging':
+			case 'desserts-drinks':
+				return <Coffee className='w-6 h-6 text-pink-400' />
+			case 'packaging-materials':
 				return <Package className='w-6 h-6 text-indigo-400' />
+			case 'cleaning-materials':
+				return <ShoppingBag className='w-6 h-6 text-green-400' />
 			default:
 				return <ImageIcon className='w-6 h-6 text-gray-400' />
 		}

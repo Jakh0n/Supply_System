@@ -135,41 +135,75 @@ const OrderDetailModal: React.FC<OrderDetailModalProps> = ({
 							<span>Order Items ({order.items.length})</span>
 						</h3>
 						<div className='space-y-3'>
-							{order.items.map((item, index) => (
-								<div
-									key={index}
-									className='flex items-center justify-between p-3 bg-gray-50 rounded-lg'
-								>
-									<div className='flex items-center flex-1'>
-										<div className='w-10 h-10 flex-shrink-0 mr-3'>
-											<ProductThumbnail
-												src={getPrimaryImage(item.product)}
-												alt={item.product.name}
-												category={item.product.category}
-												size='sm'
-												priority={false}
-											/>
-										</div>
-										<div className='flex-1'>
-											<div className='font-medium'>{item.product.name}</div>
-											<div className='text-sm text-gray-600'>
-												{item.product.category} • {item.product.unit}
-											</div>
-											{item.notes && (
-												<div className='text-sm text-gray-500 mt-1'>
-													Note: {item.notes}
+							{order.items.map((item, index) => {
+								if (!item.product) {
+									return (
+										<div
+											key={`deleted-${index}`}
+											className='flex items-center justify-between p-3 bg-red-50 rounded-lg border border-red-200'
+										>
+											<div className='flex items-center flex-1'>
+												<div className='w-10 h-10 flex-shrink-0 mr-3 bg-red-100 rounded-lg flex items-center justify-center'>
+													<Package className='h-5 w-5 text-red-500' />
 												</div>
-											)}
+												<div className='flex-1'>
+													<div className='font-medium text-red-600'>Product Deleted</div>
+													<div className='text-sm text-red-500'>
+														Product no longer available
+													</div>
+													{item.notes && (
+														<div className='text-sm text-red-400 mt-1'>
+															Note: {item.notes}
+														</div>
+													)}
+												</div>
+											</div>
+											<div className='text-right'>
+												<div className='font-medium text-red-600'>x{item.quantity}</div>
+												<div className='text-sm text-red-500'>
+													N/A
+												</div>
+											</div>
+										</div>
+									)
+								}
+
+								return (
+									<div
+										key={index}
+										className='flex items-center justify-between p-3 bg-gray-50 rounded-lg'
+									>
+										<div className='flex items-center flex-1'>
+											<div className='w-10 h-10 flex-shrink-0 mr-3'>
+												<ProductThumbnail
+													src={getPrimaryImage(item.product)}
+													alt={item.product.name}
+													category={item.product.category}
+													size='sm'
+													priority={false}
+												/>
+											</div>
+											<div className='flex-1'>
+												<div className='font-medium'>{item.product.name}</div>
+												<div className='text-sm text-gray-600'>
+													{item.product.category} • {item.product.unit}
+												</div>
+												{item.notes && (
+													<div className='text-sm text-gray-500 mt-1'>
+														Note: {item.notes}
+													</div>
+												)}
+											</div>
+										</div>
+										<div className='text-right'>
+											<div className='font-medium'>x{item.quantity}</div>
+											<div className='text-sm text-gray-600'>
+												${(item.product.price * item.quantity).toFixed(2)}
+											</div>
 										</div>
 									</div>
-									<div className='text-right'>
-										<div className='font-medium'>x{item.quantity}</div>
-										<div className='text-sm text-gray-600'>
-											${(item.product.price * item.quantity).toFixed(2)}
-										</div>
-									</div>
-								</div>
-							))}
+								)
+							})}
 						</div>
 
 						{/* Order Summary */}
@@ -183,14 +217,14 @@ const OrderDetailModal: React.FC<OrderDetailModalProps> = ({
 							<div className='flex justify-between items-center mt-1'>
 								<span className='font-medium'>Total Value:</span>
 								<span className='font-semibold'>
-									$
-									{order.items
-										.reduce(
-											(total, item) =>
-												total + item.product.price * item.quantity,
-											0
-										)
-										.toFixed(2)}
+																	$
+								{order.items
+									.reduce(
+										(total, item) =>
+											total + (item.product?.price ? item.product.price * item.quantity : 0),
+										0
+									)
+									.toFixed(2)}
 								</span>
 							</div>
 						</div>

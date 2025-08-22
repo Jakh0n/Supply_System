@@ -9,6 +9,7 @@ import { Label } from '@/components/ui/label'
 import { ProductThumbnail } from '@/components/ui/ProductImage'
 import { getPrimaryImage } from '@/lib/imageUtils'
 import { Order } from '@/types'
+import { Package } from 'lucide-react'
 import React from 'react'
 import { formatDate, getStatusDisplay, getTotalQuantity } from './utils'
 
@@ -129,40 +130,63 @@ const OrderDetailsModal: React.FC<OrderDetailsModalProps> = ({
 									: ''
 							}`}
 						>
-							{order.items.map(item => (
-								<div
-									key={item.product._id}
-									className='flex items-center justify-between p-2 sm:p-3 bg-gray-50 rounded-lg'
-								>
+													{order.items.map((item, index) => (
+							<div
+								key={item.product?._id || `deleted-${index}`}
+								className='flex items-center justify-between p-2 sm:p-3 bg-gray-50 rounded-lg'
+							>
 									<div className='flex-1 min-w-0'>
 										<div className='flex items-center'>
-											<div className='w-8 h-8 sm:w-10 sm:h-10 flex-shrink-0 mr-2'>
-												<ProductThumbnail
-													src={getPrimaryImage(item.product)}
-													alt={item.product.name}
-													category={item.product.category}
-													size='sm'
-													className='rounded-lg'
-												/>
-											</div>
-											<div className='min-w-0 flex-1'>
-												<p className='font-medium text-xs sm:text-sm truncate'>
-													{item.product.name}
-												</p>
-												<p className='text-xs text-gray-500 truncate'>
-													{item.product.category} • {item.product.unit}
-												</p>
-												{item.notes && (
-													<p className='text-xs text-gray-600 mt-1 italic line-clamp-2'>
-														Note: {item.notes}
-													</p>
-												)}
-											</div>
+											{item.product ? (
+												<>
+													<div className='w-8 h-8 sm:w-10 sm:h-10 flex-shrink-0 mr-2'>
+														<ProductThumbnail
+															src={getPrimaryImage(item.product)}
+															alt={item.product.name}
+															category={item.product.category}
+															size='sm'
+															className='rounded-lg'
+														/>
+													</div>
+													<div className='min-w-0 flex-1'>
+														<p className='font-medium text-xs sm:text-sm truncate'>
+															{item.product.name}
+														</p>
+														<p className='text-xs text-gray-500 truncate'>
+															{item.product.category} • {item.product.unit}
+														</p>
+														{item.notes && (
+															<p className='text-xs text-gray-600 mt-1 italic line-clamp-2'>
+																Note: {item.notes}
+															</p>
+														)}
+													</div>
+												</>
+											) : (
+												<>
+													<div className='w-8 h-8 sm:w-10 sm:h-10 flex-shrink-0 mr-2 bg-red-100 rounded-lg flex items-center justify-center'>
+														<Package className='h-4 w-4 text-red-500' />
+													</div>
+													<div className='min-w-0 flex-1'>
+														<p className='font-medium text-xs sm:text-sm truncate text-red-600'>
+															Product Deleted
+														</p>
+														<p className='text-xs text-red-500 truncate'>
+															Product no longer available
+														</p>
+														{item.notes && (
+															<p className='text-xs text-red-600 mt-1 italic line-clamp-2'>
+																Note: {item.notes}
+															</p>
+														)}
+													</div>
+												</>
+											)}
 										</div>
 									</div>
 									<div className='text-right flex-shrink-0 ml-2'>
-										<p className='font-medium text-xs sm:text-sm'>
-											{item.quantity} {item.product.unit}
+										<p className={`font-medium text-xs sm:text-sm ${!item.product ? 'text-red-600' : ''}`}>
+											{item.quantity} {item.product?.unit || 'unit'}
 										</p>
 									</div>
 								</div>

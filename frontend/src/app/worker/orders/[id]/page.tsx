@@ -287,7 +287,41 @@ const OrderDetailPage: React.FC = () => {
 						</CardHeader>
 						<CardContent>
 							<div className='space-y-4'>
-								{order.items.map(item => (
+															{order.items.map((item, index) => {
+								if (!item.product) {
+									return (
+										<div
+											key={`deleted-${index}`}
+											className='flex items-center justify-between p-4 bg-red-50 rounded-lg border border-red-200'
+										>
+											<div className='flex-1'>
+												<div className='flex items-center'>
+													<Package className='h-5 w-5 text-red-400 mr-3' />
+													<div>
+														<p className='font-medium text-base text-red-600'>
+															Product Deleted
+														</p>
+														<p className='text-sm text-red-500'>
+															Product no longer available
+														</p>
+														{item.notes && (
+															<p className='text-sm text-red-600 mt-1 italic'>
+																Note: {item.notes}
+															</p>
+														)}
+													</div>
+												</div>
+											</div>
+											<div className='text-right'>
+												<p className='font-medium text-lg text-red-600'>
+													{item.quantity} unit
+												</p>
+											</div>
+										</div>
+									)
+								}
+
+								return (
 									<div
 										key={item.product._id}
 										className='flex items-center justify-between p-4 bg-gray-50 rounded-lg'
@@ -316,7 +350,8 @@ const OrderDetailPage: React.FC = () => {
 											</p>
 										</div>
 									</div>
-								))}
+								)
+							})}
 							</div>
 						</CardContent>
 					</Card>

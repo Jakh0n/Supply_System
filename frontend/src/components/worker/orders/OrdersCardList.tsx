@@ -7,7 +7,8 @@ import { Calendar, Eye, Package, Trash2 } from 'lucide-react'
 import React from 'react'
 
 // Helper function to get primary image
-const getPrimaryImage = (product: Product) => {
+const getPrimaryImage = (product: Product | null) => {
+	if (!product) return undefined
 	return product.images?.find(img => img.isPrimary) || product.images?.[0]
 }
 
@@ -82,22 +83,40 @@ const OrdersCardList: React.FC<OrdersCardListProps> = ({
 						<div className='mb-3'>
 							<div className='text-xs text-gray-500 mb-2'>Items:</div>
 							<div className='space-y-2'>
-								{order.items.slice(0, 2).map((item, index) => (
-									<div key={index} className='flex items-center gap-2'>
-										<div className='w-6 h-6 rounded overflow-hidden flex-shrink-0'>
-											<ProductThumbnail
-												src={getPrimaryImage(item.product)}
-												alt={item.product.name}
-												category={item.product.category}
-												size='sm'
-												className='rounded w-6 h-6'
-											/>
+								{order.items.slice(0, 2).map((item, index) => {
+									if (!item.product) {
+										return (
+											<div
+												key={`deleted-${index}`}
+												className='flex items-center gap-2'
+											>
+												<div className='w-6 h-6 rounded bg-red-100 flex-shrink-0 flex items-center justify-center'>
+													<Package className='h-3 w-3 text-red-500' />
+												</div>
+												<div className='text-sm truncate flex-1 text-red-600'>
+													Product Deleted (x{item.quantity})
+												</div>
+											</div>
+										)
+									}
+
+									return (
+										<div key={index} className='flex items-center gap-2'>
+											<div className='w-6 h-6 rounded overflow-hidden flex-shrink-0'>
+												<ProductThumbnail
+													src={getPrimaryImage(item.product)}
+													alt={item.product.name}
+													category={item.product.category}
+													size='sm'
+													className='rounded w-6 h-6'
+												/>
+											</div>
+											<div className='text-sm truncate flex-1'>
+												{item.product.name} (x{item.quantity})
+											</div>
 										</div>
-										<div className='text-sm truncate flex-1'>
-											{item.product.name} (x{item.quantity})
-										</div>
-									</div>
-								))}
+									)
+								})}
 								{order.items.length > 2 && (
 									<div className='text-xs text-gray-500 ml-8'>
 										+{order.items.length - 2} more items

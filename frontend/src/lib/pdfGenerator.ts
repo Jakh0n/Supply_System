@@ -1,4 +1,4 @@
-import { Order } from '@/types'
+import { Order, ProductCategory } from '@/types'
 import html2canvas from 'html2canvas'
 import jsPDF from 'jspdf'
 
@@ -20,6 +20,18 @@ export interface BranchReportData {
 	weeklyTrend: number
 }
 
+type OrderItem = {
+	product: {
+		_id: string
+		name: string
+		category: ProductCategory
+		unit: string
+		price: number
+	}
+	quantity: number
+	notes?: string
+}
+
 export class PDFGenerator {
 	private static formatDate(dateString: string): string {
 		return new Date(dateString).toLocaleDateString('en-US', {
@@ -35,6 +47,71 @@ export class PDFGenerator {
 			currency: 'KRW',
 			minimumFractionDigits: 0,
 		}).format(amount)
+	}
+
+	private static getCategoryDisplayName(category: ProductCategory): string {
+		const categoryMap: Record<ProductCategory, string> = {
+			'frozen-products': 'Frozen Products',
+			'main-products': 'Main Products',
+			'desserts-drinks': 'Desserts and Drinks',
+			'packaging-materials': 'Packaging Materials',
+			'cleaning-materials': 'Cleaning Materials',
+		}
+		return categoryMap[category] || category
+	}
+
+	private static getCategorySortOrder(category: ProductCategory): number {
+		const categoryOrder: Record<ProductCategory, number> = {
+			'frozen-products': 1,
+			'main-products': 2,
+			'desserts-drinks': 3,
+			'packaging-materials': 4,
+			'cleaning-materials': 5,
+		}
+		return categoryOrder[category] || 999
+	}
+
+	private static groupItemsByCategory(
+		items: OrderItem[]
+	): Record<string, OrderItem[]> {
+		const grouped = items.reduce((acc, item) => {
+			const category = item.product.category
+			const categoryName = this.getCategoryDisplayName(category)
+			if (!acc[categoryName]) {
+				acc[categoryName] = []
+			}
+			acc[categoryName].push(item)
+			return acc
+		}, {} as Record<string, OrderItem[]>)
+
+		// Sort categories by predefined order
+		const sortedGroups: Record<string, OrderItem[]> = {}
+
+		// Find the original category key for each display name and sort by order
+		const categoryEntries = Object.entries(grouped)
+			.map(([categoryName, items]) => {
+				// Find the original category key by checking the first item's category
+				const originalCategory =
+					items.length > 0 ? items[0].product.category : null
+				const sortOrder = originalCategory
+					? this.getCategorySortOrder(originalCategory)
+					: 999
+				return {
+					categoryName,
+					items: items.sort((a, b) =>
+						a.product.name.localeCompare(b.product.name)
+					),
+					sortOrder,
+				}
+			})
+			.sort((a, b) => a.sortOrder - b.sortOrder)
+
+		// Build the sorted groups object
+		categoryEntries.forEach(({ categoryName, items }) => {
+			sortedGroups[categoryName] = items
+		})
+
+		return sortedGroups
 	}
 
 	static async generateOrdersPDF(
@@ -148,15 +225,28 @@ export class PDFGenerator {
 				pdf.text(`Items: ${order.items.length}`, margin + 80, yPosition)
 				yPosition += 8
 
-				// Order items
-				order.items.forEach(item => {
-					checkNewPage(5)
-					pdf.text(
-						`• ${item.product.name} - ${item.quantity} ${item.product.unit}`,
-						margin + 10,
-						yPosition
-					)
-					yPosition += 4
+				// Group items by category and display them organized
+				const groupedItems = this.groupItemsByCategory(order.items)
+				Object.entries(groupedItems).forEach(([categoryName, items]) => {
+					checkNewPage(10)
+
+					// Category header
+					pdf.setFont('helvetica', 'bold')
+					pdf.text(`${categoryName}:`, margin + 10, yPosition)
+					yPosition += 5
+
+					pdf.setFont('helvetica', 'normal')
+					// Items in this category
+					items.forEach(item => {
+						checkNewPage(5)
+						pdf.text(
+							`  • ${item.product.name} - ${item.quantity} ${item.product.unit}`,
+							margin + 15,
+							yPosition
+						)
+						yPosition += 4
+					})
+					yPosition += 2
 				})
 
 				yPosition += 5
@@ -210,41 +300,57 @@ export class PDFGenerator {
 
 		// Items header
 		pdf.setFont('helvetica', 'bold')
-		pdf.text('Order Items:', margin, yPosition)
+		pdf.text('Order Items (Organized by Category):', margin, yPosition)
 		yPosition += 10
 
-		// Items table headers
-		pdf.setFontSize(10)
-		pdf.text('Product', margin, yPosition)
-		pdf.text('Category', margin + 60, yPosition)
-		pdf.text('Quantity', margin + 100, yPosition)
-		pdf.text('Unit', margin + 130, yPosition)
-		yPosition += 2
+		// Group items by category
+		const groupedItems = this.groupItemsByCategory(order.items)
 
-		// Draw line under headers
-		pdf.line(margin, yPosition, margin + 160, yPosition)
-		yPosition += 8
-
-		// Items
-		pdf.setFont('helvetica', 'normal')
-		order.items.forEach(item => {
-			if (yPosition > 250) {
+		// Display items organized by category
+		Object.entries(groupedItems).forEach(([categoryName, items]) => {
+			if (yPosition > 240) {
 				pdf.addPage()
 				yPosition = margin
 			}
 
-			pdf.text(item.product.name.substring(0, 25), margin, yPosition)
-			pdf.text(item.product.category, margin + 60, yPosition)
-			pdf.text(item.quantity.toString(), margin + 100, yPosition)
-			pdf.text(item.product.unit, margin + 130, yPosition)
+			// Category header
+			pdf.setFont('helvetica', 'bold')
+			pdf.setFontSize(12)
+			pdf.text(`${categoryName}`, margin, yPosition)
+			yPosition += 8
+
+			// Items table headers for this category
+			pdf.setFontSize(10)
+			pdf.text('Product', margin + 5, yPosition)
+			pdf.text('Quantity', margin + 100, yPosition)
+			pdf.text('Unit', margin + 130, yPosition)
+			yPosition += 2
+
+			// Draw line under headers
+			pdf.line(margin, yPosition, margin + 160, yPosition)
 			yPosition += 6
 
-			if (item.notes) {
-				pdf.setFont('helvetica', 'italic')
-				pdf.text(`Note: ${item.notes}`, margin + 5, yPosition)
-				pdf.setFont('helvetica', 'normal')
+			// Items in this category
+			pdf.setFont('helvetica', 'normal')
+			items.forEach(item => {
+				if (yPosition > 250) {
+					pdf.addPage()
+					yPosition = margin
+				}
+
+				pdf.text(item.product.name.substring(0, 30), margin + 5, yPosition)
+				pdf.text(item.quantity.toString(), margin + 100, yPosition)
+				pdf.text(item.product.unit, margin + 130, yPosition)
 				yPosition += 6
-			}
+
+				if (item.notes) {
+					pdf.setFont('helvetica', 'italic')
+					pdf.text(`Note: ${item.notes}`, margin + 10, yPosition)
+					pdf.setFont('helvetica', 'normal')
+					yPosition += 6
+				}
+			})
+			yPosition += 8 // Space between categories
 		})
 
 		yPosition += 10

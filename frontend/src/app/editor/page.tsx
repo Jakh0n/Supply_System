@@ -287,19 +287,19 @@ export default function EditorDashboard() {
 								</tr>
 							</thead>
 							<tbody>
-								${order.items
-									.map(
-										item => `
-									<tr>
-										<td>${item.product.name}</td>
-										<td>${item.product.category}</td>
-										<td>${item.quantity}</td>
-										<td>${item.product.unit}</td>
-										<td>${item.notes || '-'}</td>
-									</tr>
-								`
-									)
-									.join('')}
+															${order.items
+								.map(
+									item => `
+								<tr>
+									<td>${item.product?.name || 'Product Deleted'}</td>
+									<td>${item.product?.category || '-'}</td>
+									<td>${item.quantity}</td>
+									<td>${item.product?.unit || 'unit'}</td>
+									<td>${item.notes || '-'}</td>
+								</tr>
+							`
+								)
+								.join('')}
 							</tbody>
 						</table>
 					</div>
@@ -411,12 +411,12 @@ export default function EditorDashboard() {
 			order.worker.username,
 			order.branch,
 			formatDate(order.requestedDate),
-			order.status,
-			order.items.length,
-			order.items.map(item => item.product.name).join('; '),
-			order.items
-				.map(item => `${item.quantity} ${item.product.unit}`)
-				.join('; '),
+					order.status,
+		order.items.length,
+		order.items.map(item => item.product?.name || 'Product Deleted').join('; '),
+		order.items
+			.map(item => `${item.quantity} ${item.product?.unit || 'unit'}`)
+			.join('; '),
 			order.processedBy?.username || 'Not processed',
 			order.processedAt ? formatDate(order.processedAt) : 'Not processed',
 			order.notes || '',
@@ -576,12 +576,12 @@ export default function EditorDashboard() {
 							${branchOrders
 								.flatMap(order =>
 									order.items.map(
-										item => `
-									<div class="product-item">
-										<span class="product-name">${item.product.name}</span>
-										<span class="product-quantity">- ${item.quantity} ${item.product.unit}</span>
-									</div>
-								`
+																			item => `
+								<div class="product-item">
+									<span class="product-name">${item.product?.name || 'Product Deleted'}</span>
+									<span class="product-quantity">- ${item.quantity} ${item.product?.unit || 'unit'}</span>
+								</div>
+							`
 									)
 								)
 								.join('')}
@@ -726,21 +726,21 @@ export default function EditorDashboard() {
 												<TableHead className='text-xs'>Notes</TableHead>
 											</TableRow>
 										</TableHeader>
-										<TableBody>
-											{selectedOrder.items.map(item => (
-												<TableRow key={item.product._id}>
-													<TableCell className='text-sm'>
-														{item.product.name}
-													</TableCell>
-													<TableCell className='text-sm'>
-														{item.product.category}
-													</TableCell>
-													<TableCell className='text-sm'>
-														{item.quantity}
-													</TableCell>
-													<TableCell className='text-sm'>
-														{item.product.unit}
-													</TableCell>
+																			<TableBody>
+										{selectedOrder.items.map((item, index) => (
+											<TableRow key={item.product?._id || `deleted-${index}`}>
+												<TableCell className='text-sm'>
+													{item.product?.name || 'Product Deleted'}
+												</TableCell>
+												<TableCell className='text-sm'>
+													{item.product?.category || '-'}
+												</TableCell>
+												<TableCell className='text-sm'>
+													{item.quantity}
+												</TableCell>
+												<TableCell className='text-sm'>
+													{item.product?.unit || 'unit'}
+												</TableCell>
 													<TableCell className='text-sm'>
 														{item.notes || '-'}
 													</TableCell>

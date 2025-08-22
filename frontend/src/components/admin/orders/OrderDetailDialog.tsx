@@ -81,7 +81,8 @@ const OrderDetailDialog: React.FC<OrderDetailDialogProps> = ({
 
 	const getTotalValue = (order: Order): number => {
 		return order.items.reduce(
-			(total, item) => total + item.quantity * item.product.price,
+			(total, item) =>
+				total + (item.product?.price ? item.quantity * item.product.price : 0),
 			0
 		)
 	}
@@ -140,41 +141,77 @@ const OrderDetailDialog: React.FC<OrderDetailDialogProps> = ({
 							Items ({order.items.length})
 						</Label>
 						<div className='space-y-3 max-h-60 overflow-y-auto'>
-							{order.items.map(item => (
-								<div
-									key={item.product._id}
-									className='flex flex-col sm:flex-row sm:justify-between sm:items-start p-3 bg-gray-50 rounded-lg space-y-2 sm:space-y-0'
-								>
-									<div className='flex items-start gap-3 flex-1'>
-										<div className='w-10 h-10 rounded-lg overflow-hidden flex-shrink-0'>
-											<ProductThumbnail
-												src={getPrimaryImage(item.product)}
-												alt={item.product.name}
-												category={item.product.category}
-												size='sm'
-												className='rounded-lg'
-											/>
+							{order.items.map(item => {
+								// Handle null product case
+								if (!item.product) {
+									return (
+										<div
+											key={`deleted-${item.quantity}`}
+											className='flex flex-col sm:flex-row sm:justify-between sm:items-start p-3 bg-red-50 rounded-lg space-y-2 sm:space-y-0 border border-red-200'
+										>
+											<div className='flex items-start gap-3 flex-1'>
+												<div className='w-10 h-10 rounded-lg bg-red-100 flex-shrink-0 flex items-center justify-center'>
+													<XCircle className='h-5 w-5 text-red-500' />
+												</div>
+												<div className='min-w-0 flex-1'>
+													<p className='font-medium text-sm text-red-600'>
+														Product Deleted
+													</p>
+													<p className='text-sm text-red-500'>
+														{item.quantity} × [Product no longer available]
+													</p>
+													{item.notes && (
+														<p className='text-sm text-gray-400 italic mt-1'>
+															Note: {item.notes}
+														</p>
+													)}
+												</div>
+											</div>
+											<div className='text-left sm:text-right'>
+												<p className='font-medium text-sm text-red-600'>N/A</p>
+											</div>
 										</div>
-										<div className='min-w-0 flex-1'>
-											<p className='font-medium text-sm'>{item.product.name}</p>
-											<p className='text-sm text-gray-500'>
-												{item.quantity} {item.product.unit} ×{' '}
-												{formatKRW(item.product.price)}
-											</p>
-											{item.notes && (
-												<p className='text-sm text-gray-400 italic mt-1'>
-													Note: {item.notes}
+									)
+								}
+
+								return (
+									<div
+										key={item.product._id}
+										className='flex flex-col sm:flex-row sm:justify-between sm:items-start p-3 bg-gray-50 rounded-lg space-y-2 sm:space-y-0'
+									>
+										<div className='flex items-start gap-3 flex-1'>
+											<div className='w-10 h-10 rounded-lg overflow-hidden flex-shrink-0'>
+												<ProductThumbnail
+													src={getPrimaryImage(item.product)}
+													alt={item.product.name}
+													category={item.product.category}
+													size='sm'
+													className='rounded-lg'
+												/>
+											</div>
+											<div className='min-w-0 flex-1'>
+												<p className='font-medium text-sm'>
+													{item.product.name}
 												</p>
-											)}
+												<p className='text-sm text-gray-500'>
+													{item.quantity} {item.product.unit} ×{' '}
+													{formatKRW(item.product.price)}
+												</p>
+												{item.notes && (
+													<p className='text-sm text-gray-400 italic mt-1'>
+														Note: {item.notes}
+													</p>
+												)}
+											</div>
+										</div>
+										<div className='text-left sm:text-right'>
+											<p className='font-medium text-sm'>
+												{formatKRW(item.quantity * item.product.price)}
+											</p>
 										</div>
 									</div>
-									<div className='text-left sm:text-right'>
-										<p className='font-medium text-sm'>
-											{formatKRW(item.quantity * item.product.price)}
-										</p>
-									</div>
-								</div>
-							))}
+								)
+							})}
 						</div>
 						<div className='mt-4 pt-3 border-t'>
 							<div className='flex justify-between items-center font-medium'>

@@ -241,7 +241,8 @@ const OrdersManagement: React.FC = () => {
 
 	const getTotalValue = (order: Order): number => {
 		return order.items.reduce(
-			(total, item) => total + item.quantity * item.product.price,
+			(total, item) =>
+				total + (item.product?.price ? item.quantity * item.product.price : 0),
 			0
 		)
 	}
@@ -393,32 +394,64 @@ const OrdersManagement: React.FC = () => {
 											Items
 										</Label>
 										<div className='mt-2 space-y-2 max-h-60 overflow-y-auto'>
-											{selectedOrder.items.map(item => (
-												<div
-													key={item.product._id}
-													className='flex flex-col sm:flex-row sm:justify-between sm:items-center p-2 bg-gray-50 rounded gap-2'
-												>
-													<div className='flex-1'>
-														<p className='font-medium text-sm'>
-															{item.product.name}
-														</p>
-														<p className='text-sm text-gray-500'>
-															{item.quantity} {item.product.unit} ×{' '}
-															{formatKRW(item.product.price)}
-														</p>
-														{item.notes && (
-															<p className='text-sm text-gray-400 italic'>
-																Note: {item.notes}
+											{selectedOrder.items.map(item => {
+												// Handle null product case
+												if (!item.product) {
+													return (
+														<div
+															key={`deleted-${item.quantity}`}
+															className='flex flex-col sm:flex-row sm:justify-between sm:items-center p-2 bg-red-50 rounded gap-2'
+														>
+															<div className='flex-1'>
+																<p className='font-medium text-sm text-red-600'>
+																	Product Deleted
+																</p>
+																<p className='text-sm text-red-500'>
+																	{item.quantity} × [Product no longer
+																	available]
+																</p>
+																{item.notes && (
+																	<p className='text-sm text-gray-400 italic'>
+																		Note: {item.notes}
+																	</p>
+																)}
+															</div>
+															<div className='text-right'>
+																<p className='font-medium text-sm text-red-600'>
+																	N/A
+																</p>
+															</div>
+														</div>
+													)
+												}
+
+												return (
+													<div
+														key={item.product._id}
+														className='flex flex-col sm:flex-row sm:justify-between sm:items-center p-2 bg-gray-50 rounded gap-2'
+													>
+														<div className='flex-1'>
+															<p className='font-medium text-sm'>
+																{item.product.name}
 															</p>
-														)}
+															<p className='text-sm text-gray-500'>
+																{item.quantity} {item.product.unit} ×{' '}
+																{formatKRW(item.product.price)}
+															</p>
+															{item.notes && (
+																<p className='text-sm text-gray-400 italic'>
+																	Note: {item.notes}
+																</p>
+															)}
+														</div>
+														<div className='text-right'>
+															<p className='font-medium text-sm'>
+																{formatKRW(item.quantity * item.product.price)}
+															</p>
+														</div>
 													</div>
-													<div className='text-right'>
-														<p className='font-medium text-sm'>
-															{formatKRW(item.quantity * item.product.price)}
-														</p>
-													</div>
-												</div>
-											))}
+												)
+											})}
 										</div>
 										<div className='mt-2 pt-2 border-t'>
 											<div className='flex justify-between font-medium'>

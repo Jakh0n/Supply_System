@@ -13,10 +13,12 @@ import {
 	OrdersResponse,
 	OrderStatus,
 	Product,
+	ProductCategory,
 	ProductFilters,
 	ProductFormData,
 	ProductInsightsResponse,
 	ProductsResponse,
+	ProductUnit,
 	RegisterData,
 	UnitsResponse,
 	User,
@@ -36,6 +38,80 @@ const api = axios.create({
 		'Content-Type': 'application/json',
 	},
 })
+
+// Helper function to create a placeholder product for deleted items
+const createDeletedProductPlaceholder = (): Product => ({
+	_id: 'deleted-product',
+	name: 'Product Deleted',
+	category: 'main-products' as ProductCategory,
+	unit: 'pieces' as ProductUnit,
+	description: 'This product has been deleted',
+	supplier: '',
+	price: 0,
+	images: [],
+	isActive: false,
+	createdBy: { _id: 'system', username: 'System' },
+	createdAt: new Date().toISOString(),
+	updatedAt: new Date().toISOString(),
+})
+
+// Raw API types (with potentially null products)
+interface RawOrderItem {
+	product: Product | null
+	quantity: number
+	notes?: string
+}
+
+interface RawOrder {
+	_id: string
+	orderNumber: string
+	worker: {
+		_id: string
+		username: string
+		branch: string
+	}
+	branch: string
+	requestedDate: string
+	items: RawOrderItem[]
+	status: OrderStatus
+	notes?: string
+	adminNotes?: string
+	processedBy?: {
+		_id: string
+		username: string
+	}
+	processedAt?: string
+	createdAt: string
+	updatedAt: string
+}
+
+interface RawOrdersResponse {
+	orders: RawOrder[]
+	pagination: {
+		current: number
+		pages: number
+		total: number
+	}
+}
+
+// Helper function to clean order data by replacing null products with placeholders
+const cleanOrderData = (order: RawOrder): Order => {
+	return {
+		...order,
+		items: order.items.map(item => ({
+			...item,
+			product: item.product || createDeletedProductPlaceholder(),
+		})),
+	}
+}
+
+// Helper function to clean multiple orders
+const cleanOrdersData = (data: RawOrdersResponse): OrdersResponse => {
+	return {
+		...data,
+		orders: data.orders.map(cleanOrderData),
+	}
+}
 
 // Request interceptor to add auth token
 api.interceptors.request.use(
@@ -105,12 +181,12 @@ export const ordersApi = {
 		if (filters?.limit) params.append('limit', filters.limit.toString())
 
 		const response = await api.get(`/orders?${params.toString()}`)
-		return response.data
+		return cleanOrdersData(response.data)
 	},
 
 	getOrder: async (id: string): Promise<{ order: Order }> => {
 		const response = await api.get(`/orders/${id}`)
-		return response.data
+		return { order: cleanOrderData(response.data.order) }
 	},
 
 	createOrder: async (data: OrderFormData): Promise<{ order: Order }> => {
