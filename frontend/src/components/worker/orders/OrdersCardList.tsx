@@ -1,6 +1,7 @@
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
+import { ProductThumbnail } from '@/components/ui/ProductImage'
 import { Order, Product } from '@/types'
 import { Calendar, Eye, Package, Trash2 } from 'lucide-react'
 import React from 'react'
