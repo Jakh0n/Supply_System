@@ -1,4 +1,4 @@
-import { Order, ProductCategory } from '@/types'
+import { Order } from '@/types'
 import html2canvas from 'html2canvas'
 import jsPDF from 'jspdf'
 
@@ -24,7 +24,7 @@ type OrderItem = {
 	product: {
 		_id: string
 		name: string
-		category: ProductCategory
+		category: string // Allow both legacy and new categories
 		unit: string
 		price: number
 	}
@@ -49,26 +49,38 @@ export class PDFGenerator {
 		}).format(amount)
 	}
 
-	private static getCategoryDisplayName(category: ProductCategory): string {
-		const categoryMap: Record<ProductCategory, string> = {
+	private static getCategoryDisplayName(category: string): string {
+		// Handle both new and legacy categories
+		const categoryMap: Record<string, string> = {
+			// New categories
 			'frozen-products': 'Frozen Products',
 			'main-products': 'Main Products',
 			'desserts-drinks': 'Desserts and Drinks',
 			'packaging-materials': 'Packaging Materials',
 			'cleaning-materials': 'Cleaning Materials',
+
+			// Legacy categories mapping to new ones
+			food: 'Main Products',
+			beverages: 'Desserts and Drinks',
+			cleaning: 'Cleaning Materials',
+			equipment: 'Packaging Materials',
+			packaging: 'Packaging Materials',
+			other: 'Main Products',
 		}
-		return categoryMap[category] || category
+		return categoryMap[category] || 'Main Products'
 	}
 
-	private static getCategorySortOrder(category: ProductCategory): number {
-		const categoryOrder: Record<ProductCategory, number> = {
-			'frozen-products': 1,
-			'main-products': 2,
-			'desserts-drinks': 3,
-			'packaging-materials': 4,
-			'cleaning-materials': 5,
+	private static getCategorySortOrder(category: string): number {
+		// Map categories to display names first, then get sort order
+		const displayName = this.getCategoryDisplayName(category)
+		const sortOrder: Record<string, number> = {
+			'Frozen Products': 1,
+			'Main Products': 2,
+			'Desserts and Drinks': 3,
+			'Packaging Materials': 4,
+			'Cleaning Materials': 5,
 		}
-		return categoryOrder[category] || 999
+		return sortOrder[displayName] || 6
 	}
 
 	private static groupItemsByCategory(
@@ -90,12 +102,8 @@ export class PDFGenerator {
 		// Find the original category key for each display name and sort by order
 		const categoryEntries = Object.entries(grouped)
 			.map(([categoryName, items]) => {
-				// Find the original category key by checking the first item's category
-				const originalCategory =
-					items.length > 0 ? items[0].product.category : null
-				const sortOrder = originalCategory
-					? this.getCategorySortOrder(originalCategory)
-					: 999
+				// Get sort order based on the display name
+				const sortOrder = this.getCategorySortOrder(categoryName)
 				return {
 					categoryName,
 					items: items.sort((a, b) =>
@@ -112,6 +120,135 @@ export class PDFGenerator {
 		})
 
 		return sortedGroups
+	}
+
+	private static calculateProductsSummary(orders: Order[]) {
+		const productMap = new Map<
+			string,
+			{
+				name: string
+				unit: string
+				category: string
+				totalQuantity: number
+				totalValue: number
+			}
+		>()
+
+		const categoryMap = new Map<
+			string,
+			{
+				quantity: number
+				value: number
+			}
+		>()
+
+		let totalQuantity = 0
+		let totalValue = 0
+
+		// Process all orders and their items
+		orders.forEach(order => {
+			order.items.forEach(item => {
+				const productId = item.product._id
+				const quantity = item.quantity
+				const value = quantity * item.product.price
+				const categoryDisplayName = this.getCategoryDisplayName(
+					item.product.category
+				)
+
+				totalQuantity += quantity
+				totalValue += value
+
+				// Update product summary
+				if (productMap.has(productId)) {
+					const existing = productMap.get(productId)!
+					existing.totalQuantity += quantity
+					existing.totalValue += value
+				} else {
+					productMap.set(productId, {
+						name: item.product.name,
+						unit: item.product.unit,
+						category: categoryDisplayName,
+						totalQuantity: quantity,
+						totalValue: value,
+					})
+				}
+
+				// Update category summary
+				if (categoryMap.has(categoryDisplayName)) {
+					const existing = categoryMap.get(categoryDisplayName)!
+					existing.quantity += quantity
+					existing.value += value
+				} else {
+					categoryMap.set(categoryDisplayName, {
+						quantity: quantity,
+						value: value,
+					})
+				}
+			})
+		})
+
+		// Convert maps to arrays and sort
+		const topProducts = Array.from(productMap.values()).sort(
+			(a, b) => b.totalQuantity - a.totalQuantity
+		)
+
+		const byCategory = Object.fromEntries(categoryMap)
+
+		// Calculate average order value
+		const averageOrderValue = orders.length > 0 ? totalValue / orders.length : 0
+
+		return {
+			totalQuantity,
+			totalValue,
+			averageOrderValue,
+			byCategory,
+			topProducts,
+		}
+	}
+
+	private static calculateSingleOrderSummary(order: Order) {
+		const categoryMap = new Map<
+			string,
+			{
+				quantity: number
+				value: number
+			}
+		>()
+
+		let totalQuantity = 0
+		let totalValue = 0
+
+		// Process order items
+		order.items.forEach(item => {
+			const quantity = item.quantity
+			const value = quantity * item.product.price
+			const categoryDisplayName = this.getCategoryDisplayName(
+				item.product.category
+			)
+
+			totalQuantity += quantity
+			totalValue += value
+
+			// Update category summary
+			if (categoryMap.has(categoryDisplayName)) {
+				const existing = categoryMap.get(categoryDisplayName)!
+				existing.quantity += quantity
+				existing.value += value
+			} else {
+				categoryMap.set(categoryDisplayName, {
+					quantity: quantity,
+					value: value,
+				})
+			}
+		})
+
+		const byCategory = Object.fromEntries(categoryMap)
+
+		return {
+			totalQuantity,
+			totalValue,
+			byCategory,
+		}
 	}
 
 	static async generateOrdersPDF(
@@ -175,6 +312,82 @@ export class PDFGenerator {
 			yPosition += 6
 		})
 		yPosition += 10
+
+		// Products summary
+		const productsSummary = this.calculateProductsSummary(orders)
+
+		checkNewPage(80) // Ensure enough space for products summary
+
+		pdf.setFont('helvetica', 'bold')
+		pdf.text('Products Summary:', margin, yPosition)
+		yPosition += 10
+
+		// Total quantities and values
+		pdf.setFont('helvetica', 'normal')
+		pdf.text(
+			`Total Products Ordered: ${productsSummary.totalQuantity} items`,
+			margin + 10,
+			yPosition
+		)
+		yPosition += 6
+		pdf.text(
+			`Total Order Value: ${this.formatKRW(productsSummary.totalValue)}`,
+			margin + 10,
+			yPosition
+		)
+		yPosition += 6
+		pdf.text(
+			`Average Order Value: ${this.formatKRW(
+				productsSummary.averageOrderValue
+			)}`,
+			margin + 10,
+			yPosition
+		)
+		yPosition += 10
+
+		// Summary by category
+		pdf.setFont('helvetica', 'bold')
+		pdf.text('By Category:', margin + 10, yPosition)
+		yPosition += 8
+
+		pdf.setFont('helvetica', 'normal')
+		Object.entries(productsSummary.byCategory).forEach(
+			([category, summary]) => {
+				checkNewPage(6)
+				pdf.text(
+					`• ${category}: ${summary.quantity} items (${this.formatKRW(
+						summary.value
+					)})`,
+					margin + 20,
+					yPosition
+				)
+				yPosition += 6
+			}
+		)
+		yPosition += 5
+
+		// Top 10 most ordered products
+		if (productsSummary.topProducts.length > 0) {
+			checkNewPage(60) // Ensure space for top products
+
+			pdf.setFont('helvetica', 'bold')
+			pdf.text('Top Products (Most Ordered):', margin + 10, yPosition)
+			yPosition += 8
+
+			pdf.setFont('helvetica', 'normal')
+			productsSummary.topProducts.slice(0, 10).forEach((product, index) => {
+				checkNewPage(6)
+				pdf.text(
+					`${index + 1}. ${product.name}: ${product.totalQuantity} ${
+						product.unit
+					} (${this.formatKRW(product.totalValue)})`,
+					margin + 20,
+					yPosition
+				)
+				yPosition += 6
+			})
+			yPosition += 10
+		}
 
 		// Orders by branch
 		const branchSummary = orders.reduce((acc, order) => {
@@ -373,7 +586,56 @@ export class PDFGenerator {
 			pdf.setFont('helvetica', 'normal')
 			const adminNotes = pdf.splitTextToSize(order.adminNotes, 160)
 			pdf.text(adminNotes, margin, yPosition)
+			yPosition += adminNotes.length * 5
 		}
+
+		// Order Summary
+		yPosition += 10
+		if (yPosition > 240) {
+			pdf.addPage()
+			yPosition = 20
+		}
+
+		const orderSummary = this.calculateSingleOrderSummary(order)
+
+		pdf.setFont('helvetica', 'bold')
+		pdf.setFontSize(12)
+		pdf.text('Order Summary:', margin, yPosition)
+		yPosition += 10
+
+		pdf.setFont('helvetica', 'normal')
+		pdf.setFontSize(10)
+		pdf.text(
+			`Total Items: ${orderSummary.totalQuantity} products`,
+			margin + 5,
+			yPosition
+		)
+		yPosition += 6
+		pdf.text(
+			`Total Value: ${this.formatKRW(orderSummary.totalValue)}`,
+			margin + 5,
+			yPosition
+		)
+		yPosition += 10
+
+		// Category breakdown
+		pdf.setFont('helvetica', 'bold')
+		pdf.text('By Category:', margin + 5, yPosition)
+		yPosition += 6
+
+		pdf.setFont('helvetica', 'normal')
+		Object.entries(orderSummary.byCategory).forEach(([category, data]) => {
+			if (yPosition > 270) {
+				pdf.addPage()
+				yPosition = 20
+			}
+			pdf.text(
+				`• ${category}: ${data.quantity} items (${this.formatKRW(data.value)})`,
+				margin + 10,
+				yPosition
+			)
+			yPosition += 5
+		})
 
 		// Save the PDF
 		const fileName = `order-${order.orderNumber}-${new Date().getTime()}.pdf`
