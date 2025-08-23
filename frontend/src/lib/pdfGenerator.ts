@@ -50,22 +50,22 @@ export class PDFGenerator {
 	}
 
 	private static getCategoryDisplayName(category: string): string {
-		// Handle both new and legacy categories
+		// Handle both current and legacy categories
 		const categoryMap: Record<string, string> = {
-			// New categories
+			// Current categories
 			'frozen-products': 'Frozen Products',
 			'main-products': 'Main Products',
 			'desserts-drinks': 'Desserts and Drinks',
 			'packaging-materials': 'Packaging Materials',
 			'cleaning-materials': 'Cleaning Materials',
 
-			// Legacy categories mapping to new ones
-			food: 'Main Products',
-			beverages: 'Desserts and Drinks',
-			cleaning: 'Cleaning Materials',
-			equipment: 'Packaging Materials',
-			packaging: 'Packaging Materials',
-			other: 'Main Products',
+			// Legacy categories mapping (if any old data exists)
+			food: 'Food',
+			beverages: 'Beverages',
+			cleaning: 'Cleaning',
+			equipment: 'Equipment',
+			packaging: 'Packaging',
+			other: 'Other',
 		}
 		return categoryMap[category] || 'Main Products'
 	}

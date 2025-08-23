@@ -440,7 +440,34 @@ export const productsApi = {
 	createProduct: async (
 		data: ProductFormData
 	): Promise<{ product: Product }> => {
-		const response = await api.post('/products', data)
+		// Clean up the data before sending
+		const cleanData = {
+			...data,
+			// Ensure empty strings become undefined for optional fields
+			description: data.description?.trim() || undefined,
+			supplier: data.supplier?.trim() || undefined,
+			// Ensure price is a number
+			price:
+				typeof data.price === 'string' ? parseFloat(data.price) : data.price,
+		}
+
+		console.log('Sending product data to API:', cleanData)
+		console.log('Original data:', data)
+		console.log(
+			'Price type:',
+			typeof cleanData.price,
+			'Value:',
+			cleanData.price
+		)
+		console.log(
+			'Category type:',
+			typeof cleanData.category,
+			'Value:',
+			cleanData.category
+		)
+		console.log('Unit type:', typeof cleanData.unit, 'Value:', cleanData.unit)
+		console.log('Category exact value:', JSON.stringify(cleanData.category))
+		const response = await api.post('/products', cleanData)
 		return response.data
 	},
 

@@ -121,14 +121,60 @@ const ProductsManagement: React.FC = () => {
 		e.preventDefault()
 		try {
 			setFormLoading(true)
+
+			// Debug log the data being sent
+			console.log(
+				'Creating product with data:',
+				JSON.stringify(formData, null, 2)
+			)
+
 			const response = await productsApi.createProduct(formData)
 			setProducts(prev => [response.product, ...prev])
 			setIsCreateDialogOpen(false)
 			resetForm()
 			toast.success('Product created successfully')
 		} catch (err: unknown) {
-			const error = err as { response?: { data?: { message?: string } } }
-			toast.error(error.response?.data?.message || 'Failed to create product')
+			console.error('Product creation error:', err)
+			const error = err as {
+				response?: {
+					data?: {
+						message?: string
+						errors?: Array<{
+							path?: string
+							field?: string
+							msg?: string
+							message?: string
+						}>
+					}
+				}
+			}
+
+			// Log detailed error information
+			if (error.response?.data) {
+				console.error('Error response data:', error.response.data)
+				if (error.response.data.errors) {
+					console.error(
+						'Validation errors details:',
+						JSON.stringify(error.response.data.errors, null, 2)
+					)
+				}
+			}
+
+			let errorMessage = 'Failed to create product'
+			if (
+				error.response?.data?.errors &&
+				Array.isArray(error.response.data.errors)
+			) {
+				// Show validation errors
+				const validationErrors = error.response.data.errors
+					.map(err => `${err.path || err.field}: ${err.msg || err.message}`)
+					.join(', ')
+				errorMessage = `Validation failed: ${validationErrors}`
+			} else if (error.response?.data?.message) {
+				errorMessage = error.response.data.message
+			}
+
+			toast.error(errorMessage)
 		} finally {
 			setFormLoading(false)
 		}

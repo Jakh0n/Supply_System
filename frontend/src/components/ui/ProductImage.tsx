@@ -1,6 +1,6 @@
 import { isValidImageUrl, optimizeImageUrl } from '@/lib/imageUtils'
 import { cn } from '@/lib/utils'
-import { ProductImage as ProductImageType } from '@/types'
+import { ProductCategory, ProductImage as ProductImageType } from '@/types'
 import { Coffee, ImageIcon, Package, ShoppingBag, Utensils } from 'lucide-react'
 import Image from 'next/image'
 import React, { useCallback, useState } from 'react'
@@ -11,12 +11,7 @@ interface ProductImageProps {
 	/** Alternative text for the image */
 	alt: string
 	/** Product category for fallback icon */
-	category?:
-		| 'frozen-products'
-		| 'main-products'
-		| 'desserts-drinks'
-		| 'packaging-materials'
-		| 'cleaning-materials'
+	category?: ProductCategory
 	/** Image width */
 	width?: number
 	/** Image height */
@@ -84,9 +79,20 @@ const ProductImage: React.FC<ProductImageProps> = ({
 	// Validate the image URL
 	const isValidUrl = isValidImageUrl(imageUrl)
 
-	// Optimize the image URL if needed
-	const optimizedUrl =
-		isValidUrl && optimize ? optimizeImageUrl(imageUrl!, optimize) : imageUrl
+	// Optimize the image URL if needed and ensure it's still valid after optimization
+	const optimizedUrl = (() => {
+		if (!isValidUrl) return imageUrl
+		if (!optimize) return imageUrl
+
+		try {
+			const optimized = optimizeImageUrl(imageUrl!, optimize)
+			// Make sure optimized URL is still valid
+			return isValidImageUrl(optimized) ? optimized : imageUrl
+		} catch (error) {
+			console.warn('Image optimization failed, using original URL:', error)
+			return imageUrl
+		}
+	})()
 
 	const handleLoad = useCallback(() => {
 		setIsLoading(false)
@@ -132,8 +138,8 @@ const ProductImage: React.FC<ProductImageProps> = ({
 		</div>
 	)
 
-	// If no valid URL, show placeholder immediately (no loading state)
-	if (!isValidUrl) {
+	// If no valid URL or optimized URL is invalid, show placeholder immediately (no loading state)
+	if (!isValidUrl || !isValidImageUrl(optimizedUrl)) {
 		return (
 			<div
 				className={cn(
@@ -197,7 +203,12 @@ const ProductImage: React.FC<ProductImageProps> = ({
 				onLoad={handleLoad}
 				onError={handleError}
 				priority={priority}
-				sizes={sizes}
+				sizes={
+					fill
+						? sizes ||
+						  '(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw'
+						: sizes
+				}
 				quality={optimize?.quality as number | undefined}
 			/>
 		</div>
@@ -264,6 +275,10 @@ export const ProductCardImage: React.FC<
 				containerClassName
 			)}
 			className={cn('object-cover', className)}
+			sizes={
+				props.sizes ||
+				'(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw'
+			}
 			optimize={{
 				width: 400,
 				height: 400,
