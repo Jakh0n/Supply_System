@@ -128,6 +128,7 @@ export interface OrderFilters {
 	status?: OrderStatus | 'all'
 	page?: number
 	limit?: number
+	viewAll?: string // For workers to view all orders
 }
 
 export interface ProductFilters {

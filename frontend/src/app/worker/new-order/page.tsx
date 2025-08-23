@@ -49,7 +49,13 @@ import { useRouter } from 'next/navigation'
 import React, { useCallback, useEffect, useState } from 'react'
 import { toast } from 'sonner'
 
-// Helper function to get tomorrow's date
+// Helper function to get today's date
+const getTodayDate = (): string => {
+	const today = new Date()
+	return today.toISOString().split('T')[0]
+}
+
+// Helper function to get tomorrow's date (kept for minimum date validation if needed)
 const getTomorrowDate = (): string => {
 	const tomorrow = new Date()
 	tomorrow.setDate(tomorrow.getDate() + 1)
@@ -85,7 +91,7 @@ const NewOrder: React.FC = () => {
 		'all'
 	)
 	const [orderItems, setOrderItems] = useState<OrderItem[]>([])
-	const [requestedDate, setRequestedDate] = useState(getTomorrowDate())
+	const [requestedDate, setRequestedDate] = useState(getTodayDate())
 	const [orderNotes, setOrderNotes] = useState('')
 	const [submitting, setSubmitting] = useState(false)
 	const [showSuggestionsModal, setShowSuggestionsModal] = useState(false)
@@ -797,12 +803,12 @@ const NewOrder: React.FC = () => {
 												type='date'
 												value={requestedDate}
 												onChange={e => setRequestedDate(e.target.value)}
-												min={getTomorrowDate()}
+												min={getTodayDate()}
 												className='pl-9 sm:pl-10 h-9 sm:h-11 border-2 focus:border-blue-500 text-sm'
 											/>
 										</div>
 										<p className='text-xs text-gray-500 mt-1'>
-											Orders must be placed at least 1 day in advance
+											You can place orders for today or future dates
 										</p>
 									</div>
 

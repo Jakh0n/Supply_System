@@ -19,6 +19,7 @@ import {
 	Settings,
 	ShoppingCart,
 	User,
+	Users,
 } from 'lucide-react'
 import Image from 'next/image'
 import Link from 'next/link'
@@ -140,6 +141,17 @@ const Navbar: React.FC = () => {
 									>
 										<ShoppingCart className='h-4 w-4 mr-2' />
 										My Orders
+									</Link>
+									<Link
+										href='/worker/all-orders'
+										className={`px-3 py-2 rounded-md text-sm font-medium flex items-center transition-colors ${
+											isActiveLink('/worker/all-orders')
+												? 'text-blue-600 bg-blue-50'
+												: 'text-gray-700 hover:text-blue-600 hover:bg-gray-50'
+										}`}
+									>
+										<Users className='h-4 w-4 mr-2' />
+										All Team Orders
 									</Link>
 									<Link
 										href='/worker/new-order'

@@ -36,15 +36,48 @@ const WorkerDashboard: React.FC = () => {
 	const [totalPages, setTotalPages] = useState(1)
 	const [totalOrders, setTotalOrders] = useState(0)
 
+	// Filter states
+	const [dateFilter, setDateFilter] = useState<
+		'all' | 'today' | 'yesterday' | 'weekly'
+	>('all')
+
 	const ordersPerPage = 7
+
+	// Date helper functions
+	const getTodayDate = () => {
+		return new Date().toISOString().split('T')[0]
+	}
+
+	const getYesterdayDate = () => {
+		const yesterday = new Date()
+		yesterday.setDate(yesterday.getDate() - 1)
+		return yesterday.toISOString().split('T')[0]
+	}
+
+	const getWeeklyStartDate = () => {
+		const today = new Date()
+		const firstDay = today.getDate() - today.getDay()
+		const weekStart = new Date(today.setDate(firstDay))
+		return weekStart.toISOString().split('T')[0]
+	}
 
 	const fetchRecentOrders = useCallback(async () => {
 		try {
 			setLoading(true)
 
+			let dateFilterValue: string | undefined = undefined
+			if (dateFilter === 'today') {
+				dateFilterValue = getTodayDate()
+			} else if (dateFilter === 'yesterday') {
+				dateFilterValue = getYesterdayDate()
+			} else if (dateFilter === 'weekly') {
+				dateFilterValue = getWeeklyStartDate()
+			}
+
 			const filters = {
 				page: currentPage,
 				limit: ordersPerPage,
+				date: dateFilterValue,
 			}
 
 			const response = await ordersApi.getOrders(filters)
@@ -57,7 +90,7 @@ const WorkerDashboard: React.FC = () => {
 		} finally {
 			setLoading(false)
 		}
-	}, [currentPage])
+	}, [currentPage, dateFilter])
 
 	useEffect(() => {
 		fetchRecentOrders()
@@ -75,6 +108,13 @@ const WorkerDashboard: React.FC = () => {
 
 	const handlePageChange = (newPage: number) => {
 		setCurrentPage(newPage)
+	}
+
+	const handleDateFilterChange = (
+		dateFilter: 'all' | 'today' | 'yesterday' | 'weekly'
+	) => {
+		setDateFilter(dateFilter)
+		setCurrentPage(1) // Reset to first page when filtering
 	}
 
 	const handleCloseModal = () => {
@@ -107,8 +147,10 @@ const WorkerDashboard: React.FC = () => {
 						totalPages={totalPages}
 						loading={loading}
 						error={error}
+						dateFilter={dateFilter}
 						onViewOrder={handleViewOrder}
 						onPageChange={handlePageChange}
+						onDateFilterChange={handleDateFilterChange}
 						onRetry={fetchRecentOrders}
 					/>
 				</div>

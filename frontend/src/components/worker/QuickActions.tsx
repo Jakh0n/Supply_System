@@ -4,13 +4,13 @@ import {
 	CardHeader,
 	CardTitle,
 } from '@/components/ui/card'
-import { Plus, ShoppingCart } from 'lucide-react'
+import { Plus, ShoppingCart, Users } from 'lucide-react'
 import Link from 'next/link'
 import React from 'react'
 
 const QuickActions: React.FC = () => {
 	return (
-		<div className='grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6'>
+		<div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6'>
 			<Link href='/worker/new-order' className='block'>
 				<Card className='cursor-pointer hover:shadow-lg transition-all duration-200 h-full border-l-4 border-l-green-500 hover:border-l-green-600'>
 					<CardHeader className='p-4 sm:p-6'>
@@ -38,6 +38,22 @@ const QuickActions: React.FC = () => {
 						</CardTitle>
 						<CardDescription className='text-sm sm:text-base mt-2'>
 							Check the status of your submitted orders
+						</CardDescription>
+					</CardHeader>
+				</Card>
+			</Link>
+
+			<Link href='/worker/all-orders' className='block'>
+				<Card className='cursor-pointer hover:shadow-lg transition-all duration-200 h-full border-l-4 border-l-purple-500 hover:border-l-purple-600'>
+					<CardHeader className='p-4 sm:p-6'>
+						<CardTitle className='flex items-center text-base sm:text-lg'>
+							<div className='p-2 bg-purple-100 rounded-lg mr-3'>
+								<Users className='h-4 w-4 sm:h-5 sm:w-5 text-purple-600' />
+							</div>
+							<span>All Team Orders</span>
+						</CardTitle>
+						<CardDescription className='text-sm sm:text-base mt-2'>
+							View all orders from your team - perfect for coordination
 						</CardDescription>
 					</CardHeader>
 				</Card>

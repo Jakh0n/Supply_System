@@ -179,6 +179,7 @@ export const ordersApi = {
 			params.append('status', filters.status)
 		if (filters?.page) params.append('page', filters.page.toString())
 		if (filters?.limit) params.append('limit', filters.limit.toString())
+		if (filters?.viewAll) params.append('viewAll', filters.viewAll)
 
 		const response = await api.get(`/orders?${params.toString()}`)
 		return cleanOrdersData(response.data)
