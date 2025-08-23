@@ -318,11 +318,7 @@ const OrderDetailPage: React.FC = () => {
 															<p className='text-sm text-red-500'>
 																Product no longer available
 															</p>
-															{item.notes && (
-																<p className='text-sm text-red-600 mt-1 italic'>
-																	Note: {item.notes}
-																</p>
-															)}
+															{/* Item notes removed - using order-level notes only */}
 														</div>
 													</div>
 												</div>

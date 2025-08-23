@@ -120,11 +120,6 @@ const DashboardStats: React.FC<DashboardStatsProps> = ({
 								: stat.value}
 						</div>
 						<p className='text-xs text-gray-500 truncate'>{stat.description}</p>
-						{stat.subValue && (
-							<p className='text-xs text-green-600 font-medium mt-1 truncate'>
-								{stat.subValue}
-							</p>
-						)}
 					</CardContent>
 				</Card>
 			))}

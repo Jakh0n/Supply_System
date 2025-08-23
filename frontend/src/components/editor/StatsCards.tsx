@@ -3,7 +3,7 @@ import { Calendar, FileText } from 'lucide-react'
 
 interface DashboardStats {
 	todayOrders: number
-	totalOrders: number
+	todayCompletedOrders: number
 	pendingOrders: number
 	completedOrders?: number
 }
@@ -21,10 +21,10 @@ const StatsCards: React.FC<StatsCardsProps> = ({ stats }) => {
 			iconColor: 'text-blue-500',
 		},
 		{
-			title: 'Total Orders',
-			value: stats.totalOrders,
+			title: 'Completed Today',
+			value: stats.todayCompletedOrders || 0,
 			icon: FileText,
-			iconColor: 'text-gray-500',
+			iconColor: 'text-green-500',
 		},
 		{
 			title: 'Pending Orders',
@@ -33,10 +33,10 @@ const StatsCards: React.FC<StatsCardsProps> = ({ stats }) => {
 			iconColor: 'text-yellow-500',
 		},
 		{
-			title: 'Completed Orders',
+			title: 'All Completed',
 			value: stats.completedOrders || 0,
 			icon: FileText,
-			iconColor: 'text-green-500',
+			iconColor: 'text-gray-500',
 		},
 	]
 

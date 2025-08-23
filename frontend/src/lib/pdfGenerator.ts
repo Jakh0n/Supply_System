@@ -556,12 +556,7 @@ export class PDFGenerator {
 				pdf.text(item.product.unit, margin + 130, yPosition)
 				yPosition += 6
 
-				if (item.notes) {
-					pdf.setFont('helvetica', 'italic')
-					pdf.text(`Note: ${item.notes}`, margin + 10, yPosition)
-					pdf.setFont('helvetica', 'normal')
-					yPosition += 6
-				}
+				// Item notes removed - using order-level notes only
 			})
 			yPosition += 8 // Space between categories
 		})

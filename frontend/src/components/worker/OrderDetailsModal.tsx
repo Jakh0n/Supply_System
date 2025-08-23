@@ -183,11 +183,7 @@ const OrderDetailsModal: React.FC<OrderDetailsModalProps> = ({
 														<p className='text-xs text-red-500 truncate'>
 															Product no longer available
 														</p>
-														{item.notes && (
-															<p className='text-xs text-red-600 mt-1 italic line-clamp-2'>
-																Note: {item.notes}
-															</p>
-														)}
+														{/* Item notes removed - using order-level notes only */}
 													</div>
 												</>
 											)}

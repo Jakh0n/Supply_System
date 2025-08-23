@@ -169,7 +169,7 @@ const EditOrder: React.FC = () => {
 				`Increased ${product.name} quantity to ${existingItem.quantity + 1}`
 			)
 		} else {
-			setOrderItems(prev => [...prev, { product, quantity: 1, notes: '' }])
+			setOrderItems(prev => [...prev, { product, quantity: 1 }])
 			toast.success(`Added ${product.name} to your order`)
 		}
 		setSearchTerm('')
@@ -242,7 +242,7 @@ const EditOrder: React.FC = () => {
 
 			if (!originalItem) return true
 			if (formItem.quantity !== originalItem.quantity) return true
-			if ((formItem.notes || '') !== (originalItem.notes || '')) return true
+			// Notes comparison removed as notes are no longer per-item
 		}
 
 		return false

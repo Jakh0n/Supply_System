@@ -160,11 +160,7 @@ const OrderDetailDialog: React.FC<OrderDetailDialogProps> = ({
 													<p className='text-sm text-red-500'>
 														{item.quantity} × [Product no longer available]
 													</p>
-													{item.notes && (
-														<p className='text-sm text-gray-400 italic mt-1'>
-															Note: {item.notes}
-														</p>
-													)}
+													{/* Item notes removed - using order-level notes only */}
 												</div>
 											</div>
 											<div className='text-left sm:text-right'>
@@ -197,11 +193,7 @@ const OrderDetailDialog: React.FC<OrderDetailDialogProps> = ({
 													{item.quantity} {item.product.unit} ×{' '}
 													{formatKRW(item.product.price)}
 												</p>
-												{item.notes && (
-													<p className='text-sm text-gray-400 italic mt-1'>
-														Note: {item.notes}
-													</p>
-												)}
+												{/* Item notes removed - using order-level notes only */}
 											</div>
 										</div>
 										<div className='text-left sm:text-right'>

@@ -410,11 +410,7 @@ const OrdersManagement: React.FC = () => {
 																	{item.quantity} × [Product no longer
 																	available]
 																</p>
-																{item.notes && (
-																	<p className='text-sm text-gray-400 italic'>
-																		Note: {item.notes}
-																	</p>
-																)}
+																{/* Item notes removed - using order-level notes only */}
 															</div>
 															<div className='text-right'>
 																<p className='font-medium text-sm text-red-600'>
@@ -438,11 +434,7 @@ const OrdersManagement: React.FC = () => {
 																{item.quantity} {item.product.unit} ×{' '}
 																{formatKRW(item.product.price)}
 															</p>
-															{item.notes && (
-																<p className='text-sm text-gray-400 italic'>
-																	Note: {item.notes}
-																</p>
-															)}
+															{/* Item notes removed - using order-level notes only */}
 														</div>
 														<div className='text-right'>
 															<p className='font-medium text-sm'>
