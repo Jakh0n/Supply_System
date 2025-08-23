@@ -39,13 +39,21 @@ const UsersManagement = () => {
 	const [statusFilter, setStatusFilter] = useState<'true' | 'false' | 'all'>(
 		'all'
 	)
-	const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false)
 	const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
+	const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false)
 	const [selectedUser, setSelectedUser] = useState<User | null>(null)
 	const [isSubmitting, setIsSubmitting] = useState(false)
 
-	// Form state
+	// Form state for editing users
 	const [formData, setFormData] = useState<RegisterData>({
+		username: '',
+		password: '',
+		position: 'worker',
+		branch: '',
+	})
+
+	// Form state for creating users
+	const [createFormData, setCreateFormData] = useState<RegisterData>({
 		username: '',
 		password: '',
 		position: 'worker',
@@ -84,16 +92,36 @@ const UsersManagement = () => {
 		setSelectedUser(null)
 	}
 
+	const resetCreateForm = () => {
+		setCreateFormData({
+			username: '',
+			password: '',
+			position: 'worker',
+			branch: '',
+		})
+	}
+
 	const handleCreateUser = async (e: React.FormEvent) => {
 		e.preventDefault()
 		if (isSubmitting) return
 
 		try {
 			setIsSubmitting(true)
-			await usersApi.createUser(formData)
+			const createData: RegisterData = {
+				username: createFormData.username,
+				password: createFormData.password,
+				position: createFormData.position,
+			}
+
+			// Include branch for workers
+			if (createFormData.position === 'worker') {
+				createData.branch = createFormData.branch
+			}
+
+			await usersApi.createUser(createData)
 			await fetchUsers()
 			setIsCreateDialogOpen(false)
-			resetForm()
+			resetCreateForm()
 			toast.success('User created successfully')
 		} catch (err: unknown) {
 			const error = err as { response?: { data?: { message?: string } } }
@@ -181,9 +209,22 @@ const UsersManagement = () => {
 		setIsEditDialogOpen(true)
 	}
 
+	const openCreateDialog = () => {
+		resetCreateForm()
+		setIsCreateDialogOpen(true)
+	}
+
 	const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
 		const { name, value } = e.target
 		setFormData(prev => ({
+			...prev,
+			[name]: value,
+		}))
+	}
+
+	const handleCreateInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+		const { name, value } = e.target
+		setCreateFormData(prev => ({
 			...prev,
 			[name]: value,
 		}))
@@ -198,6 +239,21 @@ const UsersManagement = () => {
 		// Clear branch if position is admin
 		if (name === 'position' && value === 'admin') {
 			setFormData(prev => ({
+				...prev,
+				branch: '',
+			}))
+		}
+	}
+
+	const handleCreateSelectChange = (name: string, value: string) => {
+		setCreateFormData(prev => ({
+			...prev,
+			[name]: value,
+		}))
+
+		// Clear branch if position is admin
+		if (name === 'position' && value === 'admin') {
+			setCreateFormData(prev => ({
 				...prev,
 				branch: '',
 			}))
@@ -224,17 +280,7 @@ const UsersManagement = () => {
 			<AdminLayout>
 				<div className='space-y-4 sm:space-y-6 p-4 sm:p-6'>
 					{/* Header */}
-					<UsersHeader
-						isCreateDialogOpen={isCreateDialogOpen}
-						setIsCreateDialogOpen={setIsCreateDialogOpen}
-						formData={formData}
-						setFormData={setFormData}
-						onCreateUser={handleCreateUser}
-						isSubmitting={isSubmitting}
-						resetForm={resetForm}
-						handleInputChange={handleInputChange}
-						handleSelectChange={handleSelectChange}
-					/>
+					<UsersHeader onAddUser={openCreateDialog} />
 
 					{/* Error message */}
 					{error && (
@@ -268,6 +314,121 @@ const UsersManagement = () => {
 						onToggleStatus={handleToggleStatus}
 						onDeleteUser={handleDeleteUser}
 					/>
+
+					{/* Create User Dialog */}
+					<Dialog
+						open={isCreateDialogOpen}
+						onOpenChange={setIsCreateDialogOpen}
+					>
+						<DialogContent className='sm:max-w-[425px] mx-4 max-h-[90vh] overflow-y-auto'>
+							<DialogHeader>
+								<DialogTitle className='text-lg sm:text-xl'>
+									Create New User
+								</DialogTitle>
+								<DialogDescription>
+									Add a new user to the system with appropriate permissions.
+								</DialogDescription>
+							</DialogHeader>
+							<form onSubmit={handleCreateUser} className='space-y-4'>
+								<div>
+									<Label
+										htmlFor='create-username'
+										className='text-sm font-medium'
+									>
+										Username
+									</Label>
+									<Input
+										id='create-username'
+										name='username'
+										value={createFormData.username}
+										onChange={handleCreateInputChange}
+										placeholder='Enter username'
+										required
+										className='mt-1'
+									/>
+								</div>
+								<div>
+									<Label
+										htmlFor='create-password'
+										className='text-sm font-medium'
+									>
+										Password
+									</Label>
+									<Input
+										id='create-password'
+										name='password'
+										type='password'
+										value={createFormData.password}
+										onChange={handleCreateInputChange}
+										placeholder='Enter password'
+										required
+										className='mt-1'
+									/>
+								</div>
+								<div>
+									<Label
+										htmlFor='create-position'
+										className='text-sm font-medium'
+									>
+										Position
+									</Label>
+									<Select
+										value={createFormData.position}
+										onValueChange={value =>
+											handleCreateSelectChange('position', value)
+										}
+									>
+										<SelectTrigger className='mt-1'>
+											<SelectValue placeholder='Select position' />
+										</SelectTrigger>
+										<SelectContent>
+											<SelectItem value='worker'>Worker</SelectItem>
+											<SelectItem value='editor'>Editor</SelectItem>
+											<SelectItem value='admin'>Admin</SelectItem>
+										</SelectContent>
+									</Select>
+								</div>
+
+								{createFormData.position === 'worker' && (
+									<div>
+										<Label
+											htmlFor='create-branch'
+											className='text-sm font-medium'
+										>
+											Branch
+										</Label>
+										<Input
+											id='create-branch'
+											name='branch'
+											value={createFormData.branch || ''}
+											onChange={handleCreateInputChange}
+											placeholder='Enter branch name'
+											required
+											className='mt-1'
+										/>
+									</div>
+								)}
+
+								<div className='flex flex-col sm:flex-row justify-end space-y-2 sm:space-y-0 sm:space-x-2'>
+									<Button
+										type='button'
+										variant='outline'
+										onClick={() => setIsCreateDialogOpen(false)}
+										className='w-full sm:w-auto'
+									>
+										Cancel
+									</Button>
+									<Button
+										type='submit'
+										disabled={isSubmitting}
+										className='w-full sm:w-auto'
+									>
+										{isSubmitting ? 'Creating...' : 'Create User'}
+									</Button>
+								</div>
+							</form>
+						</DialogContent>
+					</Dialog>
 
 					{/* Edit Dialog */}
 					<Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
@@ -341,6 +502,7 @@ const UsersManagement = () => {
 										</SelectContent>
 									</Select>
 								</div>
+
 								{formData.position === 'worker' && (
 									<div>
 										<Label
@@ -352,7 +514,7 @@ const UsersManagement = () => {
 										<Input
 											id='edit-branch'
 											name='branch'
-											value={formData.branch}
+											value={formData.branch || ''}
 											onChange={handleInputChange}
 											placeholder='Enter branch name'
 											required
@@ -360,6 +522,7 @@ const UsersManagement = () => {
 										/>
 									</div>
 								)}
+
 								<div className='flex flex-col sm:flex-row justify-end space-y-2 sm:space-y-0 sm:space-x-2'>
 									<Button
 										type='button'

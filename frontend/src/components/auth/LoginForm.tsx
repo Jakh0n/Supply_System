@@ -14,7 +14,6 @@ import { useAuth } from '@/contexts/AuthContext'
 import { LoginCredentials } from '@/types'
 import { AlertCircle, Eye, EyeOff } from 'lucide-react'
 import Image from 'next/image'
-import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import React, { useEffect, useState } from 'react'
 
@@ -157,27 +156,6 @@ const LoginForm: React.FC = () => {
 								{loading ? 'Signing in...' : 'Sign in'}
 							</Button>
 						</form>
-
-						<div className='mt-6'>
-							<div className='relative'>
-								<div className='absolute inset-0 flex items-center'>
-									<div className='w-full border-t border-gray-300' />
-								</div>
-								<div className='relative flex justify-center text-sm'>
-									<span className='px-2 bg-white text-gray-500'>
-										Don&apos;t have an account?
-									</span>
-								</div>
-							</div>
-
-							<div className='mt-6'>
-								<Link href='/register'>
-									<Button variant='outline' className='w-full'>
-										Create new account
-									</Button>
-								</Link>
-							</div>
-						</div>
 					</CardContent>
 				</Card>
 			</div>

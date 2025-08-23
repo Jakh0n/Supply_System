@@ -1,7 +1,7 @@
 'use client'
 
 import { authApi } from '@/lib/api'
-import { AuthUser, LoginCredentials, RegisterData } from '@/types'
+import { AuthUser, LoginCredentials } from '@/types'
 import React, { createContext, useContext, useEffect, useState } from 'react'
 import { toast } from 'sonner'
 
@@ -9,7 +9,6 @@ interface AuthContextType {
 	user: AuthUser | null
 	loading: boolean
 	login: (credentials: LoginCredentials) => Promise<void>
-	register: (data: RegisterData) => Promise<void>
 	logout: () => Promise<void>
 	isAdmin: boolean
 	isWorker: boolean
@@ -78,21 +77,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 		}
 	}
 
-	const register = async (data: RegisterData) => {
-		try {
-			const response = await authApi.register(data)
-			localStorage.setItem('token', response.token)
-			setUser(response.user)
-			toast.success('Registration successful!')
-		} catch (error: unknown) {
-			const message = isApiError(error)
-				? error.response?.data?.message || 'Registration failed'
-				: 'Registration failed'
-			toast.error(message)
-			throw error
-		}
-	}
-
 	const logout = async () => {
 		try {
 			await authApi.logout()
@@ -113,7 +97,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 		user,
 		loading,
 		login,
-		register,
 		logout,
 		isAdmin,
 		isWorker,

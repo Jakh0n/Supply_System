@@ -394,6 +394,32 @@ const NewOrder: React.FC = () => {
 		return categoryMap[category] || category
 	}
 
+	// Group products by category
+	const getProductsByCategory = () => {
+		const grouped: Record<string, Product[]> = {}
+
+		filteredProducts.forEach(product => {
+			const category = product.category
+			if (!grouped[category]) {
+				grouped[category] = []
+			}
+			grouped[category].push(product)
+		})
+
+		return grouped
+	}
+
+	// Get category order for display
+	const getCategoryOrder = (): ProductCategory[] => {
+		return [
+			'frozen-products',
+			'main-products',
+			'desserts-drinks',
+			'packaging-materials',
+			'cleaning-materials',
+		]
+	}
+
 	if (loading) {
 		return (
 			<ProtectedRoute requiredRole='worker'>
@@ -471,27 +497,27 @@ const NewOrder: React.FC = () => {
 								</CardHeader>
 								<CardContent className='p-4 sm:p-6 pt-0'>
 									{/* Search and Filter */}
-									<div className='flex flex-col gap-3 sm:gap-4 mb-4 sm:mb-6'>
+									<div className='flex flex-col gap-4 mb-6'>
 										<div className='w-full'>
 											<div className='relative'>
-												<Search className='absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4' />
+												<Search className='absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5' />
 												<Input
-													placeholder='Search products...'
+													placeholder='Search products by name, description, or supplier...'
 													value={searchTerm}
 													onChange={e => setSearchTerm(e.target.value)}
-													className='pl-10 h-9 sm:h-10 text-sm'
+													className='pl-12 h-12 text-base border-2 focus:border-blue-500 shadow-sm'
 												/>
 											</div>
 										</div>
-										<div className='w-full sm:w-auto'>
+										<div className='w-full'>
 											<Select
 												value={categoryFilter}
 												onValueChange={(value: ProductCategory | 'all') =>
 													setCategoryFilter(value)
 												}
 											>
-												<SelectTrigger className='w-full h-9 sm:h-10 text-sm'>
-													<SelectValue placeholder='All categories' />
+												<SelectTrigger className='w-full h-12 text-base border-2 focus:border-blue-500 shadow-sm'>
+													<SelectValue placeholder='Filter by category' />
 												</SelectTrigger>
 												<SelectContent>
 													<SelectItem value='all'>All Categories</SelectItem>
@@ -515,7 +541,7 @@ const NewOrder: React.FC = () => {
 										</div>
 									</div>
 
-									{/* Products Display */}
+									{/* Products Display - Organized by Category */}
 									{filteredProducts.length === 0 ? (
 										<div className='text-center py-8 sm:py-12'>
 											<Package className='h-12 w-12 sm:h-16 sm:w-16 text-gray-400 mx-auto mb-3 sm:mb-4' />
@@ -530,212 +556,259 @@ const NewOrder: React.FC = () => {
 										</div>
 									) : (
 										<>
-											{/* Mobile Card View */}
-											<div className='block sm:hidden space-y-3 max-h-80 overflow-y-auto'>
-												{filteredProducts.map(product => (
-													<div
-														key={product._id}
-														className='border rounded-lg p-3 hover:bg-gray-50 transition-colors'
-													>
-														<div className='flex items-start justify-between mb-2'>
-															<div className='flex items-start flex-1 min-w-0'>
-																<div className='w-10 h-10 flex-shrink-0 mr-3'>
-																	<ProductThumbnail
-																		src={getPrimaryImage(product)}
-																		alt={product.name}
-																		category={product.category}
-																		size='sm'
-																		priority={false}
-																	/>
-																</div>
-																<div className='min-w-0 flex-1'>
-																	<p className='font-medium text-sm text-gray-900 mb-1 line-clamp-2'>
-																		{product.name}
+											{/* Category-based Product Organization */}
+											<div className='space-y-6 max-h-96 overflow-y-auto'>
+												{getCategoryOrder()
+													.filter(category => {
+														const productsInCategory =
+															getProductsByCategory()[category] || []
+														return productsInCategory.length > 0
+													})
+													.map(category => {
+														const productsInCategory =
+															getProductsByCategory()[category] || []
+														return (
+															<div
+																key={category}
+																className='border rounded-lg overflow-hidden'
+															>
+																{/* Category Header */}
+																<div className='bg-gradient-to-r from-blue-50 to-indigo-50 px-4 py-3 border-b'>
+																	<h3 className='font-semibold text-base text-gray-900 flex items-center'>
+																		<Package className='h-4 w-4 mr-2 text-blue-600' />
+																		{getCategoryDisplayName(category)}
+																	</h3>
+																	<p className='text-xs text-gray-600 mt-1 ml-6'>
+																		{productsInCategory.length}{' '}
+																		{productsInCategory.length === 1
+																			? 'item'
+																			: 'items'}{' '}
+																		available
 																	</p>
-																	{product.description && (
-																		<p className='text-xs text-gray-500 line-clamp-2 mb-2'>
-																			{product.description}
-																		</p>
-																	)}
-																	<div className='flex items-center gap-2 mb-2'>
-																		<span className='inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800'>
-																			{getCategoryDisplayName(product.category)}
-																		</span>
-																		<span className='text-xs text-gray-600 font-medium'>
-																			{product.unit}
-																		</span>
+																</div>
+
+																{/* Products in Category */}
+																<div className='divide-y divide-gray-100'>
+																	{/* Mobile Card View */}
+																	<div className='block sm:hidden'>
+																		{productsInCategory.map(product => (
+																			<div
+																				key={product._id}
+																				className='p-4 hover:bg-gray-50 transition-colors border-b border-gray-100 last:border-b-0'
+																			>
+																				<div className='flex items-start gap-3 mb-2'>
+																					{/* Bigger Product Image */}
+																					<div className='w-20 h-20 flex-shrink-0 rounded-lg overflow-hidden border border-gray-200'>
+																						<ProductThumbnail
+																							src={getPrimaryImage(product)}
+																							alt={product.name}
+																							category={product.category}
+																							size='lg'
+																							priority={false}
+																						/>
+																					</div>
+
+																					{/* Product Info */}
+																					<div className='flex-1 min-w-0'>
+																						<h4 className='font-medium text-sm text-gray-900 mb-1 line-clamp-2'>
+																							{product.name}
+																						</h4>
+																						{product.description && (
+																							<p className='text-xs text-gray-500 line-clamp-2 mb-1'>
+																								{product.description}
+																							</p>
+																						)}
+																						<div className='flex items-center gap-2 mb-1'>
+																							<span className='inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800'>
+																								{product.unit}
+																							</span>
+																						</div>
+																					</div>
+																				</div>
+
+																				{/* Smaller Quantity Controls */}
+																				<div className='flex items-center justify-center gap-1 w-full'>
+																					{getProductQuantity(product._id) >
+																					0 ? (
+																						<>
+																							<Button
+																								variant='outline'
+																								size='sm'
+																								onClick={() =>
+																									updateItemQuantity(
+																										product._id,
+																										getProductQuantity(
+																											product._id
+																										) - 1
+																									)
+																								}
+																								className='h-7 w-7 p-0 rounded-full'
+																							>
+																								<Minus className='h-3 w-3' />
+																							</Button>
+																							<span className='text-sm font-bold text-center min-w-[2rem] px-1'>
+																								{getProductQuantity(
+																									product._id
+																								)}
+																							</span>
+																							<Button
+																								variant='outline'
+																								size='sm'
+																								onClick={() =>
+																									updateItemQuantity(
+																										product._id,
+																										getProductQuantity(
+																											product._id
+																										) + 1
+																									)
+																								}
+																								className='h-7 w-7 p-0 rounded-full'
+																							>
+																								<Plus className='h-3 w-3' />
+																							</Button>
+																						</>
+																					) : (
+																						<Button
+																							size='sm'
+																							onClick={() =>
+																								addProductToOrder(product)
+																							}
+																							className='w-full bg-green-600 hover:bg-green-700 text-white h-7 text-xs'
+																						>
+																							<Plus className='h-3 w-3 mr-1' />
+																							Add
+																						</Button>
+																					)}
+																				</div>
+																			</div>
+																		))}
+																	</div>
+
+																	{/* Desktop Table View */}
+																	<div className='hidden sm:block'>
+																		<table className='w-full'>
+																			<thead className='bg-gray-50'>
+																				<tr className='border-b'>
+																					<th className='text-left p-3 font-medium text-gray-700 text-sm w-1/2'>
+																						Product
+																					</th>
+																					<th className='text-left p-3 font-medium text-gray-700 text-sm w-1/4'>
+																						Unit
+																					</th>
+																					<th className='text-right p-3 font-medium text-gray-700 text-sm w-1/4'>
+																						Action
+																					</th>
+																				</tr>
+																			</thead>
+																			<tbody>
+																				{productsInCategory.map(product => (
+																					<tr
+																						key={product._id}
+																						className='border-b hover:bg-gray-50 transition-colors'
+																					>
+																						<td className='p-3'>
+																							<div className='flex items-start'>
+																								<div className='w-10 h-10 flex-shrink-0 mr-3'>
+																									<ProductThumbnail
+																										src={getPrimaryImage(
+																											product
+																										)}
+																										alt={product.name}
+																										category={product.category}
+																										size='sm'
+																										priority={false}
+																									/>
+																								</div>
+																								<div className='min-w-0 flex-1'>
+																									<p className='font-medium text-sm text-gray-900 mb-1 truncate'>
+																										{product.name}
+																									</p>
+																									{product.description && (
+																										<div className='group relative'>
+																											<p className='text-xs text-gray-500 line-clamp-2 leading-relaxed'>
+																												{product.description}
+																											</p>
+																											{product.description
+																												.length > 80 && (
+																												<div className='absolute left-0 top-full mt-1 hidden group-hover:block z-10 bg-gray-900 text-white text-xs p-2 rounded-md shadow-lg max-w-xs'>
+																													{product.description}
+																													<div className='absolute -top-1 left-4 w-2 h-2 bg-gray-900 rotate-45'></div>
+																												</div>
+																											)}
+																										</div>
+																									)}
+																								</div>
+																							</div>
+																						</td>
+																						<td className='p-3 text-sm text-gray-600 font-medium truncate'>
+																							{product.unit}
+																						</td>
+																						<td className='p-3 text-right'>
+																							{/* Inline quantity controls */}
+																							<div className='flex items-center justify-end gap-1'>
+																								{getProductQuantity(
+																									product._id
+																								) > 0 ? (
+																									<>
+																										<Button
+																											variant='outline'
+																											size='sm'
+																											onClick={() =>
+																												updateItemQuantity(
+																													product._id,
+																													getProductQuantity(
+																														product._id
+																													) - 1
+																												)
+																											}
+																											className='h-7 w-7 p-0 rounded-full'
+																										>
+																											<Minus className='h-3 w-3' />
+																										</Button>
+																										<span className='text-sm font-bold text-center min-w-[2rem] px-1'>
+																											{getProductQuantity(
+																												product._id
+																											)}
+																										</span>
+																										<Button
+																											variant='outline'
+																											size='sm'
+																											onClick={() =>
+																												updateItemQuantity(
+																													product._id,
+																													getProductQuantity(
+																														product._id
+																													) + 1
+																												)
+																											}
+																											className='h-7 w-7 p-0 rounded-full'
+																										>
+																											<Plus className='h-3 w-3' />
+																										</Button>
+																									</>
+																								) : (
+																									<Button
+																										size='sm'
+																										onClick={() =>
+																											addProductToOrder(product)
+																										}
+																										className='bg-green-600 hover:bg-green-700 text-white text-xs h-7'
+																									>
+																										<Plus className='h-3 w-3 mr-1' />
+																										Add
+																									</Button>
+																								)}
+																							</div>
+																						</td>
+																					</tr>
+																				))}
+																			</tbody>
+																		</table>
 																	</div>
 																</div>
 															</div>
-														</div>
-														{/* Inline quantity controls */}
-														<div className='flex items-center justify-center gap-1 w-full'>
-															{getProductQuantity(product._id) > 0 ? (
-																<>
-																	<Button
-																		variant='outline'
-																		size='sm'
-																		onClick={() =>
-																			updateItemQuantity(
-																				product._id,
-																				getProductQuantity(product._id) - 1
-																			)
-																		}
-																		className='h-7 w-7 p-0 rounded-full'
-																	>
-																		<Minus className='h-3 w-3' />
-																	</Button>
-																	<span className='text-sm font-bold text-center min-w-[2rem] px-1'>
-																		{getProductQuantity(product._id)}
-																	</span>
-																	<Button
-																		variant='outline'
-																		size='sm'
-																		onClick={() =>
-																			updateItemQuantity(
-																				product._id,
-																				getProductQuantity(product._id) + 1
-																			)
-																		}
-																		className='h-7 w-7 p-0 rounded-full'
-																	>
-																		<Plus className='h-3 w-3' />
-																	</Button>
-																</>
-															) : (
-																<Button
-																	size='sm'
-																	onClick={() => addProductToOrder(product)}
-																	className='w-full bg-green-600 hover:bg-green-700 text-white h-7 text-xs'
-																>
-																	<Plus className='h-3 w-3 mr-1' />
-																	Add
-																</Button>
-															)}
-														</div>
-													</div>
-												))}
-											</div>
-
-											{/* Desktop Table View */}
-											<div className='hidden sm:block overflow-x-auto max-h-96 overflow-y-auto border rounded-lg'>
-												<table className='w-full table-fixed'>
-													<thead className='bg-gray-50 sticky top-0'>
-														<tr className='border-b'>
-															<th className='text-left p-3 font-medium text-gray-700 text-sm w-1/2'>
-																Product
-															</th>
-															<th className='text-left p-3 font-medium text-gray-700 text-sm w-1/4'>
-																Category
-															</th>
-															<th className='text-left p-3 font-medium text-gray-700 text-sm w-1/6'>
-																Unit
-															</th>
-															<th className='text-right p-3 font-medium text-gray-700 text-sm w-1/6'>
-																Action
-															</th>
-														</tr>
-													</thead>
-													<tbody>
-														{filteredProducts.map(product => (
-															<tr
-																key={product._id}
-																className='border-b hover:bg-gray-50 transition-colors'
-															>
-																<td className='p-3'>
-																	<div className='flex items-start'>
-																		<div className='w-10 h-10 flex-shrink-0 mr-3'>
-																			<ProductThumbnail
-																				src={getPrimaryImage(product)}
-																				alt={product.name}
-																				category={product.category}
-																				size='sm'
-																				priority={false}
-																			/>
-																		</div>
-																		<div className='min-w-0 flex-1'>
-																			<p className='font-medium text-sm text-gray-900 mb-1 truncate'>
-																				{product.name}
-																			</p>
-																			{product.description && (
-																				<div className='group relative'>
-																					<p className='text-xs text-gray-500 line-clamp-2 leading-relaxed'>
-																						{product.description}
-																					</p>
-																					{product.description.length > 80 && (
-																						<div className='absolute left-0 top-full mt-1 hidden group-hover:block z-10 bg-gray-900 text-white text-xs p-2 rounded-md shadow-lg max-w-xs'>
-																							{product.description}
-																							<div className='absolute -top-1 left-4 w-2 h-2 bg-gray-900 rotate-45'></div>
-																						</div>
-																					)}
-																				</div>
-																			)}
-																		</div>
-																	</div>
-																</td>
-																<td className='p-3'>
-																	<span className='inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800 truncate'>
-																		{getCategoryDisplayName(product.category)}
-																	</span>
-																</td>
-																<td className='p-3 text-sm text-gray-600 font-medium truncate'>
-																	{product.unit}
-																</td>
-																<td className='p-3 text-right'>
-																	{/* Inline quantity controls */}
-																	<div className='flex items-center justify-end gap-1'>
-																		{getProductQuantity(product._id) > 0 ? (
-																			<>
-																				<Button
-																					variant='outline'
-																					size='sm'
-																					onClick={() =>
-																						updateItemQuantity(
-																							product._id,
-																							getProductQuantity(product._id) -
-																								1
-																						)
-																					}
-																					className='h-7 w-7 p-0 rounded-full'
-																				>
-																					<Minus className='h-3 w-3' />
-																				</Button>
-																				<span className='text-sm font-bold text-center min-w-[2rem] px-1'>
-																					{getProductQuantity(product._id)}
-																				</span>
-																				<Button
-																					variant='outline'
-																					size='sm'
-																					onClick={() =>
-																						updateItemQuantity(
-																							product._id,
-																							getProductQuantity(product._id) +
-																								1
-																						)
-																					}
-																					className='h-7 w-7 p-0 rounded-full'
-																				>
-																					<Plus className='h-3 w-3' />
-																				</Button>
-																			</>
-																		) : (
-																			<Button
-																				size='sm'
-																				onClick={() =>
-																					addProductToOrder(product)
-																				}
-																				className='bg-green-600 hover:bg-green-700 text-white text-xs h-7'
-																			>
-																				<Plus className='h-3 w-3 mr-1' />
-																				Add
-																			</Button>
-																		)}
-																	</div>
-																</td>
-															</tr>
-														))}
-													</tbody>
-												</table>
+														)
+													})}
 											</div>
 										</>
 									)}
@@ -746,8 +819,8 @@ const NewOrder: React.FC = () => {
 						{/* Order Summary */}
 						<div className='order-1 lg:order-2'>
 							<Card className='sticky top-4 sm:top-6 shadow-lg border-2'>
-								<CardHeader className='bg-gradient-to-r from-blue-50 to-indigo-50 border-b p-4 sm:p-6'>
-									<CardTitle className='flex items-center text-base sm:text-lg'>
+								<CardHeader className='bg-gradient-to-r from-blue-50 to-indigo-50 border-b p-3 sm:p-6'>
+									<CardTitle className='flex items-center text-sm sm:text-lg'>
 										<ShoppingCart className='h-4 w-4 sm:h-5 sm:w-5 mr-2 text-blue-600' />
 										Order Summary
 									</CardTitle>
@@ -755,7 +828,7 @@ const NewOrder: React.FC = () => {
 										Review your order details before submitting
 									</CardDescription>
 								</CardHeader>
-								<CardContent className='space-y-4 sm:space-y-6 p-4 sm:p-6'>
+								<CardContent className='space-y-3 sm:space-y-6 p-3 sm:p-6'>
 									{/* Branch Selection */}
 									<div className='space-y-2'>
 										<Label
@@ -770,7 +843,7 @@ const NewOrder: React.FC = () => {
 											onValueChange={setSelectedBranch}
 											disabled={branchesLoading}
 										>
-											<SelectTrigger className='h-9 sm:h-11 border-2 focus:border-blue-500 text-sm'>
+											<SelectTrigger className='h-10 sm:h-11 border-2 focus:border-blue-500 text-sm'>
 												<SelectValue
 													placeholder={
 														branchesLoading
@@ -809,7 +882,7 @@ const NewOrder: React.FC = () => {
 												value={requestedDate}
 												onChange={e => setRequestedDate(e.target.value)}
 												min={getTodayDate()}
-												className='pl-9 sm:pl-10 h-9 sm:h-11 border-2 focus:border-blue-500 text-sm'
+												className='pl-9 sm:pl-10 h-10 sm:h-11 border-2 focus:border-blue-500 text-sm'
 											/>
 										</div>
 										<p className='text-xs text-gray-500 mt-1'>
@@ -850,7 +923,88 @@ const NewOrder: React.FC = () => {
 															key={item.product._id}
 															className='bg-white border rounded-lg p-2 shadow-sm hover:shadow-md transition-shadow'
 														>
-															<div className='flex items-center gap-2'>
+															{/* Mobile Layout */}
+															<div className='block sm:hidden'>
+																<div className='flex items-center gap-3'>
+																	{/* Product thumbnail */}
+																	<div className='w-12 h-12 flex-shrink-0 rounded-lg overflow-hidden border border-gray-200'>
+																		<ProductThumbnail
+																			src={getPrimaryImage(item.product)}
+																			alt={item.product.name}
+																			category={item.product.category}
+																			size='md'
+																			priority={false}
+																		/>
+																	</div>
+
+																	{/* Product info */}
+																	<div className='flex-1 min-w-0'>
+																		<p className='font-semibold text-sm text-gray-900 line-clamp-2 mb-1'>
+																			{item.product.name}
+																		</p>
+																		<p className='text-xs text-gray-500 mb-1'>
+																			{getCategoryDisplayName(
+																				item.product.category
+																			)}
+																		</p>
+																		<div className='flex items-center gap-2'>
+																			<span className='text-xs font-medium text-blue-600'>
+																				{item.product.unit}
+																			</span>
+																		</div>
+																	</div>
+
+																	{/* Quantity controls on the right */}
+																	<div className='flex items-center gap-1'>
+																		<Button
+																			variant='outline'
+																			size='sm'
+																			onClick={() =>
+																				updateItemQuantity(
+																					item.product._id,
+																					item.quantity - 1
+																				)
+																			}
+																			disabled={item.quantity <= 1}
+																			className='h-7 w-7 p-0 rounded-full'
+																		>
+																			<Minus className='h-3 w-3' />
+																		</Button>
+																		<span className='text-sm font-bold text-center min-w-[2rem] px-1'>
+																			{item.quantity}
+																		</span>
+																		<Button
+																			variant='outline'
+																			size='sm'
+																			onClick={() =>
+																				updateItemQuantity(
+																					item.product._id,
+																					item.quantity + 1
+																				)
+																			}
+																			className='h-7 w-7 p-0 rounded-full'
+																		>
+																			<Plus className='h-3 w-3' />
+																		</Button>
+																	</div>
+
+																	{/* Remove button */}
+																	<Button
+																		variant='ghost'
+																		size='sm'
+																		onClick={() =>
+																			removeItemFromOrder(item.product._id)
+																		}
+																		className='text-red-500 hover:text-red-700 hover:bg-red-50 h-7 w-7 p-0 rounded-full'
+																		title='Remove item'
+																	>
+																		<Trash2 className='h-3 w-3' />
+																	</Button>
+																</div>
+															</div>
+
+															{/* Desktop Layout */}
+															<div className='hidden sm:flex items-center gap-2'>
 																{/* Product thumbnail */}
 																<div className='w-8 h-8 flex-shrink-0'>
 																	<ProductThumbnail
@@ -957,7 +1111,7 @@ const NewOrder: React.FC = () => {
 												setOrderNotes(e.target.value)
 											}
 											rows={2}
-											className='flex min-h-[60px] w-full rounded-md border border-input bg-background px-3 py-2 text-xs sm:text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 mt-1'
+											className='flex min-h-[50px] sm:min-h-[60px] w-full rounded-md border border-input bg-background px-3 py-2 text-xs sm:text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 mt-1'
 										/>
 									</div>
 
@@ -971,7 +1125,7 @@ const NewOrder: React.FC = () => {
 												orderItems.length === 0 ||
 												submitting
 											}
-											className='w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-semibold py-2.5 sm:py-3 px-4 sm:px-6 rounded-lg shadow-lg hover:shadow-xl transition-all duration-300 disabled:from-gray-400 disabled:to-gray-500 disabled:shadow-none text-sm'
+											className='w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-semibold py-3 px-4 rounded-lg shadow-lg hover:shadow-xl transition-all duration-300 disabled:from-gray-400 disabled:to-gray-500 disabled:shadow-none text-sm'
 										>
 											{submitting ? (
 												<div className='flex items-center justify-center space-x-2'>
@@ -1045,7 +1199,7 @@ const NewOrder: React.FC = () => {
 								/>
 							</div>
 
-							{/* Suggested Products List */}
+							{/* Suggested Products List - Organized by Category */}
 							<div className='flex-1 overflow-y-auto border rounded-lg bg-gray-50 min-h-0'>
 								{(() => {
 									const filteredSuggestions = suggestedProducts.filter(
@@ -1076,173 +1230,236 @@ const NewOrder: React.FC = () => {
 										)
 									}
 
+									// Group filtered suggestions by category
+									const groupedSuggestions: Record<string, Product[]> = {}
+									filteredSuggestions.forEach(product => {
+										const category = product.category
+										if (!groupedSuggestions[category]) {
+											groupedSuggestions[category] = []
+										}
+										groupedSuggestions[category].push(product)
+									})
+
 									return (
-										<div className='p-2 sm:p-3 space-y-2'>
-											{filteredSuggestions.slice(0, 8).map(product => (
-												<div
-													key={product._id}
-													className='bg-white border rounded-lg p-3 hover:bg-gray-50 transition-colors'
-												>
-													{/* Mobile Layout */}
-													<div className='block sm:hidden'>
-														<div className='flex items-start mb-2'>
-															<div className='w-10 h-10 flex-shrink-0 mr-3'>
-																<ProductThumbnail
-																	src={getPrimaryImage(product)}
-																	alt={product.name}
-																	category={product.category}
-																	size='sm'
-																	priority={false}
-																/>
-															</div>
-															<div className='flex-1 min-w-0'>
-																<p className='font-medium text-sm text-gray-900 mb-1 line-clamp-2'>
-																	{product.name}
+										<div className='p-2 sm:p-3 space-y-4'>
+											{getCategoryOrder()
+												.filter(category => {
+													const productsInCategory =
+														groupedSuggestions[category] || []
+													return productsInCategory.length > 0
+												})
+												.map(category => {
+													const productsInCategory =
+														groupedSuggestions[category] || []
+													return (
+														<div
+															key={category}
+															className='border rounded-lg overflow-hidden bg-white'
+														>
+															{/* Category Header */}
+															<div className='bg-gradient-to-r from-green-50 to-emerald-50 px-3 py-2 border-b'>
+																<h4 className='font-medium text-gray-900 text-sm flex items-center'>
+																	<Package className='h-3 w-3 mr-2 text-green-600' />
+																	{getCategoryDisplayName(category)}
+																</h4>
+																<p className='text-xs text-gray-600 mt-0.5 ml-5'>
+																	{productsInCategory.length}{' '}
+																	{productsInCategory.length === 1
+																		? 'item'
+																		: 'items'}{' '}
+																	available
 																</p>
-																<div className='flex items-center gap-2 mb-2'>
-																	<span className='inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800'>
-																		{getCategoryDisplayName(product.category)}
-																	</span>
-																	<span className='text-xs text-gray-500'>
-																		{product.unit}
-																	</span>
-																</div>
-																{product.description && (
-																	<p className='text-xs text-gray-500 line-clamp-2'>
-																		{product.description}
-																	</p>
+															</div>
+
+															{/* Products in Category */}
+															<div className='divide-y divide-gray-100'>
+																{productsInCategory.slice(0, 4).map(product => (
+																	<div
+																		key={product._id}
+																		className='p-3 hover:bg-gray-50 transition-colors'
+																	>
+																		{/* Mobile Layout */}
+																		<div className='block sm:hidden'>
+																			<div className='flex items-start gap-3 mb-2'>
+																				{/* Bigger Product Image */}
+																				<div className='w-16 h-16 flex-shrink-0 rounded-lg overflow-hidden border border-gray-200'>
+																					<ProductThumbnail
+																						src={getPrimaryImage(product)}
+																						alt={product.name}
+																						category={product.category}
+																						size='md'
+																						priority={false}
+																					/>
+																				</div>
+																				<div className='flex-1 min-w-0'>
+																					<h4 className='font-medium text-sm text-gray-900 mb-1 line-clamp-2'>
+																						{product.name}
+																					</h4>
+																					<div className='flex items-center gap-2 mb-1'>
+																						<span className='inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800'>
+																							{product.unit}
+																						</span>
+																					</div>
+																					{product.description && (
+																						<p className='text-xs text-gray-500 line-clamp-2'>
+																							{product.description}
+																						</p>
+																					)}
+																				</div>
+																			</div>
+
+																			{/* Smaller Quantity Controls - Mobile */}
+																			<div className='flex items-center justify-between gap-2'>
+																				<div className='flex items-center bg-gray-100 rounded-lg'>
+																					<Button
+																						variant='ghost'
+																						size='sm'
+																						onClick={() =>
+																							updateModalQuantity(
+																								product._id,
+																								(modalQuantities[product._id] ||
+																									1) - 1
+																							)
+																						}
+																						disabled={
+																							modalQuantities[product._id] <= 1
+																						}
+																						className='h-7 w-7 p-0 text-gray-600 hover:text-gray-800 hover:bg-gray-200'
+																					>
+																						<Minus className='h-3 w-3' />
+																					</Button>
+																					<span className='px-2 py-1 text-sm font-bold text-gray-700 min-w-[40px] text-center'>
+																						{modalQuantities[product._id] || 1}
+																					</span>
+																					<Button
+																						variant='ghost'
+																						size='sm'
+																						onClick={() =>
+																							updateModalQuantity(
+																								product._id,
+																								(modalQuantities[product._id] ||
+																									1) + 1
+																							)
+																						}
+																						className='h-7 w-7 p-0 text-gray-600 hover:text-gray-800 hover:bg-gray-200'
+																					>
+																						<Plus className='h-3 w-3' />
+																					</Button>
+																				</div>
+																				<Button
+																					size='sm'
+																					onClick={() =>
+																						addProductFromModal(product)
+																					}
+																					className='flex-1 bg-green-600 hover:bg-green-700 text-white h-7 text-xs'
+																				>
+																					<Check className='h-3 w-3 mr-1' />
+																					Add{' '}
+																					{modalQuantities[product._id] ||
+																						1}{' '}
+																					{product.unit}
+																				</Button>
+																			</div>
+																		</div>
+
+																		{/* Desktop Layout */}
+																		<div className='hidden sm:flex items-center justify-between'>
+																			<div className='flex items-center flex-1 min-w-0 mr-3'>
+																				<div className='w-10 h-10 flex-shrink-0 mr-3'>
+																					<ProductThumbnail
+																						src={getPrimaryImage(product)}
+																						alt={product.name}
+																						category={product.category}
+																						size='sm'
+																						priority={false}
+																					/>
+																				</div>
+																				<div className='min-w-0 flex-1'>
+																					<p className='font-medium text-sm text-gray-900 truncate mb-1'>
+																						{product.name}
+																					</p>
+																					<div className='flex items-center space-x-2'>
+																						<span className='text-xs text-gray-500'>
+																							{product.unit}
+																						</span>
+																					</div>
+																					{product.description && (
+																						<p className='text-xs text-gray-500 mt-1 line-clamp-1'>
+																							{product.description}
+																						</p>
+																					)}
+																				</div>
+																			</div>
+
+																			{/* Quantity Controls - Desktop */}
+																			<div className='flex items-center gap-3'>
+																				<div className='flex items-center bg-gray-100 rounded-lg'>
+																					<Button
+																						variant='ghost'
+																						size='sm'
+																						onClick={() =>
+																							updateModalQuantity(
+																								product._id,
+																								(modalQuantities[product._id] ||
+																									1) - 1
+																							)
+																						}
+																						disabled={
+																							modalQuantities[product._id] <= 1
+																						}
+																						className='h-8 w-8 p-0 text-gray-600 hover:text-gray-800 hover:bg-gray-200'
+																					>
+																						<Minus className='h-3 w-3' />
+																					</Button>
+																					<span className='px-3 py-1 text-sm font-medium text-gray-700 min-w-[50px] text-center'>
+																						{modalQuantities[product._id] || 1}
+																					</span>
+																					<Button
+																						variant='ghost'
+																						size='sm'
+																						onClick={() =>
+																							updateModalQuantity(
+																								product._id,
+																								(modalQuantities[product._id] ||
+																									1) + 1
+																							)
+																						}
+																						className='h-8 w-8 p-0 text-gray-600 hover:text-gray-800 hover:bg-gray-200'
+																					>
+																						<Plus className='h-3 w-3' />
+																					</Button>
+																				</div>
+																				<Button
+																					size='sm'
+																					onClick={() =>
+																						addProductFromModal(product)
+																					}
+																					className='bg-green-600 hover:bg-green-700 text-white whitespace-nowrap text-xs px-4'
+																				>
+																					<Check className='h-3 w-3 mr-1' />
+																					Add{' '}
+																					{modalQuantities[product._id] || 1}
+																				</Button>
+																			</div>
+																		</div>
+																	</div>
+																))}
+																{productsInCategory.length > 4 && (
+																	<div className='text-center py-2'>
+																		<p className='text-xs text-gray-500'>
+																			Showing first 4 results. Use search to
+																			find more items in this category.
+																		</p>
+																	</div>
 																)}
 															</div>
 														</div>
-
-														{/* Quantity Controls - Mobile */}
-														<div className='flex items-center justify-between gap-2'>
-															<div className='flex items-center bg-gray-100 rounded-lg'>
-																<Button
-																	variant='ghost'
-																	size='sm'
-																	onClick={() =>
-																		updateModalQuantity(
-																			product._id,
-																			(modalQuantities[product._id] || 1) - 1
-																		)
-																	}
-																	disabled={modalQuantities[product._id] <= 1}
-																	className='h-8 w-8 p-0 text-gray-600 hover:text-gray-800 hover:bg-gray-200'
-																>
-																	<Minus className='h-3 w-3' />
-																</Button>
-																<span className='px-3 py-1 text-sm font-medium text-gray-700 min-w-[40px] text-center'>
-																	{modalQuantities[product._id] || 1}
-																</span>
-																<Button
-																	variant='ghost'
-																	size='sm'
-																	onClick={() =>
-																		updateModalQuantity(
-																			product._id,
-																			(modalQuantities[product._id] || 1) + 1
-																		)
-																	}
-																	className='h-8 w-8 p-0 text-gray-600 hover:text-gray-800 hover:bg-gray-200'
-																>
-																	<Plus className='h-3 w-3' />
-																</Button>
-															</div>
-															<Button
-																size='sm'
-																onClick={() => addProductFromModal(product)}
-																className='flex-1 bg-green-600 hover:bg-green-700 text-white h-8 text-xs'
-															>
-																<Check className='h-3 w-3 mr-1' />
-																Add {modalQuantities[product._id] || 1}{' '}
-																{product.unit}
-															</Button>
-														</div>
-													</div>
-
-													{/* Desktop Layout */}
-													<div className='hidden sm:flex items-center justify-between'>
-														<div className='flex items-center flex-1 min-w-0 mr-3'>
-															<div className='w-10 h-10 flex-shrink-0 mr-3'>
-																<ProductThumbnail
-																	src={getPrimaryImage(product)}
-																	alt={product.name}
-																	category={product.category}
-																	size='sm'
-																	priority={false}
-																/>
-															</div>
-															<div className='min-w-0 flex-1'>
-																<p className='font-medium text-sm text-gray-900 truncate mb-1'>
-																	{product.name}
-																</p>
-																<div className='flex items-center space-x-2'>
-																	<span className='inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800'>
-																		{getCategoryDisplayName(product.category)}
-																	</span>
-																	<span className='text-xs text-gray-500'>
-																		{product.unit}
-																	</span>
-																</div>
-																{product.description && (
-																	<p className='text-xs text-gray-500 mt-1 line-clamp-1'>
-																		{product.description}
-																	</p>
-																)}
-															</div>
-														</div>
-
-														{/* Quantity Controls - Desktop */}
-														<div className='flex items-center gap-3'>
-															<div className='flex items-center bg-gray-100 rounded-lg'>
-																<Button
-																	variant='ghost'
-																	size='sm'
-																	onClick={() =>
-																		updateModalQuantity(
-																			product._id,
-																			(modalQuantities[product._id] || 1) - 1
-																		)
-																	}
-																	disabled={modalQuantities[product._id] <= 1}
-																	className='h-8 w-8 p-0 text-gray-600 hover:text-gray-800 hover:bg-gray-200'
-																>
-																	<Minus className='h-3 w-3' />
-																</Button>
-																<span className='px-3 py-1 text-sm font-medium text-gray-700 min-w-[50px] text-center'>
-																	{modalQuantities[product._id] || 1}
-																</span>
-																<Button
-																	variant='ghost'
-																	size='sm'
-																	onClick={() =>
-																		updateModalQuantity(
-																			product._id,
-																			(modalQuantities[product._id] || 1) + 1
-																		)
-																	}
-																	className='h-8 w-8 p-0 text-gray-600 hover:text-gray-800 hover:bg-gray-200'
-																>
-																	<Plus className='h-3 w-3' />
-																</Button>
-															</div>
-															<Button
-																size='sm'
-																onClick={() => addProductFromModal(product)}
-																className='bg-green-600 hover:bg-green-700 text-white whitespace-nowrap text-xs px-4'
-															>
-																<Check className='h-3 w-3 mr-1' />
-																Add {modalQuantities[product._id] || 1}
-															</Button>
-														</div>
-													</div>
-												</div>
-											))}
-											{filteredSuggestions.length > 8 && (
+													)
+												})}
+											{filteredSuggestions.length > 16 && (
 												<div className='text-center py-2'>
 													<p className='text-xs text-gray-500'>
-														Showing first 8 results. Use search to find more
+														Showing first 16 results. Use search to find more
 														items.
 													</p>
 												</div>
