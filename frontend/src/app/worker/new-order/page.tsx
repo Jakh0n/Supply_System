@@ -60,7 +60,6 @@ const getTomorrowDate = (): string => {
 interface OrderItem {
 	product: Product
 	quantity: number
-	notes?: string
 }
 
 // Branch interface
@@ -195,18 +194,15 @@ const NewOrder: React.FC = () => {
 		)
 	}
 
-	// Update item notes
-	const updateItemNotes = (productId: string, notes: string) => {
-		setOrderItems(prev =>
-			prev.map(item =>
-				item.product._id === productId ? { ...item, notes } : item
-			)
-		)
-	}
-
 	// Remove item from order
 	const removeItemFromOrder = (productId: string) => {
 		setOrderItems(prev => prev.filter(item => item.product._id !== productId))
+	}
+
+	// Get current quantity for a product in the order
+	const getProductQuantity = (productId: string): number => {
+		const item = orderItems.find(item => item.product._id === productId)
+		return item ? item.quantity : 0
 	}
 
 	// Clear entire order
@@ -272,7 +268,6 @@ const NewOrder: React.FC = () => {
 		const newOrderItem: OrderItem = {
 			product,
 			quantity,
-			notes: '',
 		}
 
 		setOrderItems(prev => {
@@ -309,7 +304,6 @@ const NewOrder: React.FC = () => {
 				items: orderItems.map(item => ({
 					product: item.product._id,
 					quantity: item.quantity,
-					notes: item.notes || undefined,
 				})),
 				notes: orderNotes || undefined,
 			}
@@ -375,17 +369,18 @@ const NewOrder: React.FC = () => {
 		handleShowSuggestions()
 	}
 
-	// Get category label
-	const getCategoryLabel = (category: string) => {
-		const categories = {
-			food: 'Food',
-			beverages: 'Beverages',
-			cleaning: 'Cleaning',
-			equipment: 'Equipment',
-			packaging: 'Packaging',
-			other: 'Other',
+	// Map legacy categories to display names
+	const getCategoryDisplayName = (category: string): string => {
+		const categoryMap: Record<string, string> = {
+			// Legacy categories mapping
+			food: 'Main Products',
+			beverages: 'Desserts and Drinks',
+			cleaning: 'Cleaning Materials',
+			equipment: 'Packaging Materials',
+			packaging: 'Packaging Materials',
+			other: 'Main Products',
 		}
-		return categories[category as keyof typeof categories] || category
+		return categoryMap[category] || category
 	}
 
 	if (loading) {
@@ -553,7 +548,7 @@ const NewOrder: React.FC = () => {
 																	)}
 																	<div className='flex items-center gap-2 mb-2'>
 																		<span className='inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800'>
-																			{getCategoryLabel(product.category)}
+																			{getCategoryDisplayName(product.category)}
 																		</span>
 																		<span className='text-xs text-gray-600 font-medium'>
 																			{product.unit}
@@ -562,14 +557,51 @@ const NewOrder: React.FC = () => {
 																</div>
 															</div>
 														</div>
-														<Button
-															size='sm'
-															onClick={() => addProductToOrder(product)}
-															className='w-full bg-green-600 hover:bg-green-700 text-white h-8 text-xs'
-														>
-															<Plus className='h-3 w-3 mr-1' />
-															Add to Order
-														</Button>
+														{/* Inline quantity controls */}
+														<div className='flex items-center justify-center gap-1 w-full'>
+															{getProductQuantity(product._id) > 0 ? (
+																<>
+																	<Button
+																		variant='outline'
+																		size='sm'
+																		onClick={() =>
+																			updateItemQuantity(
+																				product._id,
+																				getProductQuantity(product._id) - 1
+																			)
+																		}
+																		className='h-7 w-7 p-0 rounded-full'
+																	>
+																		<Minus className='h-3 w-3' />
+																	</Button>
+																	<span className='text-sm font-bold text-center min-w-[2rem] px-1'>
+																		{getProductQuantity(product._id)}
+																	</span>
+																	<Button
+																		variant='outline'
+																		size='sm'
+																		onClick={() =>
+																			updateItemQuantity(
+																				product._id,
+																				getProductQuantity(product._id) + 1
+																			)
+																		}
+																		className='h-7 w-7 p-0 rounded-full'
+																	>
+																		<Plus className='h-3 w-3' />
+																	</Button>
+																</>
+															) : (
+																<Button
+																	size='sm'
+																	onClick={() => addProductToOrder(product)}
+																	className='w-full bg-green-600 hover:bg-green-700 text-white h-7 text-xs'
+																>
+																	<Plus className='h-3 w-3 mr-1' />
+																	Add
+																</Button>
+															)}
+														</div>
 													</div>
 												))}
 											</div>
@@ -632,21 +664,62 @@ const NewOrder: React.FC = () => {
 																</td>
 																<td className='p-3'>
 																	<span className='inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800 truncate'>
-																		{getCategoryLabel(product.category)}
+																		{getCategoryDisplayName(product.category)}
 																	</span>
 																</td>
 																<td className='p-3 text-sm text-gray-600 font-medium truncate'>
 																	{product.unit}
 																</td>
 																<td className='p-3 text-right'>
-																	<Button
-																		size='sm'
-																		onClick={() => addProductToOrder(product)}
-																		className='bg-green-600 hover:bg-green-700 text-white whitespace-nowrap text-xs'
-																	>
-																		<Plus className='h-3 w-3 mr-1' />
-																		Add
-																	</Button>
+																	{/* Inline quantity controls */}
+																	<div className='flex items-center justify-end gap-1'>
+																		{getProductQuantity(product._id) > 0 ? (
+																			<>
+																				<Button
+																					variant='outline'
+																					size='sm'
+																					onClick={() =>
+																						updateItemQuantity(
+																							product._id,
+																							getProductQuantity(product._id) -
+																								1
+																						)
+																					}
+																					className='h-7 w-7 p-0 rounded-full'
+																				>
+																					<Minus className='h-3 w-3' />
+																				</Button>
+																				<span className='text-sm font-bold text-center min-w-[2rem] px-1'>
+																					{getProductQuantity(product._id)}
+																				</span>
+																				<Button
+																					variant='outline'
+																					size='sm'
+																					onClick={() =>
+																						updateItemQuantity(
+																							product._id,
+																							getProductQuantity(product._id) +
+																								1
+																						)
+																					}
+																					className='h-7 w-7 p-0 rounded-full'
+																				>
+																					<Plus className='h-3 w-3' />
+																				</Button>
+																			</>
+																		) : (
+																			<Button
+																				size='sm'
+																				onClick={() =>
+																					addProductToOrder(product)
+																				}
+																				className='bg-green-600 hover:bg-green-700 text-white text-xs h-7'
+																			>
+																				<Plus className='h-3 w-3 mr-1' />
+																				Add
+																			</Button>
+																		)}
+																	</div>
 																</td>
 															</tr>
 														))}
@@ -759,15 +832,16 @@ const NewOrder: React.FC = () => {
 												</p>
 											</div>
 										) : (
-											<div className='space-y-2 sm:space-y-3 max-h-60 sm:max-h-72 overflow-y-auto bg-gray-50 rounded-lg p-2 sm:p-3 border'>
-												{orderItems.map(item => (
-													<div
-														key={item.product._id}
-														className='bg-white border rounded-lg p-3 sm:p-4 space-y-2 sm:space-y-3 shadow-sm hover:shadow-md transition-shadow'
-													>
-														<div className='flex items-start justify-between'>
-															<div className='flex items-start flex-1 min-w-0'>
-																<div className='w-10 h-10 sm:w-12 sm:h-12 flex-shrink-0 mr-3'>
+											<div className='bg-gray-50 rounded-lg p-2 border'>
+												<div className='space-y-2 max-h-[260px] overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100'>
+													{orderItems.map(item => (
+														<div
+															key={item.product._id}
+															className='bg-white border rounded-lg p-2 shadow-sm hover:shadow-md transition-shadow'
+														>
+															<div className='flex items-center gap-2'>
+																{/* Product thumbnail */}
+																<div className='w-8 h-8 flex-shrink-0'>
 																	<ProductThumbnail
 																		src={getPrimaryImage(item.product)}
 																		alt={item.product.name}
@@ -776,102 +850,87 @@ const NewOrder: React.FC = () => {
 																		priority={false}
 																	/>
 																</div>
+
+																{/* Product info */}
 																<div className='flex-1 min-w-0'>
-																	<p className='font-semibold text-xs sm:text-sm text-gray-900 truncate mb-1'>
+																	<p className='font-semibold text-sm text-gray-900 truncate'>
 																		{item.product.name}
 																	</p>
-																	<p className='text-xs text-gray-500'>
-																		{item.product.category} •{' '}
-																		{item.product.unit}
+																	<p className='text-xs text-gray-500 truncate'>
+																		{getCategoryDisplayName(
+																			item.product.category
+																		)}
 																	</p>
 																</div>
-															</div>
-															<Button
-																variant='ghost'
-																size='sm'
-																onClick={() =>
-																	removeItemFromOrder(item.product._id)
-																}
-																className='text-red-500 hover:text-red-700 hover:bg-red-50 p-1 sm:p-2 h-6 w-6 sm:h-8 sm:w-8 ml-2'
-																title='Remove item'
-															>
-																<Trash2 className='h-3 w-3 sm:h-4 sm:w-4' />
-															</Button>
-														</div>
 
-														{/* Quantity controls */}
-														<div className='flex items-center justify-between bg-gray-50 rounded-lg p-2'>
-															<span className='text-xs sm:text-sm font-medium text-gray-700'>
-																Quantity:
-															</span>
-															<div className='flex items-center space-x-2 sm:space-x-3'>
-																<Button
-																	variant='outline'
-																	size='sm'
-																	onClick={() =>
-																		updateItemQuantity(
-																			item.product._id,
-																			item.quantity - 1
-																		)
-																	}
-																	disabled={item.quantity <= 1}
-																	className='h-6 w-6 sm:h-8 sm:w-8 p-0 rounded-full'
-																>
-																	<Minus className='h-2 w-2 sm:h-3 sm:w-3' />
-																</Button>
-																<span className='text-xs sm:text-sm font-bold text-gray-900 min-w-[1.5rem] sm:min-w-[2rem] text-center bg-white px-2 sm:px-3 py-1 rounded-md border'>
-																	{item.quantity}
+																{/* Inline quantity controls */}
+																<div className='flex items-center gap-1'>
+																	<Button
+																		variant='outline'
+																		size='sm'
+																		onClick={() =>
+																			updateItemQuantity(
+																				item.product._id,
+																				item.quantity - 1
+																			)
+																		}
+																		disabled={item.quantity <= 1}
+																		className='h-6 w-6 p-0 rounded-full'
+																	>
+																		<Minus className='h-3 w-3' />
+																	</Button>
+																	<span className='text-sm font-bold text-center min-w-[2rem] px-1'>
+																		{item.quantity}
+																	</span>
+																	<Button
+																		variant='outline'
+																		size='sm'
+																		onClick={() =>
+																			updateItemQuantity(
+																				item.product._id,
+																				item.quantity + 1
+																			)
+																		}
+																		className='h-6 w-6 p-0 rounded-full'
+																	>
+																		<Plus className='h-3 w-3' />
+																	</Button>
+																</div>
+
+																{/* Unit display */}
+																<span className='text-sm font-medium text-blue-600 min-w-[3rem] text-right'>
+																	{item.product.unit}
 																</span>
+
+																{/* Remove button */}
 																<Button
-																	variant='outline'
+																	variant='ghost'
 																	size='sm'
 																	onClick={() =>
-																		updateItemQuantity(
-																			item.product._id,
-																			item.quantity + 1
-																		)
+																		removeItemFromOrder(item.product._id)
 																	}
-																	className='h-6 w-6 sm:h-8 sm:w-8 p-0 rounded-full'
+																	className='text-red-500 hover:text-red-700 hover:bg-red-50 h-6 w-6 p-0'
+																	title='Remove item'
 																>
-																	<Plus className='h-2 w-2 sm:h-3 sm:w-3' />
+																	<Trash2 className='h-3 w-3' />
 																</Button>
 															</div>
 														</div>
-
-														{/* Item notes */}
-														<div className='space-y-1'>
-															<Label className='text-xs font-medium text-gray-600'>
-																Special Instructions (Optional)
-															</Label>
-															<Input
-																placeholder='e.g., urgent, specific brand, etc.'
-																value={item.notes || ''}
-																onChange={e =>
-																	updateItemNotes(
-																		item.product._id,
-																		e.target.value
-																	)
-																}
-																className='text-xs sm:text-sm h-8 sm:h-9 border-gray-200 focus:border-blue-400'
-															/>
-														</div>
-
-														{/* Item total */}
-														<div className='flex justify-between items-center pt-2 border-t border-gray-100'>
-															<span className='text-xs text-gray-500'>
-																Total:
-															</span>
-															<span className='text-xs sm:text-sm font-bold text-gray-900 bg-blue-50 px-2 py-1 rounded'>
-																{item.quantity} {item.product.unit}
-															</span>
-														</div>
+													))}
+												</div>
+												{orderItems.length > 5 && (
+													<div className='text-center pt-2 border-t border-gray-200 mt-2'>
+														<p className='text-xs text-gray-500'>
+															Showing 5 of {orderItems.length} items - scroll to
+															see more
+														</p>
 													</div>
-												))}
+												)}
 											</div>
 										)}
 									</div>
 
-									{/* Order Notes */}
+									{/* Order Notes - Simple */}
 									<div>
 										<Label
 											htmlFor='order-notes'
@@ -881,13 +940,13 @@ const NewOrder: React.FC = () => {
 										</Label>
 										<textarea
 											id='order-notes'
-											placeholder='Add any special instructions or notes...'
+											placeholder='Add any notes for this order...'
 											value={orderNotes}
 											onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) =>
 												setOrderNotes(e.target.value)
 											}
-											rows={3}
-											className='flex min-h-[60px] sm:min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-xs sm:text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 mt-1'
+											rows={2}
+											className='flex min-h-[60px] w-full rounded-md border border-input bg-background px-3 py-2 text-xs sm:text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 mt-1'
 										/>
 									</div>
 
@@ -1031,7 +1090,7 @@ const NewOrder: React.FC = () => {
 																</p>
 																<div className='flex items-center gap-2 mb-2'>
 																	<span className='inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800'>
-																		{getCategoryLabel(product.category)}
+																		{getCategoryDisplayName(product.category)}
 																	</span>
 																	<span className='text-xs text-gray-500'>
 																		{product.unit}
@@ -1109,7 +1168,7 @@ const NewOrder: React.FC = () => {
 																</p>
 																<div className='flex items-center space-x-2'>
 																	<span className='inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800'>
-																		{getCategoryLabel(product.category)}
+																		{getCategoryDisplayName(product.category)}
 																	</span>
 																	<span className='text-xs text-gray-500'>
 																		{product.unit}

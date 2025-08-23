@@ -174,7 +174,7 @@ export interface UsersResponse {
 
 export interface DashboardStats {
 	todayOrders: number
-	totalOrders: number
+	todayCompletedOrders: number
 	pendingOrders: number
 	totalUsers?: number
 	totalProducts?: number

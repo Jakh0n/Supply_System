@@ -181,6 +181,20 @@ const MyOrders: React.FC = () => {
 
 	const hasActiveFilters = selectedDate || statusFilter !== 'all'
 
+	// Map legacy categories to display names
+	const getCategoryDisplayName = (category: string): string => {
+		const categoryMap: Record<string, string> = {
+			// Legacy categories mapping
+			food: 'Main Products',
+			beverages: 'Desserts and Drinks',
+			cleaning: 'Cleaning Materials',
+			equipment: 'Packaging Materials',
+			packaging: 'Packaging Materials',
+			other: 'Main Products',
+		}
+		return categoryMap[category] || category
+	}
+
 	if (loading && orders.length === 0) {
 		return (
 			<ProtectedRoute requiredRole='worker'>
@@ -802,81 +816,74 @@ const MyOrders: React.FC = () => {
 													: ''
 											}`}
 										>
-																					{selectedOrder.items.map((item, index) => {
-											if (!item.product) {
+											{selectedOrder.items.map((item, index) => {
+												if (!item.product) {
+													return (
+														<div
+															key={`deleted-${index}`}
+															className='flex items-center justify-between p-2 sm:p-3 bg-red-50 rounded-lg border border-red-200'
+														>
+															<div className='flex-1 min-w-0'>
+																<div className='flex items-center'>
+																	<div className='w-8 h-8 sm:w-10 sm:h-10 flex-shrink-0 mr-2 bg-red-100 rounded-lg flex items-center justify-center'>
+																		<Package className='h-4 w-4 text-red-500' />
+																	</div>
+																	<div className='min-w-0 flex-1'>
+																		<p className='font-medium text-xs sm:text-sm truncate text-red-600'>
+																			Product Deleted
+																		</p>
+																		<p className='text-xs text-red-500 truncate'>
+																			Product no longer available
+																		</p>
+																	</div>
+																</div>
+															</div>
+															<div className='text-right flex-shrink-0 ml-2'>
+																<p className='font-medium text-xs sm:text-sm text-red-600'>
+																	{item.quantity} unit
+																</p>
+															</div>
+														</div>
+													)
+												}
+
 												return (
 													<div
-														key={`deleted-${index}`}
-														className='flex items-center justify-between p-2 sm:p-3 bg-red-50 rounded-lg border border-red-200'
+														key={item.product._id}
+														className='flex items-center justify-between p-2 bg-white rounded-lg border shadow-sm'
 													>
 														<div className='flex-1 min-w-0'>
 															<div className='flex items-center'>
-																<div className='w-8 h-8 sm:w-10 sm:h-10 flex-shrink-0 mr-2 bg-red-100 rounded-lg flex items-center justify-center'>
-																	<Package className='h-4 w-4 text-red-500' />
+																<div className='w-8 h-8 sm:w-10 sm:h-10 flex-shrink-0 mr-2'>
+																	<ProductThumbnail
+																		src={getPrimaryImage(item.product)}
+																		alt={item.product.name}
+																		category={item.product.category}
+																		size='sm'
+																		className='rounded-lg'
+																	/>
 																</div>
 																<div className='min-w-0 flex-1'>
-																	<p className='font-medium text-xs sm:text-sm truncate text-red-600'>
-																		Product Deleted
+																	<p className='font-medium text-xs sm:text-sm truncate'>
+																		{item.product.name}
 																	</p>
-																	<p className='text-xs text-red-500 truncate'>
-																		Product no longer available
+																	<p className='text-xs text-gray-500 truncate'>
+																		{getCategoryDisplayName(
+																			item.product.category
+																		)}{' '}
+																		• {item.product.unit}
 																	</p>
-																	{item.notes && (
-																		<p className='text-xs text-red-600 mt-1 italic line-clamp-2'>
-																			Note: {item.notes}
-																		</p>
-																	)}
 																</div>
 															</div>
 														</div>
 														<div className='text-right flex-shrink-0 ml-2'>
-															<p className='font-medium text-xs sm:text-sm text-red-600'>
-																{item.quantity} unit
+															<p className='font-medium text-xs sm:text-sm'>
+																{item.quantity} {item.product.unit}
 															</p>
 														</div>
 													</div>
 												)
-											}
-
-											return (
-												<div
-													key={item.product._id}
-													className='flex items-center justify-between p-2 sm:p-3 bg-gray-50 rounded-lg'
-												>
-													<div className='flex-1 min-w-0'>
-														<div className='flex items-center'>
-															<div className='w-8 h-8 sm:w-10 sm:h-10 flex-shrink-0 mr-2'>
-																<ProductThumbnail
-																	src={getPrimaryImage(item.product)}
-																	alt={item.product.name}
-																	category={item.product.category}
-																	size='sm'
-																	className='rounded-lg'
-																/>
-															</div>
-															<div className='min-w-0 flex-1'>
-																<p className='font-medium text-xs sm:text-sm truncate'>
-																	{item.product.name}
-																</p>
-																<p className='text-xs text-gray-500 truncate'>
-																	{item.product.category} • {item.product.unit}
-																</p>
-																{item.notes && (
-																	<p className='text-xs text-gray-600 mt-1 italic line-clamp-2'>
-																		Note: {item.notes}
-																	</p>
-																)}
-															</div>
-														</div>
-													</div>
-													<div className='text-right flex-shrink-0 ml-2'>
-														<p className='font-medium text-xs sm:text-sm'>
-															{item.quantity} {item.product.unit}
-														</p>
-													</div>
-												</div>
-											)
-										})}
+											})}
 										</div>
 									</div>
 

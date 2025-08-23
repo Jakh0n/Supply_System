@@ -128,6 +128,20 @@ const OrderDetailPage: React.FC = () => {
 		return order.items.reduce((total, item) => total + item.quantity, 0)
 	}
 
+	// Map legacy categories to display names
+	const getCategoryDisplayName = (category: string): string => {
+		const categoryMap: Record<string, string> = {
+			// Legacy categories mapping
+			food: 'Main Products',
+			beverages: 'Desserts and Drinks',
+			cleaning: 'Cleaning Materials',
+			equipment: 'Packaging Materials',
+			packaging: 'Packaging Materials',
+			other: 'Main Products',
+		}
+		return categoryMap[category] || category
+	}
+
 	if (loading) {
 		return (
 			<ProtectedRoute requiredRole='worker'>
@@ -287,71 +301,67 @@ const OrderDetailPage: React.FC = () => {
 						</CardHeader>
 						<CardContent>
 							<div className='space-y-4'>
-															{order.items.map((item, index) => {
-								if (!item.product) {
+								{order.items.map((item, index) => {
+									if (!item.product) {
+										return (
+											<div
+												key={`deleted-${index}`}
+												className='flex items-center justify-between p-4 bg-red-50 rounded-lg border border-red-200'
+											>
+												<div className='flex-1'>
+													<div className='flex items-center'>
+														<Package className='h-5 w-5 text-red-400 mr-3' />
+														<div>
+															<p className='font-medium text-base text-red-600'>
+																Product Deleted
+															</p>
+															<p className='text-sm text-red-500'>
+																Product no longer available
+															</p>
+															{item.notes && (
+																<p className='text-sm text-red-600 mt-1 italic'>
+																	Note: {item.notes}
+																</p>
+															)}
+														</div>
+													</div>
+												</div>
+												<div className='text-right'>
+													<p className='font-medium text-lg text-red-600'>
+														{item.quantity} unit
+													</p>
+												</div>
+											</div>
+										)
+									}
+
 									return (
 										<div
-											key={`deleted-${index}`}
-											className='flex items-center justify-between p-4 bg-red-50 rounded-lg border border-red-200'
+											key={item.product._id}
+											className='flex items-center justify-between p-4 bg-gray-50 rounded-lg'
 										>
 											<div className='flex-1'>
 												<div className='flex items-center'>
-													<Package className='h-5 w-5 text-red-400 mr-3' />
+													<Package className='h-5 w-5 text-gray-400 mr-3' />
 													<div>
-														<p className='font-medium text-base text-red-600'>
-															Product Deleted
+														<p className='font-medium text-base'>
+															{item.product.name}
 														</p>
-														<p className='text-sm text-red-500'>
-															Product no longer available
+														<p className='text-sm text-gray-500'>
+															{getCategoryDisplayName(item.product.category)} •{' '}
+															{item.product.unit}
 														</p>
-														{item.notes && (
-															<p className='text-sm text-red-600 mt-1 italic'>
-																Note: {item.notes}
-															</p>
-														)}
 													</div>
 												</div>
 											</div>
 											<div className='text-right'>
-												<p className='font-medium text-lg text-red-600'>
-													{item.quantity} unit
+												<p className='font-medium text-lg'>
+													{item.quantity} {item.product.unit}
 												</p>
 											</div>
 										</div>
 									)
-								}
-
-								return (
-									<div
-										key={item.product._id}
-										className='flex items-center justify-between p-4 bg-gray-50 rounded-lg'
-									>
-										<div className='flex-1'>
-											<div className='flex items-center'>
-												<Package className='h-5 w-5 text-gray-400 mr-3' />
-												<div>
-													<p className='font-medium text-base'>
-														{item.product.name}
-													</p>
-													<p className='text-sm text-gray-500'>
-														{item.product.category} • {item.product.unit}
-													</p>
-													{item.notes && (
-														<p className='text-sm text-gray-600 mt-1 italic'>
-															Note: {item.notes}
-														</p>
-													)}
-												</div>
-											</div>
-										</div>
-										<div className='text-right'>
-											<p className='font-medium text-lg'>
-												{item.quantity} {item.product.unit}
-											</p>
-										</div>
-									</div>
-								)
-							})}
+								})}
 							</div>
 						</CardContent>
 					</Card>

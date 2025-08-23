@@ -58,6 +58,19 @@ const OrderDetailModal: React.FC<OrderDetailModalProps> = ({
 	isOpen,
 	onClose,
 }) => {
+	// Map legacy categories to display names
+	const getCategoryDisplayName = (category: string): string => {
+		const categoryMap: Record<string, string> = {
+			// Legacy categories mapping
+			food: 'Main Products',
+			beverages: 'Desserts and Drinks',
+			cleaning: 'Cleaning Materials',
+			equipment: 'Packaging Materials',
+			packaging: 'Packaging Materials',
+			other: 'Main Products',
+		}
+		return categoryMap[category] || category
+	}
 	if (!order) return null
 
 	return (
@@ -147,22 +160,19 @@ const OrderDetailModal: React.FC<OrderDetailModalProps> = ({
 													<Package className='h-5 w-5 text-red-500' />
 												</div>
 												<div className='flex-1'>
-													<div className='font-medium text-red-600'>Product Deleted</div>
+													<div className='font-medium text-red-600'>
+														Product Deleted
+													</div>
 													<div className='text-sm text-red-500'>
 														Product no longer available
 													</div>
-													{item.notes && (
-														<div className='text-sm text-red-400 mt-1'>
-															Note: {item.notes}
-														</div>
-													)}
 												</div>
 											</div>
 											<div className='text-right'>
-												<div className='font-medium text-red-600'>x{item.quantity}</div>
-												<div className='text-sm text-red-500'>
-													N/A
+												<div className='font-medium text-red-600'>
+													x{item.quantity}
 												</div>
+												<div className='text-sm text-red-500'>N/A</div>
 											</div>
 										</div>
 									)
@@ -186,13 +196,9 @@ const OrderDetailModal: React.FC<OrderDetailModalProps> = ({
 											<div className='flex-1'>
 												<div className='font-medium'>{item.product.name}</div>
 												<div className='text-sm text-gray-600'>
-													{item.product.category} • {item.product.unit}
+													{getCategoryDisplayName(item.product.category)} •{' '}
+													{item.product.unit}
 												</div>
-												{item.notes && (
-													<div className='text-sm text-gray-500 mt-1'>
-														Note: {item.notes}
-													</div>
-												)}
 											</div>
 										</div>
 										<div className='text-right'>
@@ -217,14 +223,17 @@ const OrderDetailModal: React.FC<OrderDetailModalProps> = ({
 							<div className='flex justify-between items-center mt-1'>
 								<span className='font-medium'>Total Value:</span>
 								<span className='font-semibold'>
-																	$
-								{order.items
-									.reduce(
-										(total, item) =>
-											total + (item.product?.price ? item.product.price * item.quantity : 0),
-										0
-									)
-									.toFixed(2)}
+									$
+									{order.items
+										.reduce(
+											(total, item) =>
+												total +
+												(item.product?.price
+													? item.product.price * item.quantity
+													: 0),
+											0
+										)
+										.toFixed(2)}
 								</span>
 							</div>
 						</div>

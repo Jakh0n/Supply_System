@@ -43,7 +43,6 @@ import { toast } from 'sonner'
 interface OrderItem {
 	product: Product
 	quantity: number
-	notes?: string
 }
 
 const EditOrder: React.FC = () => {
@@ -95,14 +94,13 @@ const EditOrder: React.FC = () => {
 				setRequestedDate(order.requestedDate.split('T')[0])
 				setOrderNotes(order.notes || '')
 
-							// Convert order items to form format (skip items with deleted products)
-			const formItems: OrderItem[] = order.items
-				.filter(item => item.product !== null)
-				.map(item => ({
-					product: item.product!,
-					quantity: item.quantity,
-					notes: item.notes || '',
-				}))
+				// Convert order items to form format (skip items with deleted products)
+				const formItems: OrderItem[] = order.items
+					.filter(item => item.product !== null)
+					.map(item => ({
+						product: item.product!,
+						quantity: item.quantity,
+					}))
 				setOrderItems(formItems)
 			} catch (err) {
 				setError('Failed to load order details')
@@ -191,17 +189,30 @@ const EditOrder: React.FC = () => {
 	}
 
 	// Update item notes
-	const updateItemNotes = (productId: string, notes: string) => {
-		setOrderItems(prev =>
-			prev.map(item =>
-				item.product._id === productId ? { ...item, notes } : item
-			)
-		)
-	}
 
 	// Remove item from order
 	const removeItemFromOrder = (productId: string) => {
 		setOrderItems(prev => prev.filter(item => item.product._id !== productId))
+	}
+
+	// Map legacy categories to display names
+	const getCategoryDisplayName = (category: string): string => {
+		const categoryMap: Record<string, string> = {
+			// Legacy categories mapping
+			food: 'Main Products',
+			beverages: 'Desserts and Drinks',
+			cleaning: 'Cleaning Materials',
+			equipment: 'Packaging Materials',
+			packaging: 'Packaging Materials',
+			other: 'Main Products',
+		}
+		return categoryMap[category] || category
+	}
+
+	// Get current quantity for a product in the order
+	const getProductQuantity = (productId: string): number => {
+		const item = orderItems.find(item => item.product._id === productId)
+		return item ? item.quantity : 0
 	}
 
 	// Clear all items
@@ -224,10 +235,10 @@ const EditOrder: React.FC = () => {
 		if (orderItems.length !== originalOrder.items.length) return true
 
 		for (let i = 0; i < orderItems.length; i++) {
-					const formItem = orderItems[i]
-		const originalItem = originalOrder.items.find(
-			item => item.product?._id === formItem.product._id
-		)
+			const formItem = orderItems[i]
+			const originalItem = originalOrder.items.find(
+				item => item.product?._id === formItem.product._id
+			)
 
 			if (!originalItem) return true
 			if (formItem.quantity !== originalItem.quantity) return true
@@ -267,7 +278,6 @@ const EditOrder: React.FC = () => {
 				items: orderItems.map(item => ({
 					product: item.product._id,
 					quantity: item.quantity,
-					notes: item.notes || undefined,
 				})),
 				notes: orderNotes || undefined,
 			}
@@ -416,8 +426,7 @@ const EditOrder: React.FC = () => {
 													{filteredProducts.slice(0, 10).map(product => (
 														<div
 															key={product._id}
-															className='p-2 sm:p-3 hover:bg-gray-50 cursor-pointer transition-colors active:bg-gray-100'
-															onClick={() => addProductToOrder(product)}
+															className='p-2 sm:p-3 hover:bg-gray-50 transition-colors'
 														>
 															<div className='flex items-center justify-between'>
 																<div className='flex-1 min-w-0 pr-2'>
@@ -425,10 +434,55 @@ const EditOrder: React.FC = () => {
 																		{product.name}
 																	</p>
 																	<p className='text-xs text-gray-500 truncate'>
-																		{product.category} • {product.unit}
+																		{getCategoryDisplayName(product.category)}
 																	</p>
 																</div>
-																<Plus className='h-3 w-3 sm:h-4 sm:w-4 text-blue-600 flex-shrink-0' />
+
+																{/* Inline quantity controls */}
+																<div className='flex items-center gap-1 flex-shrink-0'>
+																	{getProductQuantity(product._id) > 0 ? (
+																		<>
+																			<Button
+																				variant='outline'
+																				size='sm'
+																				onClick={() =>
+																					updateItemQuantity(
+																						product._id,
+																						getProductQuantity(product._id) - 1
+																					)
+																				}
+																				className='h-6 w-6 p-0 rounded-full'
+																			>
+																				<Minus className='h-3 w-3' />
+																			</Button>
+																			<span className='text-sm font-bold text-center min-w-[1.5rem] px-1'>
+																				{getProductQuantity(product._id)}
+																			</span>
+																			<Button
+																				variant='outline'
+																				size='sm'
+																				onClick={() =>
+																					updateItemQuantity(
+																						product._id,
+																						getProductQuantity(product._id) + 1
+																					)
+																				}
+																				className='h-6 w-6 p-0 rounded-full'
+																			>
+																				<Plus className='h-3 w-3' />
+																			</Button>
+																		</>
+																	) : (
+																		<Button
+																			size='sm'
+																			onClick={() => addProductToOrder(product)}
+																			className='bg-green-600 hover:bg-green-700 text-white text-xs h-6 px-2'
+																		>
+																			<Plus className='h-3 w-3 mr-1' />
+																			Add
+																		</Button>
+																	)}
+																</div>
 															</div>
 														</div>
 													))}
@@ -600,101 +654,90 @@ const EditOrder: React.FC = () => {
 												</p>
 											</div>
 										) : (
-											<div className='space-y-2 max-h-48 sm:max-h-60 overflow-y-auto'>
-												{orderItems.map(item => (
-													<div
-														key={item.product._id}
-														className='p-2 sm:p-3 bg-gray-50 rounded-lg border space-y-2 sm:space-y-3'
-													>
-														{/* Product info */}
-														<div className='flex items-start justify-between'>
-															<div className='flex-1 min-w-0 pr-2'>
-																<p className='font-medium text-xs sm:text-sm truncate'>
-																	{item.product.name}
-																</p>
-																<p className='text-xs text-gray-500 truncate'>
-																	{item.product.category} • {item.product.unit}
-																</p>
-															</div>
-															<Button
-																variant='ghost'
-																size='sm'
-																onClick={() =>
-																	removeItemFromOrder(item.product._id)
-																}
-																className='text-red-600 hover:text-red-700 hover:bg-red-100 h-5 w-5 sm:h-6 sm:w-6 p-0 flex-shrink-0'
-															>
-																<X className='h-3 w-3' />
-															</Button>
-														</div>
+											<div className='bg-gray-50 rounded-lg p-2 border'>
+												<div className='space-y-2 max-h-[260px] overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100'>
+													{orderItems.map(item => (
+														<div
+															key={item.product._id}
+															className='p-2 bg-white rounded-lg border shadow-sm hover:shadow-md transition-shadow'
+														>
+															{/* Compact single-line layout */}
+															<div className='flex items-center gap-2'>
+																{/* Product info */}
+																<div className='flex-1 min-w-0'>
+																	<p className='font-semibold text-sm text-gray-900 truncate'>
+																		{item.product.name}
+																	</p>
+																	<p className='text-xs text-gray-500 truncate'>
+																		{getCategoryDisplayName(
+																			item.product.category
+																		)}
+																	</p>
+																</div>
 
-														{/* Quantity controls */}
-														<div className='flex items-center justify-between'>
-															<span className='text-xs font-medium text-gray-600'>
-																Quantity:
-															</span>
-															<div className='flex items-center space-x-1 sm:space-x-2'>
-																<Button
-																	variant='outline'
-																	size='sm'
-																	onClick={() =>
-																		updateItemQuantity(
-																			item.product._id,
-																			item.quantity - 1
-																		)
-																	}
-																	className='h-6 w-6 sm:h-7 sm:w-7 p-0'
-																>
-																	<Minus className='h-2 w-2 sm:h-3 sm:w-3' />
-																</Button>
-																<span className='text-xs sm:text-sm font-bold min-w-[1.5rem] sm:min-w-[2rem] text-center'>
-																	{item.quantity}
+																{/* Inline quantity controls */}
+																<div className='flex items-center gap-1'>
+																	<Button
+																		variant='outline'
+																		size='sm'
+																		onClick={() =>
+																			updateItemQuantity(
+																				item.product._id,
+																				item.quantity - 1
+																			)
+																		}
+																		disabled={item.quantity <= 1}
+																		className='h-6 w-6 p-0 rounded-full'
+																	>
+																		<Minus className='h-3 w-3' />
+																	</Button>
+																	<span className='text-sm font-bold text-center min-w-[2rem] px-1'>
+																		{item.quantity}
+																	</span>
+																	<Button
+																		variant='outline'
+																		size='sm'
+																		onClick={() =>
+																			updateItemQuantity(
+																				item.product._id,
+																				item.quantity + 1
+																			)
+																		}
+																		className='h-6 w-6 p-0 rounded-full'
+																	>
+																		<Plus className='h-3 w-3' />
+																	</Button>
+																</div>
+
+																{/* Unit display */}
+																<span className='text-sm font-medium text-blue-600 min-w-[3rem] text-right'>
+																	{item.product.unit}
 																</span>
+
+																{/* Remove button */}
 																<Button
-																	variant='outline'
+																	variant='ghost'
 																	size='sm'
 																	onClick={() =>
-																		updateItemQuantity(
-																			item.product._id,
-																			item.quantity + 1
-																		)
+																		removeItemFromOrder(item.product._id)
 																	}
-																	className='h-6 w-6 sm:h-7 sm:w-7 p-0'
+																	className='text-red-500 hover:text-red-700 hover:bg-red-50 h-6 w-6 p-0'
+																	title='Remove item'
 																>
-																	<Plus className='h-2 w-2 sm:h-3 sm:w-3' />
+																	<X className='h-3 w-3' />
 																</Button>
 															</div>
 														</div>
-
-														{/* Item notes */}
-														<div className='space-y-1'>
-															<Label className='text-xs font-medium text-gray-600'>
-																Special Instructions (Optional)
-															</Label>
-															<Input
-																placeholder='e.g., urgent, specific brand...'
-																value={item.notes || ''}
-																onChange={e =>
-																	updateItemNotes(
-																		item.product._id,
-																		e.target.value
-																	)
-																}
-																className='text-xs h-7 sm:h-8 lg:h-9 border-gray-200 focus:border-blue-400'
-															/>
-														</div>
-
-														{/* Item total */}
-														<div className='flex justify-between items-center pt-1 sm:pt-2 border-t border-gray-100'>
-															<span className='text-xs text-gray-500'>
-																Total:
-															</span>
-															<span className='text-xs font-bold text-gray-900 bg-blue-50 px-1.5 py-0.5 sm:px-2 sm:py-1 rounded'>
-																{item.quantity} {item.product.unit}
-															</span>
-														</div>
+													))}
+												</div>
+												{orderItems.length > 5 && (
+													<div className='text-center pt-2 border-t border-gray-200 mt-2'>
+														<p className='text-xs text-gray-500'>
+															Showing 5 of {orderItems.length} items - scroll to
+															see more
+														</p>
 													</div>
-												))}
+												)}
 											</div>
 										)}
 									</div>

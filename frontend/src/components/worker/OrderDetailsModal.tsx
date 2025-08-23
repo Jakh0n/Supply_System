@@ -24,6 +24,19 @@ const OrderDetailsModal: React.FC<OrderDetailsModalProps> = ({
 	isOpen,
 	onClose,
 }) => {
+	// Map legacy categories to display names
+	const getCategoryDisplayName = (category: string): string => {
+		const categoryMap: Record<string, string> = {
+			// Legacy categories mapping
+			food: 'Main Products',
+			beverages: 'Desserts and Drinks',
+			cleaning: 'Cleaning Materials',
+			equipment: 'Packaging Materials',
+			packaging: 'Packaging Materials',
+			other: 'Main Products',
+		}
+		return categoryMap[category] || category
+	}
 	if (!order) return null
 
 	const statusDisplay = getStatusDisplay(order.status)
@@ -130,11 +143,11 @@ const OrderDetailsModal: React.FC<OrderDetailsModalProps> = ({
 									: ''
 							}`}
 						>
-													{order.items.map((item, index) => (
-							<div
-								key={item.product?._id || `deleted-${index}`}
-								className='flex items-center justify-between p-2 sm:p-3 bg-gray-50 rounded-lg'
-							>
+							{order.items.map((item, index) => (
+								<div
+									key={item.product?._id || `deleted-${index}`}
+									className='flex items-center justify-between p-2 sm:p-3 bg-gray-50 rounded-lg'
+								>
 									<div className='flex-1 min-w-0'>
 										<div className='flex items-center'>
 											{item.product ? (
@@ -153,13 +166,9 @@ const OrderDetailsModal: React.FC<OrderDetailsModalProps> = ({
 															{item.product.name}
 														</p>
 														<p className='text-xs text-gray-500 truncate'>
-															{item.product.category} • {item.product.unit}
+															{getCategoryDisplayName(item.product.category)} •{' '}
+															{item.product.unit}
 														</p>
-														{item.notes && (
-															<p className='text-xs text-gray-600 mt-1 italic line-clamp-2'>
-																Note: {item.notes}
-															</p>
-														)}
 													</div>
 												</>
 											) : (
@@ -185,7 +194,11 @@ const OrderDetailsModal: React.FC<OrderDetailsModalProps> = ({
 										</div>
 									</div>
 									<div className='text-right flex-shrink-0 ml-2'>
-										<p className={`font-medium text-xs sm:text-sm ${!item.product ? 'text-red-600' : ''}`}>
+										<p
+											className={`font-medium text-xs sm:text-sm ${
+												!item.product ? 'text-red-600' : ''
+											}`}
+										>
 											{item.quantity} {item.product?.unit || 'unit'}
 										</p>
 									</div>

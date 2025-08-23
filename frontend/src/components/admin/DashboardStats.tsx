@@ -60,38 +60,35 @@ const DashboardStats: React.FC<DashboardStatsProps> = ({
 	const statsData = [
 		{
 			title: "Today's Orders",
-			value: stats.todayOrders,
+			value: stats.todayOrders || 0,
 			icon: ShoppingCart,
 			color: 'text-blue-600',
 			bgColor: 'bg-blue-50',
 			description: 'Orders placed today',
 		},
 		{
-			title: 'Total Orders',
-			value: stats.totalOrders,
+			title: 'Completed Today',
+			value: stats.todayCompletedOrders || 0,
 			icon: ShoppingCart,
 			color: 'text-green-600',
 			bgColor: 'bg-green-50',
-			description: 'All time orders',
+			description: 'Orders completed today',
 		},
 		{
 			title: 'Pending Orders',
-			value: stats.pendingOrders,
+			value: stats.pendingOrders || 0,
 			icon: Clock,
 			color: 'text-orange-600',
 			bgColor: 'bg-orange-50',
 			description: 'Awaiting approval',
 		},
 		{
-			title: 'Total Revenue',
-			value: stats.totalRevenue ? formatKRW(stats.totalRevenue) : '--',
+			title: "Today's Revenue",
+			value: stats.todayRevenue ? formatKRW(stats.todayRevenue) : '₩0',
 			icon: DollarSign,
 			color: 'text-purple-600',
 			bgColor: 'bg-purple-50',
-			description: 'All time revenue',
-			subValue: stats.todayRevenue
-				? `Today: ${formatKRW(stats.todayRevenue)}`
-				: '',
+			description: 'Revenue earned today',
 		},
 	]
 
