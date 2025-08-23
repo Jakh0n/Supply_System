@@ -8,25 +8,35 @@ const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
 	metadataBase: new URL('https://flami.org/'),
-	title: 'King Kebab Supply System',
-	description: 'Restaurant Supply Syztems',
+	title: '👑 King Kebab Supply System',
+	description:
+		'Restaurant Supply Management System - Professional Supply Chain Management',
 	authors: [
 		{
 			name: 'Jakhon Yokubov',
 			url: 'https://flami.org',
 		},
 	],
-	icons: { icon: '/crown.png' },
+	icons: {
+		icon: [
+			{ url: '/crown.png', sizes: '32x32', type: 'image/png' },
+			{ url: '/crown.png', sizes: '16x16', type: 'image/png' },
+			{ url: '/crown.png', sizes: '48x48', type: 'image/png' },
+		],
+		apple: [{ url: '/crown.png', sizes: '180x180', type: 'image/png' }],
+		shortcut: '/crown.png',
+	},
+	manifest: '/manifest.json',
 	openGraph: {
-		title: "FLAMI | Koreyada eng arzon kitoblar do'koni",
+		title: 'King Kebab Supply System',
 		description:
 			"King Kebab Supply System - Streamline your restaurant's supply chain with our comprehensive management solution. Track inventory, manage orders, and analyze data across multiple branches.",
 		type: 'website',
 		url: 'https://flami.org',
 		locale: 'kr-KR',
-		images: '/working_hours.jpg',
+		images: '/crown.png',
 		countryName: 'Korea',
-		siteName: 'King Suplly System',
+		siteName: 'King Kebab Supply System',
 		emails: 'info@flami.org',
 	},
 }

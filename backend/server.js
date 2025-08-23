@@ -24,6 +24,7 @@ app.use(
 			process.env.FRONTEND_URL,
 			'http://localhost:3000',
 			'https://depo-backend-vr7u.onrender.com',
+			'https://kingkebaborder.vercel.app',
 		],
 		credentials: true,
 		methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],

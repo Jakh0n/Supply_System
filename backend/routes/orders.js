@@ -369,6 +369,9 @@ router.post(
 				console.log('Using fallback order number:', orderNumber)
 			}
 
+			// Convert requestedDate string to Date object
+			const requestedDateTime = new Date(requestedDate)
+
 			const orderData = {
 				orderNumber,
 				worker: req.user._id,

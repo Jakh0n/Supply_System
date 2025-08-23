@@ -21,7 +21,7 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from '@/components/ui/select'
-import { ordersApi, usersApi } from '@/lib/api'
+import { ordersApi } from '@/lib/api'
 import { PDFGenerator } from '@/lib/pdfGenerator'
 import { Order, OrderStatus } from '@/types'
 import {
@@ -34,6 +34,19 @@ import {
 } from 'lucide-react'
 import React, { useCallback, useEffect, useState } from 'react'
 import { toast } from 'sonner'
+
+// Hardcoded branches for delivery
+const DELIVERY_BRANCHES = [
+	'Kondae New',
+	'Hongdae',
+	'Seulde',
+	'Seulde Tantuni',
+	'Gangnam',
+	'Kondae',
+	'Itewon',
+	'Paket',
+	'Posco',
+]
 
 // Helper function to format date
 const formatDate = (dateString: string): string => {
@@ -111,8 +124,8 @@ const OrdersManagement: React.FC = () => {
 	// Fetch branches
 	const fetchBranches = useCallback(async () => {
 		try {
-			const response = await usersApi.getBranches()
-			setBranches(response.branches)
+			// Use hardcoded branches instead of API call
+			setBranches(DELIVERY_BRANCHES)
 		} catch (err) {
 			console.error('Failed to fetch branches:', err)
 		}

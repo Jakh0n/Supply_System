@@ -73,6 +73,7 @@ const UNITS = [
 
 const ProductsManagement: React.FC = () => {
 	const [products, setProducts] = useState<Product[]>([])
+
 	const [loading, setLoading] = useState(true)
 	const [error, setError] = useState('')
 	const [searchTerm, setSearchTerm] = useState('')
