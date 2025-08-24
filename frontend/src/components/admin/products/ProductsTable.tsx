@@ -278,39 +278,39 @@ const ProductsTable: React.FC<ProductsTableProps> = ({
 
 			{/* Mobile Card View */}
 			<div className='lg:hidden'>
-				<div className='flex items-center justify-between mb-4'>
+				<div className='flex items-center justify-between mb-3'>
 					<h2 className='text-lg font-semibold text-gray-900'>
 						Products ({products.length})
 					</h2>
 				</div>
 
-				<div className='max-h-[70vh] overflow-y-auto scroll-smooth space-y-3 pr-1'>
+				<div className='max-h-[70vh] overflow-y-auto scroll-smooth space-y-2 pr-1'>
 					{products.map(product => (
 						<Card
 							key={product._id}
 							className='hover:shadow-md transition-shadow border border-gray-200'
 						>
-							<CardContent className='p-4'>
+							<CardContent className='p-3'>
 								<div className='flex items-start gap-3 mb-3'>
-									<div className='w-12 h-12 flex-shrink-0'>
+									<div className='w-10 h-10 flex-shrink-0'>
 										<ProductThumbnail
 											src={getPrimaryImage(product)}
 											alt={product.name}
-											size='md'
+											size='sm'
 											priority={false}
 										/>
 									</div>
-									<div className='flex-1'>
-										<div className='font-medium text-sm text-gray-900'>
+									<div className='flex-1 min-w-0'>
+										<div className='font-medium text-sm text-gray-900 mb-1'>
 											{product.name}
 										</div>
 										{product.description && (
-											<div className='text-xs text-gray-500 mt-1 line-clamp-2'>
+											<div className='text-xs text-gray-500 line-clamp-1 mb-1'>
 												{product.description}
 											</div>
 										)}
 										{product.images && product.images.length > 0 && (
-											<div className='text-xs text-blue-600 mt-1'>
+											<div className='text-xs text-blue-600'>
 												{product.images.length} image
 												{product.images.length > 1 ? 's' : ''}
 											</div>
@@ -318,8 +318,8 @@ const ProductsTable: React.FC<ProductsTableProps> = ({
 									</div>
 									<DropdownMenu>
 										<DropdownMenuTrigger asChild>
-											<Button variant='ghost' size='sm'>
-												<MoreHorizontal className='h-4 w-4' />
+											<Button variant='ghost' size='sm' className='h-7 w-7 p-0'>
+												<MoreHorizontal className='h-3 w-3' />
 											</Button>
 										</DropdownMenuTrigger>
 										<DropdownMenuContent align='end'>
@@ -353,17 +353,21 @@ const ProductsTable: React.FC<ProductsTableProps> = ({
 									</DropdownMenu>
 								</div>
 
-								<div className='grid grid-cols-2 gap-3 mb-3'>
+								<div className='grid grid-cols-3 gap-2 mb-2'>
 									<div>
-										<div className='text-xs text-gray-500 mb-1'>Category</div>
-										<span className='inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800'>
+										<div className='text-xs text-gray-500 mb-1 font-medium'>
+											Category
+										</div>
+										<span className='inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800'>
 											{getCategoryLabel(product.category)}
 										</span>
 									</div>
 									<div>
-										<div className='text-xs text-gray-500 mb-1'>Status</div>
+										<div className='text-xs text-gray-500 mb-1 font-medium'>
+											Status
+										</div>
 										<span
-											className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+											className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
 												product.isActive
 													? 'bg-green-100 text-green-800'
 													: 'bg-red-100 text-red-800'
@@ -372,31 +376,28 @@ const ProductsTable: React.FC<ProductsTableProps> = ({
 											{product.isActive ? 'Active' : 'Inactive'}
 										</span>
 									</div>
-								</div>
-
-								<div className='grid grid-cols-2 gap-3 mb-3'>
 									<div>
-										<div className='text-xs text-gray-500'>Unit</div>
-										<div className='text-sm font-medium'>
-											{getUnitLabel(product.unit)}
+										<div className='text-xs text-gray-500 mb-1 font-medium'>
+											Price
 										</div>
-									</div>
-									<div>
-										<div className='text-xs text-gray-500'>Price</div>
-										<div className='text-sm font-medium'>
+										<div className='text-xs font-medium text-gray-900'>
 											{product.price ? formatKRW(product.price) : formatKRW(0)}
 										</div>
 									</div>
 								</div>
 
-								<div className='grid grid-cols-2 gap-3 text-xs text-gray-500'>
-									<div>
-										<span className='font-medium'>Supplier:</span>{' '}
-										{product.supplier || '-'}
+								<div className='grid grid-cols-2 gap-2 text-xs text-gray-500 border-t pt-2'>
+									<div className='flex justify-between'>
+										<span className='font-medium'>Unit:</span>
+										<span className='text-gray-700'>
+											{getUnitLabel(product.unit)}
+										</span>
 									</div>
-									<div>
-										<span className='font-medium'>Created:</span>{' '}
-										{new Date(product.createdAt).toLocaleDateString()}
+									<div className='flex justify-between'>
+										<span className='font-medium'>Supplier:</span>
+										<span className='text-gray-700'>
+											{product.supplier || '-'}
+										</span>
 									</div>
 								</div>
 							</CardContent>
@@ -407,7 +408,7 @@ const ProductsTable: React.FC<ProductsTableProps> = ({
 
 			{/* Scroll Indicator */}
 			{products.length > 10 && (
-				<div className='text-center py-2 text-sm text-gray-500 bg-gray-50 border-t rounded-lg mt-4'>
+				<div className='text-center py-2 text-sm text-gray-500 bg-gray-50 border-t rounded-lg mt-3'>
 					Showing {products.length} products - Scroll to see more
 				</div>
 			)}

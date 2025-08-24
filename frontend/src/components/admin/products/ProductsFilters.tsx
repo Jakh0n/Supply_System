@@ -44,17 +44,17 @@ const ProductsFilters: React.FC<ProductsFiltersProps> = ({
 }) => {
 	return (
 		<Card>
-			<CardHeader className='pb-2 pt-3'>
+			<CardHeader className='pb-3 pt-4 sm:pb-2 sm:pt-3'>
 				<CardTitle className='text-sm font-medium'>Filters</CardTitle>
 			</CardHeader>
-			<CardContent className='pt-0 pb-3'>
-				<div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3'>
-					<div className='space-y-1'>
+			<CardContent className='pt-0 pb-4 sm:pb-3'>
+				<div className='grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 sm:gap-3'>
+					<div className='space-y-2'>
 						<Label htmlFor='search' className='text-xs font-medium'>
 							Search Products
 						</Label>
 						<div className='relative'>
-							<Search className='absolute left-2 top-2 h-4 w-4 text-muted-foreground' />
+							<Search className='absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground' />
 							<Input
 								id='search'
 								placeholder='Search by name, description, or supplier'
@@ -62,11 +62,11 @@ const ProductsFilters: React.FC<ProductsFiltersProps> = ({
 								onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
 									onSearchChange(e.target.value)
 								}
-								className='pl-8 h-8 text-sm'
+								className='pl-10 h-10 sm:h-8 text-sm'
 							/>
 						</div>
 					</div>
-					<div className='space-y-1'>
+					<div className='space-y-2'>
 						<Label htmlFor='category-filter' className='text-xs font-medium'>
 							Category
 						</Label>
@@ -76,7 +76,7 @@ const ProductsFilters: React.FC<ProductsFiltersProps> = ({
 								onCategoryChange(value)
 							}
 						>
-							<SelectTrigger className='h-8 text-sm'>
+							<SelectTrigger className='h-10 sm:h-8 text-sm'>
 								<SelectValue placeholder='All categories' />
 							</SelectTrigger>
 							<SelectContent>
@@ -89,7 +89,7 @@ const ProductsFilters: React.FC<ProductsFiltersProps> = ({
 							</SelectContent>
 						</Select>
 					</div>
-					<div className='space-y-1'>
+					<div className='space-y-2'>
 						<Label htmlFor='status-filter' className='text-xs font-medium'>
 							Status
 						</Label>
@@ -99,7 +99,7 @@ const ProductsFilters: React.FC<ProductsFiltersProps> = ({
 								onStatusChange(value)
 							}
 						>
-							<SelectTrigger className='h-8 text-sm'>
+							<SelectTrigger className='h-10 sm:h-8 text-sm'>
 								<SelectValue placeholder='All statuses' />
 							</SelectTrigger>
 							<SelectContent>

@@ -83,8 +83,8 @@ const ProductsHeader: React.FC<ProductsHeaderProps> = ({
 	resetForm,
 }) => {
 	return (
-		<div className='flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4'>
-			<div>
+		<div className='flex flex-col space-y-4 sm:flex-row sm:justify-between sm:items-center sm:space-y-0'>
+			<div className='text-center sm:text-left'>
 				<h1 className='text-xl sm:text-2xl font-bold text-gray-900'>
 					Product Management
 				</h1>
@@ -94,12 +94,15 @@ const ProductsHeader: React.FC<ProductsHeaderProps> = ({
 			</div>
 			<Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
 				<DialogTrigger asChild>
-					<Button onClick={resetForm} className='w-full sm:w-auto'>
+					<Button
+						onClick={resetForm}
+						className='w-full sm:w-auto h-10 sm:h-9 px-4 sm:px-3 text-sm sm:text-sm font-medium'
+					>
 						<Plus className='h-4 w-4 mr-2' />
 						Add Product
 					</Button>
 				</DialogTrigger>
-				<DialogContent className='sm:max-w-[425px] mx-4 max-h-[90vh] overflow-y-auto'>
+				<DialogContent className='w-[95vw] max-w-[425px] mx-auto max-h-[90vh] overflow-y-auto sm:max-w-[425px]'>
 					<DialogHeader>
 						<DialogTitle className='text-lg sm:text-xl'>
 							Create New Product
@@ -121,10 +124,10 @@ const ProductsHeader: React.FC<ProductsHeaderProps> = ({
 								}
 								placeholder='Enter product name'
 								required
-								className='mt-1'
+								className='mt-1 h-10'
 							/>
 						</div>
-						<div className='grid grid-cols-1 sm:grid-cols-2 gap-4'>
+						<div className='grid grid-cols-1 gap-4'>
 							<div>
 								<Label htmlFor='category' className='text-sm font-medium'>
 									Category *
@@ -135,7 +138,7 @@ const ProductsHeader: React.FC<ProductsHeaderProps> = ({
 										setFormData(prev => ({ ...prev, category: value }))
 									}
 								>
-									<SelectTrigger className='mt-1'>
+									<SelectTrigger className='mt-1 h-10'>
 										<SelectValue placeholder='Select category' />
 									</SelectTrigger>
 									<SelectContent>
@@ -157,7 +160,7 @@ const ProductsHeader: React.FC<ProductsHeaderProps> = ({
 										setFormData(prev => ({ ...prev, unit: value }))
 									}
 								>
-									<SelectTrigger className='mt-1'>
+									<SelectTrigger className='mt-1 h-10'>
 										<SelectValue placeholder='Select unit' />
 									</SelectTrigger>
 									<SelectContent>
@@ -184,7 +187,7 @@ const ProductsHeader: React.FC<ProductsHeaderProps> = ({
 									}))
 								}
 								placeholder='Enter supplier name'
-								className='mt-1'
+								className='mt-1 h-10'
 							/>
 						</div>
 						<div>
@@ -203,7 +206,7 @@ const ProductsHeader: React.FC<ProductsHeaderProps> = ({
 								}
 								placeholder='₩0 (Korean Won)'
 								required
-								className='mt-1'
+								className='mt-1 h-10'
 							/>
 						</div>
 						<div>
@@ -237,19 +240,19 @@ const ProductsHeader: React.FC<ProductsHeaderProps> = ({
 							maxImages={5}
 							disabled={formLoading}
 						/>
-						<div className='flex flex-col sm:flex-row justify-end space-y-2 sm:space-y-0 sm:space-x-2'>
+						<div className='flex flex-col space-y-2 sm:flex-row sm:justify-end sm:space-y-0 sm:space-x-2 pt-2'>
 							<Button
 								type='button'
 								variant='outline'
 								onClick={() => setIsCreateDialogOpen(false)}
-								className='w-full sm:w-auto'
+								className='w-full sm:w-auto h-10'
 							>
 								Cancel
 							</Button>
 							<Button
 								type='submit'
 								disabled={formLoading}
-								className='w-full sm:w-auto'
+								className='w-full sm:w-auto h-10'
 							>
 								{formLoading ? 'Creating...' : 'Create Product'}
 							</Button>

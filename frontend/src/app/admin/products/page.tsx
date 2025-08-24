@@ -279,7 +279,7 @@ const ProductsManagement: React.FC = () => {
 	return (
 		<ProtectedRoute requiredRole='admin'>
 			<AdminLayout>
-				<div className='space-y-4 sm:space-y-6 p-4 sm:p-6'>
+				<div className='space-y-4 sm:space-y-6 p-3 sm:p-6'>
 					{/* Header */}
 					<ProductsHeader
 						isCreateDialogOpen={isCreateDialogOpen}
@@ -326,7 +326,7 @@ const ProductsManagement: React.FC = () => {
 
 					{/* Edit Dialog */}
 					<Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-						<DialogContent className='sm:max-w-[425px] mx-4 max-h-[90vh] overflow-y-auto'>
+						<DialogContent className='w-[95vw] max-w-[425px] mx-auto max-h-[90vh] overflow-y-auto sm:max-w-[425px]'>
 							<DialogHeader>
 								<DialogTitle className='text-lg sm:text-xl'>
 									Edit Product
@@ -348,10 +348,10 @@ const ProductsManagement: React.FC = () => {
 										}
 										placeholder='Enter product name'
 										required
-										className='mt-1'
+										className='mt-1 h-10'
 									/>
 								</div>
-								<div className='grid grid-cols-1 sm:grid-cols-2 gap-4'>
+								<div className='grid grid-cols-1 gap-4'>
 									<div>
 										<Label
 											htmlFor='edit-category'
@@ -365,7 +365,7 @@ const ProductsManagement: React.FC = () => {
 												setFormData(prev => ({ ...prev, category: value }))
 											}
 										>
-											<SelectTrigger className='mt-1'>
+											<SelectTrigger className='mt-1 h-10'>
 												<SelectValue placeholder='Select category' />
 											</SelectTrigger>
 											<SelectContent>
@@ -390,7 +390,7 @@ const ProductsManagement: React.FC = () => {
 												setFormData(prev => ({ ...prev, unit: value }))
 											}
 										>
-											<SelectTrigger className='mt-1'>
+											<SelectTrigger className='mt-1 h-10'>
 												<SelectValue placeholder='Select unit' />
 											</SelectTrigger>
 											<SelectContent>
@@ -420,7 +420,7 @@ const ProductsManagement: React.FC = () => {
 											}))
 										}
 										placeholder='Enter supplier name'
-										className='mt-1'
+										className='mt-1 h-10'
 									/>
 								</div>
 								<div>
@@ -439,7 +439,7 @@ const ProductsManagement: React.FC = () => {
 										}
 										placeholder='₩0 (Korean Won)'
 										required
-										className='mt-1'
+										className='mt-1 h-10'
 									/>
 								</div>
 								<div>
@@ -476,19 +476,19 @@ const ProductsManagement: React.FC = () => {
 									maxImages={5}
 									disabled={formLoading}
 								/>
-								<div className='flex flex-col sm:flex-row justify-end space-y-2 sm:space-y-0 sm:space-x-2'>
+								<div className='flex flex-col space-y-2 sm:flex-row sm:justify-end sm:space-y-0 sm:space-x-2 pt-2'>
 									<Button
 										type='button'
 										variant='outline'
 										onClick={() => setIsEditDialogOpen(false)}
-										className='w-full sm:w-auto'
+										className='w-full sm:w-auto h-10'
 									>
 										Cancel
 									</Button>
 									<Button
 										type='submit'
 										disabled={formLoading}
-										className='w-full sm:w-auto'
+										className='w-full sm:w-auto h-10'
 									>
 										{formLoading ? 'Updating...' : 'Update Product'}
 									</Button>
