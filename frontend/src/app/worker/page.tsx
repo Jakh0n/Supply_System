@@ -125,7 +125,7 @@ const WorkerDashboard: React.FC = () => {
 	return (
 		<ProtectedRoute requiredRole='worker'>
 			<DashboardLayout>
-				<div className='space-y-4 sm:space-y-6'>
+				<div className='space-y-4 sm:space-y-6 p-3 sm:p-6'>
 					{/* Header with Suspense and skeleton */}
 					<Suspense fallback={<WorkerDashboardHeaderSkeleton />}>
 						<WorkerDashboardHeader

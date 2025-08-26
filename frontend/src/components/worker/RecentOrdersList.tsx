@@ -91,32 +91,36 @@ const RecentOrdersList: React.FC<RecentOrdersListProps> = ({
 			label: 'All Time',
 			action: () => applyQuickFilter('all'),
 			icon: Package,
-			color: 'bg-gray-500',
+			color: 'bg-slate-600 hover:bg-slate-700',
+			activeColor: 'bg-slate-800',
 		},
 		{
 			label: 'Today',
 			action: () => applyQuickFilter('today'),
 			icon: Calendar,
-			color: 'bg-blue-500',
+			color: 'bg-blue-600 hover:bg-blue-700',
+			activeColor: 'bg-blue-800',
 		},
 		{
 			label: 'Yesterday',
 			action: () => applyQuickFilter('yesterday'),
 			icon: Clock,
-			color: 'bg-purple-500',
+			color: 'bg-purple-600 hover:bg-purple-700',
+			activeColor: 'bg-purple-800',
 		},
 		{
 			label: 'This Week',
 			action: () => applyQuickFilter('weekly'),
 			icon: CalendarDays,
-			color: 'bg-green-500',
+			color: 'bg-emerald-600 hover:bg-emerald-700',
+			activeColor: 'bg-emerald-800',
 		},
 	]
 
 	const renderContent = () => {
 		if (error) {
 			return (
-				<div className='text-center py-6 sm:py-8'>
+				<div className='text-center py-8 sm:py-12'>
 					<ErrorState error={error} onRetry={onRetry} retryText='Retry' />
 				</div>
 			)
@@ -127,9 +131,9 @@ const RecentOrdersList: React.FC<RecentOrdersListProps> = ({
 		}
 
 		return (
-			<div className='space-y-4'>
+			<div className='space-y-6'>
 				{/* Orders List */}
-				<div className='space-y-3 sm:space-y-4'>
+				<div className='space-y-4'>
 					{orders.map(order => (
 						<OrderCard
 							key={order._id}
@@ -150,9 +154,9 @@ const RecentOrdersList: React.FC<RecentOrdersListProps> = ({
 				/>
 
 				{/* View All Orders Link */}
-				<div className='pt-2 sm:pt-4 border-t border-gray-200'>
+				<div className='pt-4 border-t border-gray-100'>
 					<Link href='/worker/orders' className='block'>
-						<Button className='w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white font-medium h-10 sm:h-9 text-sm sm:text-base shadow-sm hover:shadow-md transition-all duration-200'>
+						<Button className='w-full sm:w-auto bg-gradient-to-r from-blue-600 to-blue-700 sm:hover:from-blue-700 sm:hover:to-blue-800 text-white font-medium h-11 sm:h-10 text-sm sm:text-base shadow-lg sm:hover:shadow-xl transition-all duration-200 sm:hover:scale-105'>
 							<ShoppingCart className='h-4 w-4 mr-2' />
 							View All Orders
 						</Button>
@@ -163,81 +167,89 @@ const RecentOrdersList: React.FC<RecentOrdersListProps> = ({
 	}
 
 	return (
-		<Card>
-			<CardHeader className='p-4 sm:p-6'>
-				<div className='flex flex-col gap-4'>
+		<Card className='shadow-lg border-0 bg-gradient-to-br from-white to-gray-50'>
+			<CardHeader className='p-6 sm:p-8 pb-4'>
+				<div className='flex flex-col gap-6'>
 					<div className='flex flex-col sm:flex-row sm:justify-between sm:items-start gap-4'>
-						<div>
-							<CardTitle className='text-lg sm:text-xl flex items-center gap-2'>
-								<ShoppingCart className='h-5 w-5 text-blue-500' />
+						<div className='text-center sm:text-left'>
+							<CardTitle className='text-xl sm:text-2xl flex items-center justify-center sm:justify-start gap-3 text-gray-900'>
+								<div className='p-2 bg-gradient-to-r from-blue-500 to-blue-600 rounded-xl shadow-lg'>
+									<ShoppingCart className='h-5 w-5 text-white' />
+								</div>
 								Recent Orders
 							</CardTitle>
-							<CardDescription className='text-sm sm:text-base'>
+							<CardDescription className='text-sm sm:text-base mt-2 text-gray-600'>
 								Your latest order submissions
-								{totalOrders > 0 && ` (${totalOrders} total)`}
+								{totalOrders > 0 && (
+									<span className='font-medium text-blue-600'>
+										{' '}
+										• {totalOrders} total
+									</span>
+								)}
 							</CardDescription>
 						</div>
 						<Button
 							onClick={onRetry}
 							variant='ghost'
 							size='sm'
-							className='h-7 w-7 p-0'
+							className='h-10 w-10 p-0 self-center sm:self-start rounded-full sm:hover:bg-blue-50 sm:hover:text-blue-600 transition-colors'
 							disabled={loading}
 						>
 							<RefreshCw
-								className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`}
+								className={`h-5 w-5 ${loading ? 'animate-spin' : ''}`}
 							/>
 						</Button>
 					</div>
 
-					{/* UX-Friendly Filters */}
-					<div className='space-y-3'>
-						{/* Quick Filters */}
-						<div className='flex items-center justify-between'>
-							<div className='flex items-center gap-2'>
-								<span className='text-sm font-medium text-gray-700'>
-									Quick filters:
-								</span>
-								<div className='flex items-center gap-1'>
-									{quickFilters.map((filter, index) => (
-										<Button
-											key={index}
-											onClick={filter.action}
-											variant={
-												(filter.label === 'All Time' && dateFilter === 'all') ||
-												(filter.label === 'Today' && dateFilter === 'today') ||
-												(filter.label === 'Yesterday' &&
-													dateFilter === 'yesterday') ||
-												(filter.label === 'This Week' &&
-													dateFilter === 'weekly')
-													? 'default'
-													: 'outline'
-											}
-											size='sm'
-											className='h-7 px-3 text-xs font-medium'
-										>
-											<filter.icon className='h-3 w-3 mr-1' />
-											{filter.label}
-										</Button>
-									))}
-								</div>
-							</div>
+					{/* Enhanced Quick Filters */}
+					<div className='space-y-4'>
+						<div className='text-center sm:text-left'>
+							<span className='text-sm font-semibold text-gray-700 bg-gray-100 px-3 py-1 rounded-full'>
+								Quick Filters
+							</span>
+						</div>
+						<div className='flex flex-wrap justify-center sm:justify-start items-center gap-3'>
+							{quickFilters.map((filter, index) => {
+								const isActive =
+									(filter.label === 'All Time' && dateFilter === 'all') ||
+									(filter.label === 'Today' && dateFilter === 'today') ||
+									(filter.label === 'Yesterday' &&
+										dateFilter === 'yesterday') ||
+									(filter.label === 'This Week' && dateFilter === 'weekly')
+
+								return (
+									<Button
+										key={index}
+										onClick={filter.action}
+										variant={isActive ? 'default' : 'outline'}
+										size='sm'
+										className={`h-9 px-4 text-sm font-medium rounded-full transition-all duration-200 ${
+											isActive
+												? `${filter.activeColor} text-white shadow-lg`
+												: 'border-gray-200 sm:hover:border-gray-300 sm:hover:bg-gray-50'
+										}`}
+									>
+										<filter.icon className='h-4 w-4 mr-2' />
+										{filter.label}
+									</Button>
+								)
+							})}
 						</div>
 
 						{/* Active Filters Display */}
 						{activeFiltersCount > 0 && (
-							<div className='flex items-center gap-2 p-3 bg-blue-50 rounded-md border border-blue-200'>
-								<span className='text-sm font-medium text-blue-700'>
-									Active:
+							<div className='flex items-center justify-center sm:justify-start gap-3 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl border border-blue-100'>
+								<span className='text-sm font-semibold text-blue-700'>
+									Active Filter:
 								</span>
-								<div className='flex items-center gap-1 px-2 py-1 bg-blue-100 text-blue-800 rounded-md text-xs font-medium'>
-									<Calendar className='h-3 w-3' />
+								<div className='flex items-center gap-2 px-3 py-1.5 bg-white text-blue-800 rounded-full text-sm font-medium shadow-sm'>
+									<Calendar className='h-4 w-4' />
 									{getFilterDisplayName(dateFilter)}
 									<Button
 										onClick={clearFilters}
 										variant='ghost'
 										size='sm'
-										className='h-4 w-4 p-0 ml-1 hover:bg-blue-200 text-blue-600'
+										className='h-5 w-5 p-0 ml-1 sm:hover:bg-blue-100 text-blue-600 rounded-full'
 									>
 										<X className='h-3 w-3' />
 									</Button>
@@ -247,7 +259,7 @@ const RecentOrdersList: React.FC<RecentOrdersListProps> = ({
 					</div>
 				</div>
 			</CardHeader>
-			<CardContent className='p-4 sm:p-6 pt-0'>{renderContent()}</CardContent>
+			<CardContent className='p-6 sm:p-8 pt-0'>{renderContent()}</CardContent>
 		</Card>
 	)
 }
