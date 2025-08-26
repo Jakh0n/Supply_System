@@ -13,7 +13,7 @@ const EmptyOrdersState = () => {
 					No Recent Orders
 				</h3>
 				<p className='text-gray-600 text-sm sm:text-base leading-relaxed max-w-md mx-auto'>
-					You haven't submitted any orders yet. Start by creating your first
+					You have not submitted any orders yet. Start by creating your first
 					supply request!
 				</p>
 			</div>
