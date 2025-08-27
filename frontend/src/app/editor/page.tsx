@@ -470,7 +470,8 @@ export default function EditorDashboard() {
 		}
 	}
 
-	// Helper functions for PDF summary
+	// Helper functions for PDF summary (commented out since summary section removed)
+	/*
 	const getCategoryDisplayName = (category: string): string => {
 		const categoryMap: Record<string, string> = {
 			// Current categories
@@ -582,394 +583,255 @@ export default function EditorDashboard() {
 			topProducts,
 		}
 	}
+	*/
 
 	const generatePDFReport = (orders: Order[]) => {
-		// Group orders by branch
-		const ordersByBranch = orders.reduce((acc, order) => {
-			if (!acc[order.branch]) {
-				acc[order.branch] = []
-			}
-			acc[order.branch].push(order)
-			return acc
-		}, {} as Record<string, Order[]>)
+		// Import jsPDF dynamically
+		import('jspdf')
+			.then(({ default: jsPDF }) => {
+				// Group orders by branch
+				const ordersByBranch = orders.reduce((acc, order) => {
+					if (!acc[order.branch]) {
+						acc[order.branch] = []
+					}
+					acc[order.branch].push(order)
+					return acc
+				}, {} as Record<string, Order[]>)
 
-		// Helper function to get category display name and sort order
-		const getCategoryDisplayName = (category: string): string => {
-			const categoryMap: Record<string, string> = {
-				// Current categories
-				'frozen-products': 'Frozen Products',
-				'main-products': 'Main Products',
-				'desserts-drinks': 'Desserts and Drinks',
-				'packaging-materials': 'Packaging Materials',
-				'cleaning-materials': 'Cleaning Materials',
+				// Helper function to get category display name and sort order
+				const getCategoryDisplayName = (category: string): string => {
+					const categoryMap: Record<string, string> = {
+						// Current categories
+						'frozen-products': 'Frozen Products',
+						'main-products': 'Main Products',
+						'desserts-drinks': 'Desserts and Drinks',
+						'packaging-materials': 'Packaging Materials',
+						'cleaning-materials': 'Cleaning Materials',
 
-				// Legacy categories mapping (if any old data exists)
-				food: 'Food',
-				beverages: 'Beverages',
-				cleaning: 'Cleaning',
-				equipment: 'Equipment',
-				packaging: 'Packaging',
-				other: 'Other',
-			}
-			return categoryMap[category] || 'Main Products'
-		}
-
-		const getCategorySortOrder = (category: string): number => {
-			const displayName = getCategoryDisplayName(category)
-			const sortOrder: Record<string, number> = {
-				'Frozen Products': 1,
-				'Main Products': 2,
-				'Desserts and Drinks': 3,
-				'Packaging Materials': 4,
-				'Cleaning Materials': 5,
-			}
-			return sortOrder[displayName] || 6
-		}
-
-		// Function to group and sort items by category
-		type OrderItemType = Order['items'][0]
-		const groupItemsByCategory = (items: OrderItemType[]) => {
-			const grouped = items.reduce((acc, item) => {
-				const categoryName = getCategoryDisplayName(item.product.category)
-				if (!acc[categoryName]) {
-					acc[categoryName] = []
+						// Legacy categories mapping (if any old data exists)
+						food: 'Food',
+						beverages: 'Beverages',
+						cleaning: 'Cleaning',
+						equipment: 'Equipment',
+						packaging: 'Packaging',
+						other: 'Other',
+					}
+					return categoryMap[category] || 'Main Products'
 				}
-				acc[categoryName].push(item)
-				return acc
-			}, {} as Record<string, OrderItemType[]>)
 
-			// Sort categories by predefined order
-			const sortedGroups: Record<string, OrderItemType[]> = {}
-			const categoryEntries = Object.entries(grouped)
-				.map(([categoryName, items]) => ({
-					categoryName,
-					items: items.sort((a, b) =>
-						a.product.name.localeCompare(b.product.name)
-					),
-					sortOrder: getCategorySortOrder(categoryName),
-				}))
-				.sort((a, b) => a.sortOrder - b.sortOrder)
+				const getCategorySortOrder = (category: string): number => {
+					const displayName = getCategoryDisplayName(category)
+					const sortOrder: Record<string, number> = {
+						'Frozen Products': 1,
+						'Main Products': 2,
+						'Desserts and Drinks': 3,
+						'Packaging Materials': 4,
+						'Cleaning Materials': 5,
+					}
+					return sortOrder[displayName] || 6
+				}
 
-			categoryEntries.forEach(({ categoryName, items }) => {
-				sortedGroups[categoryName] = items
-			})
-
-			return sortedGroups
-		}
-
-		// Calculate products summary
-		const productsSummary = calculateProductsSummary(orders)
-
-		const pdfContent = `
-			<!DOCTYPE html>
-			<html>
-			<head>
-				<title>Orders Checklist - ${filters.date}</title>
-				<style>
-					body { 
-						font-family: Arial, sans-serif; 
-						margin: 20px; 
-						font-size: 12px;
-						line-height: 1.4;
-					}
-					.header { 
-						text-align: center; 
-						border-bottom: 2px solid #333; 
-						padding-bottom: 15px; 
-						margin-bottom: 30px; 
-					}
-					.header h1 {
-						font-size: 20px;
-						margin: 0 0 8px 0;
-						color: #333;
-					}
-					.header h3 {
-						font-size: 14px;
-						margin: 0;
-						color: #666;
-						font-weight: normal;
-					}
-					.branch-section { 
-						margin-bottom: 35px; 
-						page-break-inside: avoid;
-					}
-					.branch-header { 
-						background-color: #f5f5f5; 
-						padding: 12px 15px; 
-						border-left: 4px solid #2196f3; 
-						margin-bottom: 15px;
-						font-weight: bold;
-						font-size: 16px;
-						color: #333;
-					}
-					.category-section {
-						margin-bottom: 20px;
-					}
-					.category-header {
-						font-weight: bold;
-						font-size: 14px;
-						color: #444;
-						margin-bottom: 8px;
-						padding-left: 10px;
-						border-left: 3px solid #007bff;
-						background-color: #f8f9fa;
-						padding: 8px 10px;
-					}
-					.products-list { 
-						margin-top: 10px;
-						margin-left: 15px;
-					}
-					.product-item { 
-						padding: 6px 0;
-						border-bottom: 1px solid #eee;
-						font-size: 12px;
-						line-height: 1.3;
-					}
-					.product-name {
-						font-weight: bold;
-						color: #333;
-						display: inline;
-					}
-					.product-quantity {
-						color: #666;
-						display: inline;
-						margin-left: 8px;
-					}
-					.footer { 
-						text-align: center; 
-						margin-top: 40px; 
-						padding-top: 15px; 
-						border-top: 1px solid #ddd; 
-						color: #666; 
-						font-size: 10px;
-					}
-					@media print { 
-						body { margin: 15px; }
-						.no-print { display: none; }
-						.branch-section, .category-section { 
-							page-break-inside: avoid;
+				// Function to group and sort items by category
+				type OrderItemType = Order['items'][0]
+				const groupItemsByCategory = (items: OrderItemType[]) => {
+					const grouped = items.reduce((acc, item) => {
+						const categoryName = getCategoryDisplayName(item.product.category)
+						if (!acc[categoryName]) {
+							acc[categoryName] = []
 						}
-					}
-					.download-btn {
-						background-color: #007bff;
-						color: white;
-						border: none;
-						padding: 10px 20px;
-						border-radius: 4px;
-						cursor: pointer;
-						font-size: 14px;
-						margin: 8px;
-					}
-					.download-btn:hover {
-						background-color: #0056b3;
-					}
-					.summary-section {
-						background-color: #f8f9fa;
-						border: 1px solid #dee2e6;
-						border-radius: 6px;
-						padding: 20px;
-						margin-bottom: 30px;
-						page-break-inside: avoid;
-					}
-					.summary-header {
-						font-size: 18px;
-						font-weight: bold;
-						color: #333;
-						margin-bottom: 15px;
-						text-align: center;
-						border-bottom: 2px solid #007bff;
-						padding-bottom: 8px;
-					}
-					.summary-stats {
-						display: flex;
-						justify-content: space-around;
-						margin-bottom: 20px;
-						flex-wrap: wrap;
-					}
-					.stat-item {
-						text-align: center;
-						margin-bottom: 10px;
-					}
-					.stat-label {
-						display: block;
-						font-size: 12px;
-						color: #666;
-						margin-bottom: 4px;
-					}
-					.stat-value {
-						display: block;
-						font-size: 16px;
-						font-weight: bold;
-						color: #333;
-					}
-					.category-breakdown, .top-products {
-						margin-bottom: 20px;
-					}
-					.category-breakdown h4, .top-products h4 {
-						font-size: 14px;
-						font-weight: bold;
-						color: #333;
-						margin-bottom: 8px;
-						border-left: 3px solid #007bff;
-						padding-left: 8px;
-					}
-					.category-item, .ranking-item {
-						font-size: 12px;
-						padding: 4px 0;
-						color: #555;
-						border-bottom: 1px solid #eee;
-					}
-					.category-list, .products-ranking {
-						margin-left: 10px;
-					}
-					@media print {
-						.summary-section {
-							background-color: #f8f9fa !important;
-							-webkit-print-color-adjust: exact;
-						}
-						.stat-item {
-							break-inside: avoid;
-						}
-					}
-				</style>
-			</head>
-			<body>
-				<div class="no-print" style="text-align: center; margin-bottom: 20px;">
-					<button class="download-btn" onclick="window.print()">📄 Save as PDF</button>
-					<button class="download-btn" onclick="window.close()" style="background-color: #6c757d;">❌ Close</button>
-				</div>
+						acc[categoryName].push(item)
+						return acc
+					}, {} as Record<string, OrderItemType[]>)
 
-				<div class="header">
-					<h1>Orders Checklist - ${filters.date}</h1>
-					<h3>All Branches Report</h3>
-				</div>
+					// Sort categories by predefined order
+					const sortedGroups: Record<string, OrderItemType[]> = {}
+					const categoryEntries = Object.entries(grouped)
+						.map(([categoryName, items]) => ({
+							categoryName,
+							items: items.sort((a, b) =>
+								a.product.name.localeCompare(b.product.name)
+							),
+							sortOrder: getCategorySortOrder(categoryName),
+						}))
+						.sort((a, b) => a.sortOrder - b.sortOrder)
 
-				<div class="summary-section">
-					<div class="summary-header">
-						📊 Products Summary for ${filters.date}
-					</div>
-					
-					<div class="summary-stats">
-						<div class="stat-item">
-							<span class="stat-label">Total Products Ordered:</span>
-							<span class="stat-value">${productsSummary.totalQuantity} items</span>
-						</div>
-						<div class="stat-item">
-							<span class="stat-label">Total Order Value:</span>
-							<span class="stat-value">${formatKRW(productsSummary.totalValue)}</span>
-						</div>
-						<div class="stat-item">
-							<span class="stat-label">Average Order Value:</span>
-							<span class="stat-value">${formatKRW(productsSummary.averageOrderValue)}</span>
-						</div>
-					</div>
-
-					<div class="category-breakdown">
-						<h4>By Category:</h4>
-						<div class="category-list">
-							${Object.entries(productsSummary.byCategory)
-								.map(
-									([category, summary]) => `
-								<div class="category-item">
-									• ${category}: ${summary.quantity} items (${formatKRW(summary.value)})
-								</div>
-							`
-								)
-								.join('')}
-						</div>
-					</div>
-
-					${
-						productsSummary.topProducts.length > 0
-							? `
-					<div class="top-products">
-						<h4>Top Products (Most Ordered):</h4>
-						<div class="products-ranking">
-							${productsSummary.topProducts
-								.slice(0, 10)
-								.map(
-									(product, index) => `
-								<div class="ranking-item">
-									${index + 1}. ${product.name}: ${product.totalQuantity} ${
-										product.unit
-									} (${formatKRW(product.totalValue)})
-								</div>
-							`
-								)
-								.join('')}
-						</div>
-					</div>
-					`
-							: ''
-					}
-				</div>
-
-				${Object.entries(ordersByBranch)
-					.map(([branch, branchOrders]) => {
-						// Collect all items from all orders in this branch
-						const allBranchItems = branchOrders.flatMap(order => order.items)
-						// Group items by category and sort
-						const groupedItems = groupItemsByCategory(allBranchItems)
-
-						return `
-					<div class="branch-section">
-						<div class="branch-header">
-							📍 ${branch} Branch (${branchOrders.length} orders)
-						</div>
-						${Object.entries(groupedItems)
-							.map(
-								([categoryName, items]) => `
-						<div class="category-section">
-							<div class="category-header">
-								${categoryName}
-							</div>
-							<div class="products-list">
-								${items
-									.map(
-										item => `
-								<div class="product-item">
-									<span class="product-name">${item.product?.name || 'Product Deleted'}</span>
-									<span class="product-quantity">- ${item.quantity} ${
-											item.product?.unit || 'unit'
-										}</span>
-								</div>
-							`
-									)
-									.join('')}
-							</div>
-						</div>
-					`
-							)
-							.join('')}
-					</div>
-				`
+					categoryEntries.forEach(({ categoryName, items }) => {
+						sortedGroups[categoryName] = items
 					})
-					.join('')}
 
-				<div class="footer">
-					<p>Generated on ${new Date().toLocaleString()}</p>
-					<p>Report for date: ${filters.date} | Total orders: ${
-			orders.length
-		} | Total branches: ${Object.keys(ordersByBranch).length}</p>
-				</div>
+					return sortedGroups
+				}
 
-				<script>
-					window.onload = function() {
-						window.focus();
-					};
-				</script>
-			</body>
-			</html>
-		`
+				// Calculate products summary (keeping for potential future use)
+				// const productsSummary = calculateProductsSummary(orders)
 
-		const printWindow = window.open('', '_blank', 'width=800,height=600')
-		if (!printWindow) {
-			toast.error('Please allow popups to download PDF')
-			return
-		}
+				// Create PDF
+				const pdf = new jsPDF({
+					orientation: 'portrait',
+					unit: 'mm',
+					format: 'a4',
+				})
 
-		printWindow.document.write(pdfContent)
-		printWindow.document.close()
+				const pageWidth = pdf.internal.pageSize.getWidth()
+				const pageHeight = pdf.internal.pageSize.getHeight()
+				const margin = 15
+				let yPosition = margin
+				let currentPage = 1
+
+				// Helper function to add page number
+				const addPageNumber = () => {
+					pdf.setFontSize(8)
+					pdf.setFont('helvetica', 'normal')
+					pdf.text(`${currentPage}`, pageWidth / 2, pageHeight - 10, {
+						align: 'center',
+					})
+				}
+
+				// Helper function to check if we need a new page
+				const checkNewPage = (requiredHeight: number) => {
+					if (yPosition + requiredHeight > pageHeight - margin) {
+						pdf.addPage()
+						currentPage++
+						yPosition = margin
+						addPageNumber() // Add page number to the new page
+						return true
+					}
+					return false
+				}
+
+				// Header
+				pdf.setFontSize(16)
+				pdf.setFont('helvetica', 'bold')
+				pdf.text('Orders Checklist', pageWidth / 2, yPosition, {
+					align: 'center',
+				})
+				yPosition += 8
+
+				pdf.setFontSize(12)
+				pdf.setFont('helvetica', 'normal')
+				pdf.text(`Date: ${filters.date}`, pageWidth / 2, yPosition, {
+					align: 'center',
+				})
+				yPosition += 8
+
+				pdf.text(`All Branches Report`, pageWidth / 2, yPosition, {
+					align: 'center',
+				})
+				yPosition += 15
+
+				// Add page number to first page
+				addPageNumber()
+
+				// Process each branch
+				Object.entries(ordersByBranch).forEach(([branch, branchOrders]) => {
+					checkNewPage(20)
+
+					// Branch header
+					pdf.setFontSize(12)
+					pdf.setFont('helvetica', 'bold')
+					pdf.text(
+						`${branch} Branch (${branchOrders.length} orders)`,
+						margin,
+						yPosition
+					)
+					yPosition += 8
+
+					// Collect all items from all orders in this branch
+					const allBranchItems = branchOrders.flatMap(order => order.items)
+					// Group items by category and sort
+					const groupedItems = groupItemsByCategory(allBranchItems)
+
+					// Process each category
+					Object.entries(groupedItems).forEach(([categoryName, items]) => {
+						checkNewPage(15)
+
+						// Category header
+						pdf.setFontSize(11)
+						pdf.setFont('helvetica', 'bold')
+						pdf.text(`${categoryName}:`, margin, yPosition)
+						yPosition += 6
+
+						// Create two columns for products
+						const columnWidth = (pageWidth - 2 * margin) / 2
+						const leftColumnX = margin
+						const rightColumnX = margin + columnWidth
+						let leftColumnY = yPosition
+						let rightColumnY = yPosition
+
+						pdf.setFontSize(9)
+						pdf.setFont('helvetica', 'normal')
+
+						items.forEach((item, index) => {
+							const productText = `${
+								item.product?.name || 'Product Deleted'
+							} - ${item.quantity} ${item.product?.unit || 'unit'}`
+
+							// Alternate between left and right columns
+							if (index % 2 === 0) {
+								// Left column
+								if (leftColumnY > pageHeight - margin - 10) {
+									pdf.addPage()
+									currentPage++
+									leftColumnY = margin
+									rightColumnY = margin
+									addPageNumber() // Add page number to new page
+								}
+								pdf.text(productText, leftColumnX, leftColumnY)
+								leftColumnY += 4
+							} else {
+								// Right column
+								if (rightColumnY > pageHeight - margin - 10) {
+									pdf.addPage()
+									currentPage++
+									leftColumnY = margin
+									rightColumnY = margin
+									addPageNumber() // Add page number to new page
+								}
+								pdf.text(productText, rightColumnX, rightColumnY)
+								rightColumnY += 4
+							}
+						})
+
+						// Set yPosition to the maximum of both columns
+						yPosition = Math.max(leftColumnY, rightColumnY) + 5
+					})
+
+					yPosition += 5
+				})
+
+				// Footer
+				checkNewPage(15)
+				pdf.setFontSize(8)
+				pdf.setFont('helvetica', 'normal')
+				pdf.text(
+					`Generated on ${new Date().toLocaleString()}`,
+					pageWidth / 2,
+					yPosition,
+					{ align: 'center' }
+				)
+				yPosition += 4
+				pdf.text(
+					`Report for date: ${filters.date} | Total orders: ${
+						orders.length
+					} | Total branches: ${Object.keys(ordersByBranch).length}`,
+					pageWidth / 2,
+					yPosition,
+					{ align: 'center' }
+				)
+
+				// Add page number to last page
+				addPageNumber()
+
+				// Save the PDF
+				const fileName = `orders-checklist-${
+					filters.date
+				}-${new Date().getTime()}.pdf`
+				pdf.save(fileName)
+			})
+			.catch(error => {
+				console.error('Error loading jsPDF:', error)
+				toast.error('Failed to generate PDF. Please try again.')
+			})
 	}
 
 	if (!user || user.position !== 'editor') {
@@ -1016,7 +878,7 @@ export default function EditorDashboard() {
 
 			{/* Order Details Dialog */}
 			<Dialog open={showOrderDialog} onOpenChange={setShowOrderDialog}>
-				<DialogContent className='max-w-4xl max-h-[90vh] overflow-y-auto'>
+				<DialogContent className='w-[95vw] max-w-4xl max-h-[90vh] overflow-y-auto mx-auto'>
 					<DialogHeader>
 						<DialogTitle className='text-lg sm:text-xl'>
 							Order Details - {selectedOrder?.orderNumber}
@@ -1073,33 +935,45 @@ export default function EditorDashboard() {
 								<h3 className='font-semibold mb-2 text-sm sm:text-base'>
 									Order Items
 								</h3>
-								<div className='overflow-x-auto'>
-									<Table>
+								<div className='overflow-x-auto -mx-4 sm:mx-0'>
+									<Table className='min-w-full'>
 										<TableHeader>
 											<TableRow>
-												<TableHead className='text-xs'>Product</TableHead>
-												<TableHead className='text-xs'>Category</TableHead>
-												<TableHead className='text-xs'>Quantity</TableHead>
-												<TableHead className='text-xs'>Unit</TableHead>
-												<TableHead className='text-xs'>Notes</TableHead>
+												<TableHead className='text-xs px-2 sm:px-4'>
+													Product
+												</TableHead>
+												<TableHead className='text-xs px-2 sm:px-4 hidden sm:table-cell'>
+													Category
+												</TableHead>
+												<TableHead className='text-xs px-2 sm:px-4'>
+													Qty
+												</TableHead>
+												<TableHead className='text-xs px-2 sm:px-4 hidden sm:table-cell'>
+													Unit
+												</TableHead>
+												<TableHead className='text-xs px-2 sm:px-4 hidden sm:table-cell'>
+													Notes
+												</TableHead>
 											</TableRow>
 										</TableHeader>
 										<TableBody>
 											{selectedOrder.items.map((item, index) => (
 												<TableRow key={item.product?._id || `deleted-${index}`}>
-													<TableCell className='text-sm'>
+													<TableCell className='text-sm px-2 sm:px-4'>
 														{item.product?.name || 'Product Deleted'}
 													</TableCell>
-													<TableCell className='text-sm'>
+													<TableCell className='text-sm px-2 sm:px-4 hidden sm:table-cell'>
 														{item.product?.category || '-'}
 													</TableCell>
-													<TableCell className='text-sm'>
+													<TableCell className='text-sm px-2 sm:px-4'>
 														{item.quantity}
 													</TableCell>
-													<TableCell className='text-sm'>
+													<TableCell className='text-sm px-2 sm:px-4 hidden sm:table-cell'>
 														{item.product?.unit || 'unit'}
 													</TableCell>
-													<TableCell className='text-sm'>-</TableCell>
+													<TableCell className='text-sm px-2 sm:px-4 hidden sm:table-cell'>
+														-
+													</TableCell>
 												</TableRow>
 											))}
 										</TableBody>

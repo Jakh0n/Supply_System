@@ -166,15 +166,15 @@ const ProductInsights: React.FC<ProductInsightsProps> = ({
 
 	return (
 		<Card className='h-fit'>
-			<CardHeader className='pb-4'>
-				<div className='flex flex-col sm:flex-row sm:items-center justify-between gap-3'>
-					<CardTitle className='flex items-center gap-2 text-lg sm:text-xl'>
-						<Package className='h-5 w-5 flex-shrink-0 text-blue-600' />
+			<CardHeader className='pb-3 sm:pb-4'>
+				<div className='flex flex-col space-y-3 sm:flex-row sm:items-center sm:justify-between sm:space-y-0'>
+					<CardTitle className='flex items-center gap-2 text-base sm:text-lg lg:text-xl'>
+						<Package className='h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0 text-blue-600' />
 						<span className='truncate'>Product Performance Insights</span>
 					</CardTitle>
 
 					{/* Controls */}
-					<div className='flex items-center gap-2'>
+					<div className='flex items-center gap-1 sm:gap-2'>
 						{/* Filter Buttons */}
 						<div className='flex gap-1'>
 							{[
@@ -194,7 +194,8 @@ const ProductInsights: React.FC<ProductInsightsProps> = ({
 											filter.key as 'all' | 'top' | 'trending' | 'declining'
 										)
 									}
-									className='h-8 px-2 sm:px-3'
+									className='h-8 w-8 sm:w-auto px-2 sm:px-3'
+									title={filter.label}
 								>
 									<filter.icon className='h-3 w-3 sm:h-4 sm:w-4 sm:mr-1' />
 									<span className='hidden sm:inline text-xs'>
@@ -208,33 +209,37 @@ const ProductInsights: React.FC<ProductInsightsProps> = ({
 
 				{/* Top Performers Summary */}
 				{productInsights.length > 0 && (
-					<div className='mt-4 p-3 bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg border border-blue-200'>
+					<div className='mt-3 sm:mt-4 p-2 sm:p-3 bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg border border-blue-200'>
 						<div className='flex items-center gap-2 mb-2'>
-							<Award className='h-4 w-4 text-blue-600' />
-							<span className='text-sm font-medium text-blue-900'>
+							<Award className='h-3 w-3 sm:h-4 sm:w-4 text-blue-600' />
+							<span className='text-xs sm:text-sm font-medium text-blue-900'>
 								Top Performers
 							</span>
 						</div>
-						<div className='flex gap-2 overflow-x-auto'>
+						<div className='flex gap-1 sm:gap-2 overflow-x-auto pb-1'>
 							{topPerformers.map((product, idx) => (
 								<div
 									key={idx}
-									className='flex items-center gap-2 bg-white rounded-md px-2 py-1 whitespace-nowrap'
+									className='flex items-center gap-1 sm:gap-2 bg-white rounded-md px-2 py-1 whitespace-nowrap flex-shrink-0'
 								>
 									<div className='flex items-center gap-1'>
-										{idx === 0 && <Crown className='h-3 w-3 text-yellow-500' />}
-										{idx === 1 && <Star className='h-3 w-3 text-gray-400' />}
+										{idx === 0 && (
+											<Crown className='h-2 w-2 sm:h-3 sm:w-3 text-yellow-500' />
+										)}
+										{idx === 1 && (
+											<Star className='h-2 w-2 sm:h-3 sm:w-3 text-gray-400' />
+										)}
 										{idx === 2 && (
-											<Target className='h-3 w-3 text-orange-500' />
+											<Target className='h-2 w-2 sm:h-3 sm:w-3 text-orange-500' />
 										)}
 									</div>
 									<span
-										className='text-xs font-medium truncate max-w-20'
+										className='text-xs font-medium truncate max-w-16 sm:max-w-20'
 										title={product.name}
 									>
 										{product.name}
 									</span>
-									<Badge variant='secondary' className='text-xs'>
+									<Badge variant='secondary' className='text-xs px-1 py-0.5'>
 										{getPerformanceScore(product)}%
 									</Badge>
 								</div>
@@ -258,7 +263,7 @@ const ProductInsights: React.FC<ProductInsightsProps> = ({
 					>
 						{/* Enhanced Mobile Card Layout */}
 						<div
-							className={`block sm:hidden space-y-4 ${
+							className={`block sm:hidden space-y-3 ${
 								filteredProducts.length > 2
 									? 'max-h-80 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100 hover:scrollbar-thumb-gray-400 pr-2'
 									: ''
@@ -270,7 +275,7 @@ const ProductInsights: React.FC<ProductInsightsProps> = ({
 								return (
 									<div
 										key={idx}
-										className='border rounded-lg p-4 bg-gradient-to-br from-white to-gray-50 hover:shadow-md transition-all'
+										className='border rounded-lg p-3 sm:p-4 bg-gradient-to-br from-white to-gray-50 hover:shadow-md transition-all'
 									>
 										{/* Header */}
 										<div className='flex justify-between items-start mb-3'>
@@ -321,32 +326,43 @@ const ProductInsights: React.FC<ProductInsightsProps> = ({
 										</div>
 
 										{/* Metrics Grid */}
-										<div className='grid grid-cols-2 gap-3 text-xs mb-3'>
-											<div className='bg-white p-2 rounded border'>
-												<p className='text-gray-600 mb-1'>Orders</p>
-												<p className='font-semibold text-blue-600'>
+										<div className='grid grid-cols-2 gap-2 sm:gap-3 text-xs mb-3'>
+											<div className='bg-white p-1.5 sm:p-2 rounded border'>
+												<p className='text-gray-600 mb-0.5 sm:mb-1 text-xs'>
+													Orders
+												</p>
+												<p className='font-semibold text-blue-600 text-xs sm:text-sm'>
 													{product.totalOrdered}
 												</p>
 											</div>
-											<div className='bg-white p-2 rounded border'>
-												<p className='text-gray-600 mb-1'>Revenue</p>
+											<div className='bg-white p-1.5 sm:p-2 rounded border'>
+												<p className='text-gray-600 mb-0.5 sm:mb-1 text-xs'>
+													Revenue
+												</p>
 												<p
-													className='font-semibold text-green-600 truncate'
+													className='font-semibold text-green-600 truncate text-xs sm:text-sm'
 													title={formatKRW(product.totalValue)}
 												>
 													{formatKRW(product.totalValue)}
 												</p>
 											</div>
-											<div className='bg-white p-2 rounded border'>
-												<p className='text-gray-600 mb-1'>Frequency</p>
-												<Badge variant='secondary' className='text-xs'>
+											<div className='bg-white p-1.5 sm:p-2 rounded border'>
+												<p className='text-gray-600 mb-0.5 sm:mb-1 text-xs'>
+													Frequency
+												</p>
+												<Badge
+													variant='secondary'
+													className='text-xs px-1 py-0.5'
+												>
 													{product.frequency}%
 												</Badge>
 											</div>
-											<div className='bg-white p-2 rounded border'>
-												<p className='text-gray-600 mb-1'>Avg Price</p>
+											<div className='bg-white p-1.5 sm:p-2 rounded border'>
+												<p className='text-gray-600 mb-0.5 sm:mb-1 text-xs'>
+													Avg Price
+												</p>
 												<p
-													className='font-semibold text-purple-600 truncate'
+													className='font-semibold text-purple-600 truncate text-xs sm:text-sm'
 													title={formatKRW(product.avgPrice)}
 												>
 													{formatKRW(product.avgPrice)}
