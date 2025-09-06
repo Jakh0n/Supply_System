@@ -52,8 +52,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 				try {
 					const response = await authApi.getCurrentUser()
 					setUser(response.user)
-				} catch {
+				} catch (error) {
+					console.error('Auth initialization error:', error)
 					localStorage.removeItem('token')
+					setUser(null)
 				}
 			}
 			setLoading(false)

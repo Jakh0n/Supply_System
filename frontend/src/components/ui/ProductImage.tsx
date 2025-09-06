@@ -113,8 +113,10 @@ const ProductImage: React.FC<ProductImageProps> = ({
 				return <Package className='w-6 h-6 text-blue-400' />
 			case 'main-products':
 				return <Utensils className='w-6 h-6 text-orange-400' />
-			case 'desserts-drinks':
+			case 'desserts':
 				return <Coffee className='w-6 h-6 text-pink-400' />
+			case 'drinks':
+				return <Coffee className='w-6 h-6 text-purple-400' />
 			case 'packaging-materials':
 				return <Package className='w-6 h-6 text-indigo-400' />
 			case 'cleaning-materials':

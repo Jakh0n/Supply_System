@@ -54,7 +54,8 @@ export interface Product {
 export type ProductCategory =
 	| 'frozen-products'
 	| 'main-products'
-	| 'desserts-drinks'
+	| 'desserts'
+	| 'drinks'
 	| 'packaging-materials'
 	| 'cleaning-materials'
 

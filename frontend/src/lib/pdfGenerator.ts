@@ -55,9 +55,13 @@ export class PDFGenerator {
 			// Current categories
 			'frozen-products': 'Frozen Products',
 			'main-products': 'Main Products',
-			'desserts-drinks': 'Desserts and Drinks',
+			desserts: 'Desserts',
+			drinks: 'Drinks',
 			'packaging-materials': 'Packaging Materials',
 			'cleaning-materials': 'Cleaning Materials',
+
+			// Legacy mapping for existing data
+			'desserts-drinks': 'Desserts and Drinks',
 
 			// Legacy categories mapping (if any old data exists)
 			food: 'Food',
@@ -76,9 +80,13 @@ export class PDFGenerator {
 		const sortOrder: Record<string, number> = {
 			'Frozen Products': 1,
 			'Main Products': 2,
+			Desserts: 3,
+			Drinks: 4,
+			'Packaging Materials': 5,
+			'Cleaning Materials': 6,
+
+			// Legacy sorting for existing data
 			'Desserts and Drinks': 3,
-			'Packaging Materials': 4,
-			'Cleaning Materials': 5,
 		}
 		return sortOrder[displayName] || 6
 	}

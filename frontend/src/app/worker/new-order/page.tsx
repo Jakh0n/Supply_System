@@ -414,7 +414,8 @@ const NewOrder: React.FC = () => {
 		return [
 			'frozen-products',
 			'main-products',
-			'desserts-drinks',
+			'desserts',
+			'drinks',
 			'packaging-materials',
 			'cleaning-materials',
 		]
@@ -527,9 +528,8 @@ const NewOrder: React.FC = () => {
 													<SelectItem value='main-products'>
 														Main Products
 													</SelectItem>
-													<SelectItem value='desserts-drinks'>
-														Desserts and Drinks
-													</SelectItem>
+													<SelectItem value='desserts'>Desserts</SelectItem>
+													<SelectItem value='drinks'>Drinks</SelectItem>
 													<SelectItem value='packaging-materials'>
 														Packaging Materials
 													</SelectItem>

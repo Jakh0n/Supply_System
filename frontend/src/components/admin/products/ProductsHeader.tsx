@@ -24,7 +24,8 @@ import React from 'react'
 const CATEGORIES = [
 	{ value: 'frozen-products' as ProductCategory, label: 'Frozen Products' },
 	{ value: 'main-products' as ProductCategory, label: 'Main Products' },
-	{ value: 'desserts-drinks' as ProductCategory, label: 'Desserts and Drinks' },
+	{ value: 'desserts' as ProductCategory, label: 'Desserts' },
+	{ value: 'drinks' as ProductCategory, label: 'Drinks' },
 	{
 		value: 'packaging-materials' as ProductCategory,
 		label: 'Packaging Materials',
