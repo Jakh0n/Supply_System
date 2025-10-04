@@ -214,6 +214,19 @@ export const ordersApi = {
 		return response.data
 	},
 
+	bulkUpdateOrderStatus: async (
+		orderIds: string[],
+		status: OrderStatus,
+		adminNotes?: string
+	): Promise<{ message: string; updatedCount: number; orders: Order[] }> => {
+		const response = await api.patch('/orders/bulk/status', {
+			orderIds,
+			status,
+			adminNotes,
+		})
+		return response.data
+	},
+
 	deleteOrder: async (id: string): Promise<void> => {
 		await api.delete(`/orders/${id}`)
 	},
@@ -248,6 +261,9 @@ export const ordersApi = {
 			params.append('month', month.toString())
 			params.append('year', year.toString())
 		}
+
+		// Add cache-busting parameter
+		params.append('_t', Date.now().toString())
 
 		const response = await api.get(
 			`/orders/analytics/branches?${params.toString()}`

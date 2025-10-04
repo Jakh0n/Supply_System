@@ -59,6 +59,10 @@ export default function EditorDashboard() {
 	const [newStatus, setNewStatus] = useState<OrderStatus>('pending')
 	const [adminNotes, setAdminNotes] = useState('')
 	const [updatingStatus, setUpdatingStatus] = useState(false)
+	const [bulkUpdating, setBulkUpdating] = useState(false)
+	const [showBulkStatusDialog, setShowBulkStatusDialog] = useState(false)
+	const [bulkStatus, setBulkStatus] = useState<OrderStatus>('completed')
+	const [bulkAdminNotes, setBulkAdminNotes] = useState('')
 	const [filters, setFilters] = useState<OrderFilters>({
 		date: '',
 		branch: '',
@@ -130,6 +134,40 @@ export default function EditorDashboard() {
 			toast.error('Failed to update order status')
 		} finally {
 			setUpdatingStatus(false)
+		}
+	}
+
+	const handleBulkStatusUpdate = async () => {
+		try {
+			setBulkUpdating(true)
+
+			// Get all orders from current view
+			if (orders.length === 0) {
+				toast.info('No orders to update')
+				setShowBulkStatusDialog(false)
+				return
+			}
+
+			const orderIds = orders.map(order => order._id)
+
+			await ordersApi.bulkUpdateOrderStatus(
+				orderIds,
+				bulkStatus,
+				bulkAdminNotes || undefined
+			)
+
+			await fetchOrders()
+			await fetchDashboardData()
+			setShowBulkStatusDialog(false)
+			setBulkAdminNotes('')
+			toast.success(
+				`Successfully updated ${orders.length} orders to ${bulkStatus}`
+			)
+		} catch (error) {
+			console.error('Error bulk updating orders:', error)
+			toast.error('Failed to update orders')
+		} finally {
+			setBulkUpdating(false)
 		}
 	}
 
@@ -735,15 +773,23 @@ export default function EditorDashboard() {
 				branchEntries.forEach(([branch, branchOrders], branchIndex) => {
 					checkNewPage(20)
 
-					// Branch header
+					// Branch header with box
 					pdf.setFontSize(10)
 					pdf.setFont('times', 'bold')
-					pdf.text(
-						`${branch} Branch (${branchOrders.length} orders)`,
-						margin,
-						yPosition
+					const branchText = `${branch} Branch`
+					const textWidth = pdf.getTextWidth(branchText)
+					const boxPadding = 2
+					const boxHeight = 8
+
+					// Draw box around branch name
+					pdf.rect(
+						margin - boxPadding,
+						yPosition - boxHeight + 2,
+						textWidth + boxPadding * 2,
+						boxHeight
 					)
-					yPosition += 8
+					pdf.text(branchText, margin, yPosition)
+					yPosition += 10
 
 					// Collect all items from all orders in this branch
 					const allBranchItems = branchOrders.flatMap(order => order.items)
@@ -1029,9 +1075,20 @@ export default function EditorDashboard() {
 
 						<Card>
 							<CardHeader className='pb-4'>
-								<CardTitle className='text-lg sm:text-xl'>
-									All Branch Orders
-								</CardTitle>
+								<div className='flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4'>
+									<CardTitle className='text-lg sm:text-xl'>
+										All Branch Orders
+									</CardTitle>
+									<div className='flex flex-col sm:flex-row gap-2'>
+										<Button
+											onClick={() => setShowBulkStatusDialog(true)}
+											disabled={loading || orders.length === 0}
+											className='bg-blue-600 hover:bg-blue-700 text-white'
+										>
+											{bulkUpdating ? 'Updating...' : 'Bulk Update Status'}
+										</Button>
+									</div>
+								</div>
 								<OrdersFilters
 									filters={filters}
 									loading={loading}
@@ -1240,6 +1297,74 @@ export default function EditorDashboard() {
 								className='w-full sm:w-auto'
 							>
 								{updatingStatus ? 'Updating...' : 'Update Status'}
+							</Button>
+						</div>
+					</div>
+				</DialogContent>
+			</Dialog>
+
+			{/* Bulk Status Update Dialog */}
+			<Dialog
+				open={showBulkStatusDialog}
+				onOpenChange={setShowBulkStatusDialog}
+			>
+				<DialogContent className='w-[95vw] max-w-md mx-auto'>
+					<DialogHeader>
+						<DialogTitle className='text-lg'>
+							Bulk Update Order Status
+						</DialogTitle>
+					</DialogHeader>
+					<div className='space-y-4'>
+						<div className='text-sm text-gray-600'>
+							This will update all {orders.length} orders in the current view to
+							the selected status.
+						</div>
+						<div>
+							<Label htmlFor='bulkStatus' className='text-sm font-medium'>
+								Status
+							</Label>
+							<Select
+								value={bulkStatus}
+								onValueChange={(value: OrderStatus) => setBulkStatus(value)}
+							>
+								<SelectTrigger className='mt-1'>
+									<SelectValue placeholder='Select status' />
+								</SelectTrigger>
+								<SelectContent>
+									<SelectItem value='pending'>Pending</SelectItem>
+									<SelectItem value='approved'>Approved</SelectItem>
+									<SelectItem value='rejected'>Rejected</SelectItem>
+									<SelectItem value='completed'>Completed</SelectItem>
+								</SelectContent>
+							</Select>
+						</div>
+						<div>
+							<Label htmlFor='bulkAdminNotes' className='text-sm font-medium'>
+								Admin Notes (Optional)
+							</Label>
+							<textarea
+								id='bulkAdminNotes'
+								value={bulkAdminNotes}
+								onChange={e => setBulkAdminNotes(e.target.value)}
+								placeholder='Add notes about this bulk update...'
+								className='w-full p-2 border rounded-md min-h-[80px] resize-none mt-1 text-sm'
+							/>
+						</div>
+						<div className='flex flex-col sm:flex-row justify-end gap-2'>
+							<Button
+								variant='outline'
+								onClick={() => setShowBulkStatusDialog(false)}
+								disabled={bulkUpdating}
+								className='w-full sm:w-auto'
+							>
+								Cancel
+							</Button>
+							<Button
+								onClick={handleBulkStatusUpdate}
+								disabled={bulkUpdating}
+								className='w-full sm:w-auto bg-blue-600 hover:bg-blue-700'
+							>
+								{bulkUpdating ? 'Updating...' : 'Update All Orders'}
 							</Button>
 						</div>
 					</div>

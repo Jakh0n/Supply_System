@@ -194,11 +194,15 @@ const BranchPerformanceCards: React.FC<BranchPerformanceCardsProps> = ({
 									<TabsContent value='products' className='space-y-4 mt-4'>
 										<div className='space-y-3'>
 											<p className='text-xs sm:text-sm font-medium text-gray-700'>
-												Top Products ({selectedMonth}/{selectedYear})
+												All Products ({selectedMonth}/{selectedYear}) -{' '}
+												{branch.mostOrderedProducts.length} total
 											</p>
-											{branch.mostOrderedProducts
-												.slice(0, 3)
-												.map((product, idx) => (
+											<div className='max-h-64 overflow-y-auto space-y-2'>
+												{console.log(
+													`Frontend: Branch ${branch.branch} has ${branch.mostOrderedProducts.length} products:`,
+													branch.mostOrderedProducts
+												)}
+												{branch.mostOrderedProducts.map((product, idx) => (
 													<div
 														key={idx}
 														className='flex items-center justify-between p-2 sm:p-3 bg-gray-50 rounded-lg'
@@ -221,6 +225,7 @@ const BranchPerformanceCards: React.FC<BranchPerformanceCardsProps> = ({
 														</Badge>
 													</div>
 												))}
+											</div>
 											{branch.mostOrderedProducts.length === 0 && (
 												<p className='text-center text-gray-500 py-4 text-sm'>
 													No products data available

@@ -58,11 +58,13 @@ const BranchPerformancePage: React.FC = () => {
 		try {
 			setLoading(true)
 
+			console.log('Fetching branch analytics...')
 			const analyticsResponse = await ordersApi.getBranchAnalytics(
 				'month',
 				selectedMonth,
 				selectedYear
 			)
+			console.log('Branch analytics response:', analyticsResponse)
 			setBranchAnalytics(analyticsResponse.branches)
 		} catch (error) {
 			console.error('Branch data fetch error:', error)
