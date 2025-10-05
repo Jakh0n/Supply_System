@@ -1,6 +1,7 @@
 'use client'
 
 import AdminLayout from '@/components/shared/AdminLayout'
+import ImageUpload from '@/components/shared/ImageUpload'
 import ProtectedRoute from '@/components/shared/ProtectedRoute'
 import {
 	AlertDialog,
@@ -116,6 +117,7 @@ const PurchaseForm: React.FC<{
 		unit: purchase?.unit || 'pieces',
 		notes: purchase?.notes || '',
 		branch: purchase?.branch || '',
+		images: purchase?.images || [],
 	})
 
 	const handleSubmit = (e: React.FormEvent) => {
@@ -308,6 +310,23 @@ const PurchaseForm: React.FC<{
 				/>
 			</div>
 
+			{/* Image Upload */}
+			<div>
+				<Label>Product Images (Optional)</Label>
+				<ImageUpload
+					images={formData.images || []}
+					onImagesChange={images =>
+						setFormData(prev => ({
+							...prev,
+							images,
+						}))
+					}
+					maxImages={5}
+					disabled={loading}
+					uploadFunction={purchasesApi.uploadImages}
+				/>
+			</div>
+
 			<div className='flex items-center gap-2 p-3 bg-gray-50 rounded-lg'>
 				<span className='text-sm font-medium'>Total Amount:</span>
 				<span className='text-lg font-bold text-green-600'>
@@ -360,14 +379,29 @@ const MobilePurchaseCard: React.FC<{
 		>
 			<CardContent className='p-4'>
 				<div className='flex justify-between items-start mb-3'>
-					<div className='flex-1'>
-						<h3 className='font-semibold text-lg'>{purchase.productName}</h3>
-						<p className='text-sm text-gray-600 mb-2'>
-							{purchase.providerName}
-						</p>
-						<Badge className={getStatusColor(purchase.status)}>
-							{purchase.status}
-						</Badge>
+					<div className='flex items-start gap-3 flex-1'>
+						{purchase.images && purchase.images.length > 0 ? (
+							<div className='w-16 h-16 rounded-lg overflow-hidden bg-gray-100 flex-shrink-0'>
+								<img
+									src={purchase.images[0].url}
+									alt={purchase.productName}
+									className='w-full h-full object-cover'
+								/>
+							</div>
+						) : (
+							<div className='w-16 h-16 rounded-lg bg-gray-100 flex items-center justify-center flex-shrink-0'>
+								<Package className='h-8 w-8 text-gray-400' />
+							</div>
+						)}
+						<div className='flex-1'>
+							<h3 className='font-semibold text-lg'>{purchase.productName}</h3>
+							<p className='text-sm text-gray-600 mb-2'>
+								{purchase.providerName}
+							</p>
+							<Badge className={getStatusColor(purchase.status)}>
+								{purchase.status}
+							</Badge>
+						</div>
 					</div>
 					<div className='flex items-center gap-2'>
 						<Button
@@ -472,6 +506,21 @@ const PurchaseItem: React.FC<{
 			className='hover:bg-gray-50 cursor-pointer border-b'
 			onClick={() => onView(purchase)}
 		>
+			<td className='px-4 py-3'>
+				{purchase.images && purchase.images.length > 0 ? (
+					<div className='w-12 h-12 rounded-lg overflow-hidden bg-gray-100'>
+						<img
+							src={purchase.images[0].url}
+							alt={purchase.productName}
+							className='w-full h-full object-cover'
+						/>
+					</div>
+				) : (
+					<div className='w-12 h-12 rounded-lg bg-gray-100 flex items-center justify-center'>
+						<Package className='h-6 w-6 text-gray-400' />
+					</div>
+				)}
+			</td>
 			<td className='px-4 py-3'>
 				<div>
 					<div className='font-medium text-gray-900'>
@@ -825,6 +874,9 @@ const PurchasesPage: React.FC = () => {
 								<thead className='bg-gray-50 border-b'>
 									<tr>
 										<th className='px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
+											Image
+										</th>
+										<th className='px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
 											Product
 										</th>
 										<th className='px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
@@ -859,6 +911,9 @@ const PurchasesPage: React.FC = () => {
 								<tbody className='bg-white divide-y divide-gray-200'>
 									{Array.from({ length: 6 }).map((_, index) => (
 										<tr key={index} className='hover:bg-gray-50'>
+											<td className='px-4 py-3'>
+												<Skeleton className='h-12 w-12 rounded-lg' />
+											</td>
 											<td className='px-4 py-3'>
 												<Skeleton className='h-4 w-32 mb-1' />
 												<Skeleton className='h-3 w-24' />
@@ -908,10 +963,13 @@ const PurchasesPage: React.FC = () => {
 					<Card key={index}>
 						<CardContent className='p-4'>
 							<div className='flex justify-between items-start mb-3'>
-								<div className='flex-1'>
-									<Skeleton className='h-6 w-3/4 mb-2' />
-									<Skeleton className='h-4 w-1/2 mb-2' />
-									<Skeleton className='h-6 w-16 rounded-full' />
+								<div className='flex items-start gap-3 flex-1'>
+									<Skeleton className='h-16 w-16 rounded-lg flex-shrink-0' />
+									<div className='flex-1'>
+										<Skeleton className='h-6 w-3/4 mb-2' />
+										<Skeleton className='h-4 w-1/2 mb-2' />
+										<Skeleton className='h-6 w-16 rounded-full' />
+									</div>
 								</div>
 								<div className='flex items-center gap-2'>
 									<Skeleton className='h-8 w-8 rounded' />
@@ -1145,6 +1203,9 @@ const PurchasesPage: React.FC = () => {
 												<table className='w-full'>
 													<thead className='bg-gray-50 border-b'>
 														<tr>
+															<th className='px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
+																Image
+															</th>
 															<th className='px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
 																Product
 															</th>

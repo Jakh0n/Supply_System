@@ -365,6 +365,7 @@ export interface ProductPurchaseFormData {
 	unit: ProductUnit
 	notes?: string
 	branch: string
+	images?: ProductImage[]
 }
 
 export interface ProductPurchaseFilters {

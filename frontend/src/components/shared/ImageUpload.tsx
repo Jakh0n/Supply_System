@@ -18,6 +18,7 @@ interface ImageUploadProps {
 	onImagesChange: (images: ProductImage[]) => void
 	maxImages?: number
 	disabled?: boolean
+	uploadFunction?: (files: File[]) => Promise<{ images: ProductImage[] }>
 }
 
 const ImageUpload: React.FC<ImageUploadProps> = ({
@@ -25,6 +26,7 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
 	onImagesChange,
 	maxImages = 5,
 	disabled = false,
+	uploadFunction,
 }) => {
 	const [dragActive, setDragActive] = useState(false)
 	const [uploading, setUploading] = useState(false)
@@ -90,8 +92,14 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
 				onImagesChange(imagesWithPreviews)
 
 				// Upload to backend
-				const { productsApi } = await import('@/lib/api')
-				const response = await productsApi.uploadImages(files)
+				let response
+				if (uploadFunction) {
+					response = await uploadFunction(files)
+				} else {
+					// Default to products API for backward compatibility
+					const { productsApi } = await import('@/lib/api')
+					response = await productsApi.uploadImages(files)
+				}
 
 				// Replace preview images with actual uploaded images
 				const newImages = [...imagesWithPreviews] // Use the updated state with previews

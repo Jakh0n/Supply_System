@@ -573,14 +573,16 @@ export const purchasesApi = {
 			const response = await api.post('/purchases', data)
 			console.log('Purchase created successfully:', response.data)
 			return response.data.data
-		} catch (error: any) {
-			console.error(
-				'API Error creating purchase:',
-				error.response?.data || error.message
-			)
-			console.error('Full error:', error)
-			console.error('Error response:', error.response)
-			console.error('Error status:', error.response?.status)
+		} catch (error) {
+			if (axios.isAxiosError(error)) {
+				console.error(
+					'API Error creating purchase:',
+					error.response?.data || error.message
+				)
+				console.error('Error status:', error.response?.status)
+			} else {
+				console.error('Unexpected error:', error)
+			}
 			throw error
 		}
 	},
@@ -613,6 +615,24 @@ export const purchasesApi = {
 			`/purchases/stats/summary?${params.toString()}`
 		)
 		return response.data.data
+	},
+
+	uploadImages: async (
+		images: File[]
+	): Promise<{
+		images: Array<{ url: string; publicId: string; isPrimary: boolean }>
+	}> => {
+		const formData = new FormData()
+		images.forEach(image => {
+			formData.append('images', image)
+		})
+
+		const response = await api.post('/purchases/upload-images', formData, {
+			headers: {
+				'Content-Type': 'multipart/form-data',
+			},
+		})
+		return response.data
 	},
 }
 
