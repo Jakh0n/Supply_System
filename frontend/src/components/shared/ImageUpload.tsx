@@ -141,7 +141,7 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
 				setUploading(false)
 			}
 		},
-		[images, onImagesChange]
+		[images, onImagesChange, uploadFunction]
 	)
 
 	const handleDrop = useCallback(

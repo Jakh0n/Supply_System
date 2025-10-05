@@ -57,6 +57,7 @@ import {
 	Search,
 	Trash2,
 } from 'lucide-react'
+import Image from 'next/image'
 import React, { useCallback, useEffect, useState } from 'react'
 import { toast } from 'sonner'
 
@@ -382,9 +383,11 @@ const MobilePurchaseCard: React.FC<{
 					<div className='flex items-start gap-3 flex-1'>
 						{purchase.images && purchase.images.length > 0 ? (
 							<div className='w-16 h-16 rounded-lg overflow-hidden bg-gray-100 flex-shrink-0'>
-								<img
+								<Image
 									src={purchase.images[0].url}
 									alt={purchase.productName}
+									width={64}
+									height={64}
 									className='w-full h-full object-cover'
 								/>
 							</div>
@@ -509,9 +512,11 @@ const PurchaseItem: React.FC<{
 			<td className='px-4 py-3'>
 				{purchase.images && purchase.images.length > 0 ? (
 					<div className='w-12 h-12 rounded-lg overflow-hidden bg-gray-100'>
-						<img
+						<Image
 							src={purchase.images[0].url}
 							alt={purchase.productName}
+							width={48}
+							height={48}
 							className='w-full h-full object-cover'
 						/>
 					</div>
@@ -758,21 +763,21 @@ const PurchasesPage: React.FC = () => {
 		try {
 			const response = await purchasesApi.getPurchases(filters)
 			console.log('API Response:', response)
-			// The response has a nested data structure
-			const purchases = response.data?.purchases || response.purchases || []
-			const pagination = response.data?.pagination ||
-				response.pagination || {
-					current: 1,
-					pages: 1,
-					total: 0,
-				}
+			// The response structure
+			const purchases = response.purchases || []
+			const pagination = response.pagination || {
+				current: 1,
+				pages: 1,
+				total: 0,
+			}
 			console.log('Extracted purchases:', purchases)
 			console.log('Extracted pagination:', pagination)
 			setPurchases(purchases)
 			setPagination(pagination)
-		} catch (error) {
+		} catch (error: unknown) {
 			console.error('Error fetching purchases:', error)
-			console.error('Error details:', error.response?.data)
+			const errorWithResponse = error as { response?: { data?: unknown } }
+			console.error('Error details:', errorWithResponse.response?.data)
 			toast.error('Failed to fetch purchases')
 			// Reset to default values on error
 			setPurchases([])
@@ -797,24 +802,34 @@ const PurchasesPage: React.FC = () => {
 			setPurchases(prev => [newPurchase, ...prev])
 			setShowForm(false)
 			toast.success('Purchase added successfully!')
-		} catch (error: any) {
+		} catch (error: unknown) {
 			console.error('Error creating purchase:', error)
-			console.error('Error response:', error.response?.data)
+			console.error(
+				'Error response:',
+				(error as { response?: { data?: unknown } })?.response?.data
+			)
 
 			let errorMessage = 'Failed to add purchase'
 
-			if (error.response?.data?.message) {
-				errorMessage = error.response.data.message
-			} else if (error.response?.data?.errors) {
+			const errorWithResponse = error as {
+				response?: {
+					data?: { message?: string; errors?: Array<{ message: string }> }
+				}
+				message?: string
+			}
+
+			if (errorWithResponse.response?.data?.message) {
+				errorMessage = errorWithResponse.response.data.message
+			} else if (errorWithResponse.response?.data?.errors) {
 				// Handle validation errors
-				const validationErrors = error.response.data.errors
+				const validationErrors = errorWithResponse.response.data.errors
 				if (Array.isArray(validationErrors) && validationErrors.length > 0) {
 					errorMessage = `Validation error: ${validationErrors
-						.map((err: any) => err.message)
+						.map((err: { message: string }) => err.message)
 						.join(', ')}`
 				}
-			} else if (error.message) {
-				errorMessage = error.message
+			} else if (errorWithResponse.message) {
+				errorMessage = errorWithResponse.message
 			}
 
 			toast.error(errorMessage)

@@ -346,6 +346,7 @@ export interface ProductPurchase {
 	notes?: string
 	branch: string
 	status: PurchaseStatus
+	images: ProductImage[]
 	createdBy: {
 		_id: string
 		username: string

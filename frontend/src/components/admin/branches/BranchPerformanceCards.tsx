@@ -198,10 +198,6 @@ const BranchPerformanceCards: React.FC<BranchPerformanceCardsProps> = ({
 												{branch.mostOrderedProducts.length} total
 											</p>
 											<div className='max-h-64 overflow-y-auto space-y-2'>
-												{console.log(
-													`Frontend: Branch ${branch.branch} has ${branch.mostOrderedProducts.length} products:`,
-													branch.mostOrderedProducts
-												)}
 												{branch.mostOrderedProducts.map((product, idx) => (
 													<div
 														key={idx}
