@@ -17,8 +17,13 @@ import {
 	ProductFilters,
 	ProductFormData,
 	ProductInsightsResponse,
+	ProductPurchase,
+	ProductPurchaseFilters,
+	ProductPurchaseFormData,
+	ProductPurchasesResponse,
 	ProductsResponse,
 	ProductUnit,
+	PurchaseStats,
 	RegisterData,
 	UnitsResponse,
 	User,
@@ -521,6 +526,93 @@ export const productsApi = {
 	getUnits: async (): Promise<UnitsResponse> => {
 		const response = await api.get('/products/meta/units')
 		return response.data
+	},
+}
+
+// Product Purchases API
+export const purchasesApi = {
+	getPurchases: async (
+		filters?: ProductPurchaseFilters
+	): Promise<ProductPurchasesResponse> => {
+		const params = new URLSearchParams()
+		if (filters?.category && filters.category !== 'all')
+			params.append('category', filters.category)
+		if (filters?.branch && filters.branch !== 'all')
+			params.append('branch', filters.branch)
+		if (filters?.status && filters.status !== 'all')
+			params.append('status', filters.status)
+		if (filters?.paymentWay && filters.paymentWay !== 'all')
+			params.append('paymentWay', filters.paymentWay)
+		if (filters?.startDate) params.append('startDate', filters.startDate)
+		if (filters?.endDate) params.append('endDate', filters.endDate)
+		if (filters?.search) params.append('search', filters.search)
+		if (filters?.page) params.append('page', filters.page.toString())
+		if (filters?.limit) params.append('limit', filters.limit.toString())
+
+		const response = await api.get(`/purchases?${params.toString()}`)
+		return response.data
+	},
+
+	getPurchase: async (id: string): Promise<{ data: ProductPurchase }> => {
+		const response = await api.get(`/purchases/${id}`)
+		return response.data
+	},
+
+	createPurchase: async (
+		data: ProductPurchaseFormData
+	): Promise<ProductPurchase> => {
+		console.log('Creating purchase with data:', data)
+		console.log('Data types:', {
+			price: typeof data.price,
+			quantity: typeof data.quantity,
+			category: typeof data.category,
+			paymentWay: typeof data.paymentWay,
+			unit: typeof data.unit,
+		})
+		try {
+			const response = await api.post('/purchases', data)
+			console.log('Purchase created successfully:', response.data)
+			return response.data.data
+		} catch (error: any) {
+			console.error(
+				'API Error creating purchase:',
+				error.response?.data || error.message
+			)
+			console.error('Full error:', error)
+			console.error('Error response:', error.response)
+			console.error('Error status:', error.response?.status)
+			throw error
+		}
+	},
+
+	updatePurchase: async (
+		id: string,
+		data: Partial<ProductPurchaseFormData>
+	): Promise<ProductPurchase> => {
+		console.log('Updating purchase with data:', data)
+		const response = await api.put(`/purchases/${id}`, data)
+		return response.data.data
+	},
+
+	deletePurchase: async (id: string): Promise<void> => {
+		await api.delete(`/purchases/${id}`)
+	},
+
+	getPurchaseStats: async (filters?: {
+		startDate?: string
+		endDate?: string
+		branch?: string
+	}): Promise<PurchaseStats> => {
+		const params = new URLSearchParams()
+		if (filters?.startDate) params.append('startDate', filters.startDate)
+		if (filters?.endDate) params.append('endDate', filters.endDate)
+		if (filters?.branch && filters.branch !== 'all')
+			params.append('branch', filters.branch)
+
+		const response = await api.get(
+			`/purchases/stats/summary?${params.toString()}`
+		)
+		return response.data.data
 	},
 }
 

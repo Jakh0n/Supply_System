@@ -16,6 +16,7 @@ import {
 	ChevronDown,
 	ChevronLeft,
 	ChevronRight,
+	CreditCard,
 	LogOut,
 	Menu,
 	Package,
@@ -66,6 +67,11 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
 			title: 'Products',
 			href: '/admin/products',
 			icon: Package,
+		},
+		{
+			title: 'Purchases',
+			href: '/admin/purchases',
+			icon: CreditCard,
 		},
 		{
 			title: 'Branch Analytics',

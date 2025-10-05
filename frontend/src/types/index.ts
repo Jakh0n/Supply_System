@@ -319,3 +319,82 @@ export interface BranchFilter {
 		end: string
 	}
 }
+
+// Product Purchase Types
+export type PaymentMethod =
+	| 'cash'
+	| 'bank-transfer'
+	| 'credit-card'
+	| 'debit-card'
+	| 'check'
+	| 'installments'
+	| 'other'
+
+export type PurchaseStatus = 'pending' | 'ordered' | 'received' | 'cancelled'
+
+export interface ProductPurchase {
+	_id: string
+	date: string
+	category: ProductCategory
+	productName: string
+	price: number
+	providerName: string
+	paymentWay: PaymentMethod
+	quantity: number
+	unit: ProductUnit
+	totalAmount: number
+	notes?: string
+	branch: string
+	status: PurchaseStatus
+	createdBy: {
+		_id: string
+		username: string
+	}
+	createdAt: string
+	updatedAt: string
+}
+
+export interface ProductPurchaseFormData {
+	date: string
+	category: ProductCategory
+	productName: string
+	price: number
+	providerName: string
+	paymentWay: PaymentMethod
+	quantity: number
+	unit: ProductUnit
+	notes?: string
+	branch: string
+}
+
+export interface ProductPurchaseFilters {
+	category?: ProductCategory | 'all'
+	branch?: string | 'all'
+	status?: PurchaseStatus | 'all'
+	paymentWay?: PaymentMethod | 'all'
+	startDate?: string
+	endDate?: string
+	search?: string
+	page?: number
+	limit?: number
+}
+
+export interface ProductPurchasesResponse {
+	purchases: ProductPurchase[]
+	pagination: PaginationInfo
+}
+
+export interface PurchaseStats {
+	totalPurchases: number
+	totalAmount: number
+	statusBreakdown: Array<{
+		_id: PurchaseStatus
+		count: number
+	}>
+	categoryBreakdown: Array<{
+		_id: ProductCategory
+		count: number
+		totalAmount: number
+	}>
+	recentPurchases: ProductPurchase[]
+}
