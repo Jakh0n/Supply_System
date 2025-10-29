@@ -203,9 +203,6 @@ const OrderDetailModal: React.FC<OrderDetailModalProps> = ({
 										</div>
 										<div className='text-right'>
 											<div className='font-medium'>x{item.quantity}</div>
-											<div className='text-sm text-gray-600'>
-												${(item.product.price * item.quantity).toFixed(2)}
-											</div>
 										</div>
 									</div>
 								)
@@ -218,22 +215,6 @@ const OrderDetailModal: React.FC<OrderDetailModalProps> = ({
 								<span className='font-medium'>Total Quantity:</span>
 								<span className='font-semibold'>
 									{getTotalQuantity(order.items)}
-								</span>
-							</div>
-							<div className='flex justify-between items-center mt-1'>
-								<span className='font-medium'>Total Value:</span>
-								<span className='font-semibold'>
-									$
-									{order.items
-										.reduce(
-											(total, item) =>
-												total +
-												(item.product?.price
-													? item.product.price * item.quantity
-													: 0),
-											0
-										)
-										.toFixed(2)}
 								</span>
 							</div>
 						</div>

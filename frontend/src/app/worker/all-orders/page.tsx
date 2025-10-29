@@ -57,14 +57,6 @@ const formatDate = (dateString: string): string => {
 	})
 }
 
-const formatKRW = (price: number): string => {
-	return new Intl.NumberFormat('ko-KR', {
-		style: 'currency',
-		currency: 'KRW',
-		minimumFractionDigits: 0,
-	}).format(price)
-}
-
 const getStatusDisplay = (status: OrderStatus) => {
 	switch (status) {
 		case 'pending':
@@ -316,14 +308,6 @@ const WorkerAllOrders: React.FC = () => {
 
 	const getTotalQuantity = (order: Order): number => {
 		return order.items.reduce((total, item) => total + item.quantity, 0)
-	}
-
-	const getTotalValue = (order: Order): number => {
-		return order.items.reduce(
-			(total, item) =>
-				total + (item.product?.price ? item.quantity * item.product.price : 0),
-			0
-		)
 	}
 
 	return (
@@ -605,7 +589,6 @@ const WorkerAllOrders: React.FC = () => {
 													<TableHead>Branch</TableHead>
 													<TableHead>Date</TableHead>
 													<TableHead>Items</TableHead>
-													<TableHead>Total Value</TableHead>
 													<TableHead>Status</TableHead>
 													<TableHead className='text-right'>Actions</TableHead>
 												</TableRow>
@@ -639,9 +622,6 @@ const WorkerAllOrders: React.FC = () => {
 															<TableCell className='text-sm text-gray-600'>
 																{order.items.length} items (
 																{getTotalQuantity(order)} total)
-															</TableCell>
-															<TableCell className='text-sm text-gray-600'>
-																{formatKRW(getTotalValue(order))}
 															</TableCell>
 															<TableCell>
 																<span
@@ -791,8 +771,6 @@ const WorkerAllOrders: React.FC = () => {
 												<TableRow className='bg-gray-50'>
 													<TableHead>Product</TableHead>
 													<TableHead>Quantity</TableHead>
-													<TableHead>Unit Price</TableHead>
-													<TableHead className='text-right'>Total</TableHead>
 												</TableRow>
 											</TableHeader>
 											<TableBody>
@@ -809,25 +787,10 @@ const WorkerAllOrders: React.FC = () => {
 															</div>
 														</TableCell>
 														<TableCell>{item.quantity}</TableCell>
-														<TableCell>
-															{item.product.price
-																? formatKRW(item.product.price)
-																: 'N/A'}
-														</TableCell>
-														<TableCell className='text-right'>
-															{item.product.price
-																? formatKRW(item.quantity * item.product.price)
-																: 'N/A'}
-														</TableCell>
 													</TableRow>
 												))}
 											</TableBody>
 										</Table>
-									</div>
-									<div className='mt-3 text-right'>
-										<p className='text-lg font-semibold'>
-											Total: {formatKRW(getTotalValue(selectedOrder))}
-										</p>
 									</div>
 								</div>
 
