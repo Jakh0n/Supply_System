@@ -94,6 +94,11 @@ const ProductsManagement: React.FC = () => {
 		description: '',
 		supplier: '',
 		price: 0,
+		amount: 0,
+		count: 0,
+		purchaseSite: '',
+		contact: '',
+		monthlyUsage: 0,
 		images: [],
 	})
 	const [formLoading, setFormLoading] = useState(false)
@@ -245,6 +250,11 @@ const ProductsManagement: React.FC = () => {
 			description: product.description || '',
 			supplier: product.supplier || '',
 			price: product.price,
+			amount: product.amount || 0,
+			count: product.count || 0,
+			purchaseSite: product.purchaseSite || '',
+			contact: product.contact || '',
+			monthlyUsage: product.monthlyUsage || 0,
 			images: product.images || [],
 		})
 		setIsEditDialogOpen(true)
@@ -258,6 +268,11 @@ const ProductsManagement: React.FC = () => {
 			description: '',
 			supplier: '',
 			price: 0,
+			amount: 0,
+			count: 0,
+			purchaseSite: '',
+			contact: '',
+			monthlyUsage: 0,
 			images: [],
 		})
 	}

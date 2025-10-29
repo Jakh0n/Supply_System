@@ -1,0 +1,2560 @@
+'use client'
+
+import QuickPurchaseModal from '@/components/admin/purchases/QuickPurchaseModal'
+import AdminLayout from '@/components/shared/AdminLayout'
+import ImageUpload from '@/components/shared/ImageUpload'
+import ProtectedRoute from '@/components/shared/ProtectedRoute'
+import {
+	AlertDialog,
+	AlertDialogAction,
+	AlertDialogCancel,
+	AlertDialogContent,
+	AlertDialogDescription,
+	AlertDialogFooter,
+	AlertDialogHeader,
+	AlertDialogTitle,
+	AlertDialogTrigger,
+} from '@/components/ui/alert-dialog'
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import {
+	Dialog,
+	DialogContent,
+	DialogHeader,
+	DialogTitle,
+} from '@/components/ui/dialog'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import {
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from '@/components/ui/select'
+import { Skeleton } from '@/components/ui/skeleton'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { productsApi, purchasesApi } from '@/lib/api'
+import {
+	PaginationInfo,
+	PaymentMethod,
+	Product,
+	ProductCategory,
+	ProductFormData,
+	ProductImage,
+	ProductPurchase,
+	ProductPurchaseFilters,
+	ProductPurchaseFormData,
+	ProductUnit,
+	PurchaseStatus,
+} from '@/types'
+import { format } from 'date-fns'
+import {
+	Building,
+	Calendar,
+	CreditCard,
+	DollarSign,
+	Edit,
+	Filter,
+	Package,
+	Plus,
+	Search,
+	ShoppingCart,
+	Trash2,
+} from 'lucide-react'
+import Image from 'next/image'
+import React, { useCallback, useEffect, useState } from 'react'
+import { toast } from 'sonner'
+
+const CATEGORIES: ProductCategory[] = [
+	'frozen-products',
+	'main-products',
+	'desserts',
+	'drinks',
+	'packaging-materials',
+	'cleaning-materials',
+]
+
+const PAYMENT_METHODS: PaymentMethod[] = [
+	'cash',
+	'bank-transfer',
+	'credit-card',
+	'debit-card',
+	'check',
+	'installments',
+	'other',
+]
+
+const UNITS: ProductUnit[] = [
+	'kg',
+	'g',
+	'l',
+	'ml',
+	'pieces',
+	'boxes',
+	'bottles',
+	'cans',
+	'packets',
+]
+
+// Purchase Form Component
+const PurchaseForm: React.FC<{
+	purchase?: ProductPurchase
+	onSubmit: (data: ProductPurchaseFormData) => void
+	onCancel: () => void
+	loading: boolean
+}> = ({ purchase, onSubmit, onCancel, loading }) => {
+	const [formData, setFormData] = useState<ProductPurchaseFormData>({
+		date:
+			purchase?.date.split('T')[0] || new Date().toISOString().split('T')[0],
+		category: purchase?.category || 'main-products',
+		productName: purchase?.productName || '',
+		price: purchase?.price || 1, // Changed from 0 to 1 to pass validation
+		providerName: purchase?.providerName || '',
+		paymentWay: purchase?.paymentWay || 'cash',
+		quantity: purchase?.quantity || 1,
+		unit: purchase?.unit || 'pieces',
+		notes: purchase?.notes || '',
+		branch: purchase?.branch || '',
+		images: purchase?.images || [],
+	})
+
+	const handleSubmit = (e: React.FormEvent) => {
+		e.preventDefault()
+
+		// Basic validation
+		if (!formData.productName.trim()) {
+			toast.error('Product name is required')
+			return
+		}
+		if (!formData.providerName.trim()) {
+			toast.error('Provider name is required')
+			return
+		}
+		if (!formData.branch.trim()) {
+			toast.error('Branch is required')
+			return
+		}
+		if (formData.price <= 0) {
+			toast.error('Price must be greater than 0')
+			return
+		}
+		if (formData.quantity <= 0) {
+			toast.error('Quantity must be greater than 0')
+			return
+		}
+
+		onSubmit(formData)
+	}
+
+	return (
+		<form onSubmit={handleSubmit} className='space-y-4'>
+			<div className='grid grid-cols-2 gap-4'>
+				<div>
+					<Label htmlFor='date'>Date</Label>
+					<Input
+						id='date'
+						type='date'
+						value={formData.date}
+						onChange={e => setFormData({ ...formData, date: e.target.value })}
+						required
+					/>
+				</div>
+				<div>
+					<Label htmlFor='category'>Category</Label>
+					<Select
+						value={formData.category}
+						onValueChange={(value: ProductCategory) =>
+							setFormData({ ...formData, category: value })
+						}
+					>
+						<SelectTrigger>
+							<SelectValue />
+						</SelectTrigger>
+						<SelectContent>
+							{CATEGORIES.map(cat => (
+								<SelectItem key={cat} value={cat}>
+									{cat.replace('-', ' ').replace(/\b\w/g, l => l.toUpperCase())}
+								</SelectItem>
+							))}
+						</SelectContent>
+					</Select>
+				</div>
+			</div>
+
+			<div>
+				<Label htmlFor='productName'>Product Name</Label>
+				<Input
+					id='productName'
+					value={formData.productName}
+					onChange={e =>
+						setFormData({ ...formData, productName: e.target.value })
+					}
+					placeholder='Enter product name'
+					required
+				/>
+			</div>
+
+			<div>
+				<Label htmlFor='providerName'>Provider Name</Label>
+				<Input
+					id='providerName'
+					value={formData.providerName}
+					onChange={e =>
+						setFormData({ ...formData, providerName: e.target.value })
+					}
+					placeholder='Enter provider name'
+					required
+				/>
+			</div>
+
+			<div>
+				<Label htmlFor='branch'>Branch</Label>
+				<Input
+					id='branch'
+					value={formData.branch}
+					onChange={e => setFormData({ ...formData, branch: e.target.value })}
+					placeholder='Enter branch name'
+					required
+				/>
+			</div>
+
+			<div className='grid grid-cols-3 gap-4'>
+				<div>
+					<Label htmlFor='price'>Price</Label>
+					<Input
+						id='price'
+						type='number'
+						step='0.01'
+						min='0'
+						value={formData.price}
+						onChange={e =>
+							setFormData({
+								...formData,
+								price: parseFloat(e.target.value) || 1,
+							})
+						}
+						placeholder='0.00'
+						required
+					/>
+				</div>
+				<div>
+					<Label htmlFor='quantity'>Quantity</Label>
+					<Input
+						id='quantity'
+						type='number'
+						min='1'
+						value={formData.quantity}
+						onChange={e =>
+							setFormData({
+								...formData,
+								quantity: parseInt(e.target.value) || 1,
+							})
+						}
+						required
+					/>
+				</div>
+				<div>
+					<Label htmlFor='unit'>Unit</Label>
+					<Select
+						value={formData.unit}
+						onValueChange={(value: ProductUnit) =>
+							setFormData({ ...formData, unit: value })
+						}
+					>
+						<SelectTrigger>
+							<SelectValue />
+						</SelectTrigger>
+						<SelectContent>
+							{UNITS.map(unit => (
+								<SelectItem key={unit} value={unit}>
+									{unit}
+								</SelectItem>
+							))}
+						</SelectContent>
+					</Select>
+				</div>
+			</div>
+
+			<div>
+				<Label htmlFor='paymentWay'>Payment Method</Label>
+				<Select
+					value={formData.paymentWay}
+					onValueChange={(value: PaymentMethod) =>
+						setFormData({ ...formData, paymentWay: value })
+					}
+				>
+					<SelectTrigger>
+						<SelectValue />
+					</SelectTrigger>
+					<SelectContent>
+						{PAYMENT_METHODS.map(method => (
+							<SelectItem key={method} value={method}>
+								{method
+									.replace('-', ' ')
+									.replace(/\b\w/g, l => l.toUpperCase())}
+							</SelectItem>
+						))}
+					</SelectContent>
+				</Select>
+			</div>
+
+			<div>
+				<Label htmlFor='notes'>Notes (Optional)</Label>
+				<Input
+					id='notes'
+					value={formData.notes}
+					onChange={e => setFormData({ ...formData, notes: e.target.value })}
+					placeholder='Additional notes...'
+				/>
+			</div>
+
+			{/* Image Upload */}
+			<div>
+				<Label>Product Images (Optional)</Label>
+				<ImageUpload
+					images={formData.images || []}
+					onImagesChange={images =>
+						setFormData(prev => ({
+							...prev,
+							images,
+						}))
+					}
+					maxImages={5}
+					disabled={loading}
+					uploadFunction={purchasesApi.uploadImages}
+				/>
+			</div>
+
+			<div className='flex items-center gap-2 p-3 bg-gray-50 rounded-lg'>
+				<span className='text-sm font-medium'>Total Amount:</span>
+				<span className='text-lg font-bold text-green-600'>
+					₩{(formData.price * formData.quantity).toLocaleString()}
+				</span>
+			</div>
+
+			<div className='flex justify-end gap-2'>
+				<Button type='button' variant='outline' onClick={onCancel}>
+					Cancel
+				</Button>
+				<Button type='submit' disabled={loading}>
+					{loading
+						? 'Saving...'
+						: purchase
+						? 'Update Purchase'
+						: 'Add Purchase'}
+				</Button>
+			</div>
+		</form>
+	)
+}
+
+// Mobile Purchase Card Component
+const MobilePurchaseCard: React.FC<{
+	purchase: ProductPurchase
+	onEdit: (purchase: ProductPurchase) => void
+	onDelete: (id: string) => void
+	onView: (purchase: ProductPurchase) => void
+}> = ({ purchase, onEdit, onDelete, onView }) => {
+	const getStatusColor = (status: PurchaseStatus) => {
+		switch (status) {
+			case 'pending':
+				return 'bg-yellow-100 text-yellow-800'
+			case 'ordered':
+				return 'bg-blue-100 text-blue-800'
+			case 'received':
+				return 'bg-green-100 text-green-800'
+			case 'cancelled':
+				return 'bg-red-100 text-red-800'
+			default:
+				return 'bg-gray-100 text-gray-800'
+		}
+	}
+
+	return (
+		<Card
+			className='hover:shadow-md transition-shadow cursor-pointer'
+			onClick={() => onView(purchase)}
+		>
+			<CardContent className='p-4'>
+				<div className='flex justify-between items-start mb-3'>
+					<div className='flex items-start gap-3 flex-1'>
+						{purchase.images && purchase.images.length > 0 ? (
+							<div className='w-16 h-16 rounded-lg overflow-hidden bg-gray-100 flex-shrink-0'>
+								<Image
+									src={purchase.images[0].url}
+									alt={purchase.productName}
+									width={64}
+									height={64}
+									className='w-full h-full object-cover'
+								/>
+							</div>
+						) : (
+							<div className='w-16 h-16 rounded-lg bg-gray-100 flex items-center justify-center flex-shrink-0'>
+								<Package className='h-8 w-8 text-gray-400' />
+							</div>
+						)}
+						<div className='flex-1'>
+							<h3 className='font-semibold text-lg'>{purchase.productName}</h3>
+							<p className='text-sm text-gray-600 mb-2'>
+								{purchase.providerName}
+							</p>
+							<Badge className={getStatusColor(purchase.status)}>
+								{purchase.status}
+							</Badge>
+						</div>
+					</div>
+					<div className='flex items-center gap-2'>
+						<Button
+							variant='ghost'
+							size='sm'
+							onClick={e => {
+								e.stopPropagation()
+								onEdit(purchase)
+							}}
+						>
+							<Edit className='h-4 w-4' />
+						</Button>
+						<AlertDialog>
+							<AlertDialogTrigger asChild>
+								<Button
+									variant='ghost'
+									size='sm'
+									onClick={e => e.stopPropagation()}
+								>
+									<Trash2 className='h-4 w-4 text-red-500' />
+								</Button>
+							</AlertDialogTrigger>
+							<AlertDialogContent>
+								<AlertDialogHeader>
+									<AlertDialogTitle>Delete Purchase</AlertDialogTitle>
+									<AlertDialogDescription>
+										Are you sure you want to delete this purchase? This action
+										cannot be undone.
+									</AlertDialogDescription>
+								</AlertDialogHeader>
+								<AlertDialogFooter>
+									<AlertDialogCancel>Cancel</AlertDialogCancel>
+									<AlertDialogAction
+										onClick={() => onDelete(purchase._id)}
+										className='bg-red-500 hover:bg-red-600'
+									>
+										Delete
+									</AlertDialogAction>
+								</AlertDialogFooter>
+							</AlertDialogContent>
+						</AlertDialog>
+					</div>
+				</div>
+
+				<div className='grid grid-cols-2 gap-3 text-sm mb-3'>
+					<div className='flex items-center gap-2'>
+						<Calendar className='h-4 w-4 text-gray-400' />
+						<span>{format(new Date(purchase.date), 'MMM dd, yyyy')}</span>
+					</div>
+					<div className='flex items-center gap-2'>
+						<Package className='h-4 w-4 text-gray-400' />
+						<span>{purchase.category.replace('-', ' ')}</span>
+					</div>
+					<div className='flex items-center gap-2'>
+						<Building className='h-4 w-4 text-gray-400' />
+						<span>{purchase.branch}</span>
+					</div>
+					<div className='flex items-center gap-2'>
+						<CreditCard className='h-4 w-4 text-gray-400' />
+						<span>{purchase.paymentWay.replace('-', ' ')}</span>
+					</div>
+				</div>
+
+				<div className='pt-3 border-t flex justify-between items-center'>
+					<div className='text-sm text-gray-600'>
+						{purchase.quantity} {purchase.unit} × ₩
+						{purchase.price.toLocaleString()}
+					</div>
+					<div className='font-semibold text-lg text-green-600'>
+						₩{purchase.totalAmount.toLocaleString()}
+					</div>
+				</div>
+			</CardContent>
+		</Card>
+	)
+}
+
+// Purchase Item Component (List Format)
+const PurchaseItem: React.FC<{
+	purchase: ProductPurchase
+	onEdit: (purchase: ProductPurchase) => void
+	onDelete: (id: string) => void
+	onView: (purchase: ProductPurchase) => void
+}> = ({ purchase, onEdit, onDelete, onView }) => {
+	return (
+		<tr
+			className='hover:bg-gray-50 cursor-pointer border-b'
+			onClick={() => onView(purchase)}
+		>
+			<td className='px-4 py-3'>
+				{purchase.images && purchase.images.length > 0 ? (
+					<div className='w-12 h-12 rounded-lg overflow-hidden bg-gray-100'>
+						<Image
+							src={purchase.images[0].url}
+							alt={purchase.productName}
+							width={48}
+							height={48}
+							className='w-full h-full object-cover'
+						/>
+					</div>
+				) : (
+					<div className='w-12 h-12 rounded-lg bg-gray-100 flex items-center justify-center'>
+						<Package className='h-6 w-6 text-gray-400' />
+					</div>
+				)}
+			</td>
+			<td className='px-4 py-3'>
+				<div>
+					<div className='font-medium text-gray-900'>
+						{purchase.productName}
+					</div>
+					<div className='text-sm text-gray-500'>{purchase.providerName}</div>
+				</div>
+			</td>
+			<td className='px-4 py-3 text-sm text-gray-600'>
+				{format(new Date(purchase.date), 'MMM dd, yyyy')}
+			</td>
+			<td className='px-4 py-3 text-sm text-gray-600'>
+				{purchase.category.replace('-', ' ')}
+			</td>
+			<td className='px-4 py-3 text-sm text-gray-600'>{purchase.branch}</td>
+			<td className='px-4 py-3 text-sm text-gray-600'>
+				{purchase.paymentWay.replace('-', ' ')}
+			</td>
+			<td className='px-4 py-3 text-sm text-gray-600'>
+				{purchase.quantity} {purchase.unit}
+			</td>
+			<td className='px-4 py-3 text-sm text-gray-600'>
+				₩{purchase.price.toLocaleString()}
+			</td>
+			<td className='px-4 py-3 font-semibold text-green-600'>
+				₩{purchase.totalAmount.toLocaleString()}
+			</td>
+			<td className='px-4 py-3'>
+				<div className='flex items-center gap-2'>
+					<Button
+						variant='ghost'
+						size='sm'
+						onClick={e => {
+							e.stopPropagation()
+							onEdit(purchase)
+						}}
+					>
+						<Edit className='h-4 w-4' />
+					</Button>
+					<AlertDialog>
+						<AlertDialogTrigger asChild>
+							<Button
+								variant='ghost'
+								size='sm'
+								onClick={e => e.stopPropagation()}
+							>
+								<Trash2 className='h-4 w-4 text-red-500' />
+							</Button>
+						</AlertDialogTrigger>
+						<AlertDialogContent>
+							<AlertDialogHeader>
+								<AlertDialogTitle>Delete Purchase</AlertDialogTitle>
+								<AlertDialogDescription>
+									Are you sure you want to delete this purchase? This action
+									cannot be undone.
+								</AlertDialogDescription>
+							</AlertDialogHeader>
+							<AlertDialogFooter>
+								<AlertDialogCancel>Cancel</AlertDialogCancel>
+								<AlertDialogAction
+									onClick={() => onDelete(purchase._id)}
+									className='bg-red-500 hover:bg-red-600'
+								>
+									Delete
+								</AlertDialogAction>
+							</AlertDialogFooter>
+						</AlertDialogContent>
+					</AlertDialog>
+				</div>
+			</td>
+		</tr>
+	)
+}
+
+// Purchase Details Dialog
+const PurchaseDetailsDialog: React.FC<{
+	purchase: ProductPurchase | null
+	open: boolean
+	onClose: () => void
+}> = ({ purchase, open, onClose }) => {
+	if (!purchase) return null
+
+	return (
+		<Dialog open={open} onOpenChange={onClose}>
+			<DialogContent className='max-w-2xl'>
+				<DialogHeader>
+					<DialogTitle>Purchase Details</DialogTitle>
+				</DialogHeader>
+				<div className='space-y-6'>
+					<div className='grid grid-cols-2 gap-4'>
+						<div>
+							<Label className='text-sm font-medium text-gray-500'>
+								Product Name
+							</Label>
+							<p className='font-semibold'>{purchase.productName}</p>
+						</div>
+						<div>
+							<Label className='text-sm font-medium text-gray-500'>
+								Provider
+							</Label>
+							<p className='font-semibold'>{purchase.providerName}</p>
+						</div>
+						<div>
+							<Label className='text-sm font-medium text-gray-500'>Date</Label>
+							<p>{format(new Date(purchase.date), 'MMMM dd, yyyy')}</p>
+						</div>
+						<div>
+							<Label className='text-sm font-medium text-gray-500'>
+								Category
+							</Label>
+							<p>
+								{purchase.category
+									.replace('-', ' ')
+									.replace(/\b\w/g, l => l.toUpperCase())}
+							</p>
+						</div>
+						<div>
+							<Label className='text-sm font-medium text-gray-500'>
+								Branch
+							</Label>
+							<p>{purchase.branch}</p>
+						</div>
+						<div>
+							<Label className='text-sm font-medium text-gray-500'>
+								Status
+							</Label>
+							<Badge
+								className={`${
+									purchase.status === 'pending'
+										? 'bg-yellow-100 text-yellow-800'
+										: purchase.status === 'ordered'
+										? 'bg-blue-100 text-blue-800'
+										: purchase.status === 'received'
+										? 'bg-green-100 text-green-800'
+										: 'bg-red-100 text-red-800'
+								}`}
+							>
+								{purchase.status}
+							</Badge>
+						</div>
+						<div>
+							<Label className='text-sm font-medium text-gray-500'>
+								Quantity
+							</Label>
+							<p>
+								{purchase.quantity} {purchase.unit}
+							</p>
+						</div>
+						<div>
+							<Label className='text-sm font-medium text-gray-500'>
+								Unit Price
+							</Label>
+							<p>₩{purchase.price.toLocaleString()}</p>
+						</div>
+						<div>
+							<Label className='text-sm font-medium text-gray-500'>
+								Payment Method
+							</Label>
+							<p>
+								{purchase.paymentWay
+									.replace('-', ' ')
+									.replace(/\b\w/g, l => l.toUpperCase())}
+							</p>
+						</div>
+						<div>
+							<Label className='text-sm font-medium text-gray-500'>
+								Total Amount
+							</Label>
+							<p className='text-xl font-bold text-green-600'>
+								₩{purchase.totalAmount.toLocaleString()}
+							</p>
+						</div>
+					</div>
+
+					{purchase.notes && (
+						<div>
+							<Label className='text-sm font-medium text-gray-500'>Notes</Label>
+							<p className='mt-1 p-3 bg-gray-50 rounded-lg'>{purchase.notes}</p>
+						</div>
+					)}
+
+					<div className='grid grid-cols-2 gap-4 pt-4 border-t text-sm text-gray-500'>
+						<div>
+							<Label className='text-sm font-medium text-gray-500'>
+								Created By
+							</Label>
+							<p>{purchase.createdBy.username}</p>
+						</div>
+						<div>
+							<Label className='text-sm font-medium text-gray-500'>
+								Created At
+							</Label>
+							<p>
+								{format(new Date(purchase.createdAt), 'MMM dd, yyyy HH:mm')}
+							</p>
+						</div>
+					</div>
+				</div>
+			</DialogContent>
+		</Dialog>
+	)
+}
+
+// Product Catalog List Component
+const ProductCatalogList: React.FC<{
+	refreshTrigger?: number
+	onProductBuy: (product: Product) => void
+}> = ({ refreshTrigger, onProductBuy }) => {
+	const [products, setProducts] = useState<Product[]>([])
+	const [loading, setLoading] = useState(true)
+
+	const fetchProducts = async () => {
+		try {
+			const response = await productsApi.getProducts()
+			console.log('All products from API:', response.products)
+			// Filter to show only manually created products
+			// Products created through our manual form will have supplier information
+			const manualProducts = (response.products || []).filter(
+				product => product.supplier && product.supplier.trim() !== ''
+			)
+			console.log('Filtered manual products:', manualProducts)
+			setProducts(manualProducts)
+		} catch (error) {
+			console.error('Error fetching products:', error)
+		} finally {
+			setLoading(false)
+		}
+	}
+
+	useEffect(() => {
+		fetchProducts()
+	}, [refreshTrigger])
+
+	if (loading) {
+		return (
+			<div className='space-y-4'>
+				{[1, 2, 3].map(i => (
+					<div key={i} className='flex items-center space-x-4'>
+						<Skeleton className='h-12 w-12 rounded' />
+						<div className='space-y-2'>
+							<Skeleton className='h-4 w-[200px]' />
+							<Skeleton className='h-4 w-[100px]' />
+						</div>
+					</div>
+				))}
+			</div>
+		)
+	}
+
+	if (products.length === 0) {
+		return (
+			<div className='text-center py-8'>
+				<Package className='h-12 w-12 mx-auto text-gray-400 mb-4' />
+				<h3 className='text-lg font-medium text-gray-900 mb-2'>
+					No products yet
+				</h3>
+				<p className='text-gray-600'>Add your first product to get started</p>
+			</div>
+		)
+	}
+
+	return (
+		<div className='bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden'>
+			<div className='overflow-x-auto'>
+				<table className='w-full'>
+					<thead className='bg-gradient-to-r from-blue-50 to-indigo-50'>
+						<tr>
+							<th className='text-left p-4 font-semibold text-gray-800 text-sm uppercase tracking-wider'>
+								Image
+							</th>
+							<th className='text-left p-4 font-semibold text-gray-800 text-sm uppercase tracking-wider'>
+								Product Name
+							</th>
+							<th className='text-left p-4 font-semibold text-gray-800 text-sm uppercase tracking-wider'>
+								Amount
+							</th>
+							<th className='text-left p-4 font-semibold text-gray-800 text-sm uppercase tracking-wider'>
+								Count
+							</th>
+							<th className='text-left p-4 font-semibold text-gray-800 text-sm uppercase tracking-wider'>
+								Unit
+							</th>
+							<th className='text-left p-4 font-semibold text-gray-800 text-sm uppercase tracking-wider'>
+								Total Price
+							</th>
+							<th className='text-left p-4 font-semibold text-gray-800 text-sm uppercase tracking-wider'>
+								Unit Price
+							</th>
+							<th className='text-left p-4 font-semibold text-gray-800 text-sm uppercase tracking-wider'>
+								Category
+							</th>
+							<th className='text-left p-4 font-semibold text-gray-800 text-sm uppercase tracking-wider'>
+								Supplier
+							</th>
+							<th className='text-left p-4 font-semibold text-gray-800 text-sm uppercase tracking-wider'>
+								Purchase Site
+							</th>
+							<th className='text-left p-4 font-semibold text-gray-800 text-sm uppercase tracking-wider'>
+								Contact
+							</th>
+							<th className='text-left p-4 font-semibold text-gray-800 text-sm uppercase tracking-wider'>
+								Monthly Usage
+							</th>
+							<th className='text-left p-4 font-semibold text-gray-800 text-sm uppercase tracking-wider'>
+								Actions
+							</th>
+						</tr>
+					</thead>
+					<tbody className='divide-y divide-gray-100'>
+						{products.map((product, index) => (
+							<tr
+								key={product._id}
+								className={`hover:bg-gray-50 transition-colors duration-150 ${
+									index % 2 === 0 ? 'bg-white' : 'bg-gray-50/30'
+								}`}
+							>
+								<td className='p-4'>
+									{product.images && product.images.length > 0 ? (
+										<div className='w-16 h-16 rounded-lg overflow-hidden shadow-sm border border-gray-200'>
+											<Image
+												src={product.images[0].url}
+												alt={product.name}
+												width={64}
+												height={64}
+												className='w-full h-full object-cover'
+											/>
+										</div>
+									) : (
+										<div className='w-16 h-16 bg-gradient-to-br from-gray-100 to-gray-200 rounded-lg flex items-center justify-center shadow-sm border border-gray-200'>
+											<Package className='h-8 w-8 text-gray-400' />
+										</div>
+									)}
+								</td>
+								<td className='p-4'>
+									<div className='font-semibold text-gray-900 text-lg'>
+										{product.name}
+									</div>
+									{product.description && (
+										<div className='text-sm text-gray-600 mt-1 line-clamp-2'>
+											{product.description}
+										</div>
+									)}
+								</td>
+								<td className='p-4'>
+									<span className='inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800'>
+										{product.amount || 0}
+									</span>
+								</td>
+								<td className='p-4'>
+									<span className='inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800'>
+										{product.count || 0}
+									</span>
+								</td>
+								<td className='p-4 text-gray-700 font-medium'>
+									{product.unit}
+								</td>
+								<td className='p-4'>
+									<span className='font-bold text-lg text-green-600'>
+										₩
+										{(
+											(product.amount || 0) * (product.count || 0)
+										).toLocaleString()}
+									</span>
+								</td>
+								<td className='p-4 font-semibold text-gray-800'>
+									₩{product.price.toLocaleString()}
+								</td>
+								<td className='p-4'>
+									<span className='inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800'>
+										{product.category.replace('-', ' ')}
+									</span>
+								</td>
+								<td className='p-4 font-medium text-gray-800'>
+									{product.supplier || '-'}
+								</td>
+								<td className='p-4'>
+									{product.purchaseSite ? (
+										<a
+											href={product.purchaseSite}
+											target='_blank'
+											rel='noopener noreferrer'
+											className='text-blue-600 hover:text-blue-800 hover:underline font-medium transition-colors duration-150'
+										>
+											Visit Site
+										</a>
+									) : (
+										<span className='text-gray-400'>-</span>
+									)}
+								</td>
+								<td className='p-4 text-gray-700'>{product.contact || '-'}</td>
+								<td className='p-4'>
+									<span className='inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-800'>
+										{product.monthlyUsage || 0}
+									</span>
+								</td>
+								<td className='p-4'>
+									<Button
+										size='sm'
+										onClick={() => onProductBuy(product)}
+										className='bg-blue-600 hover:bg-blue-700 text-white font-medium px-4 py-2 rounded-lg transition-all duration-150 shadow-sm hover:shadow-md'
+									>
+										<ShoppingCart className='h-4 w-4 mr-2' />
+										BUY
+									</Button>
+								</td>
+							</tr>
+						))}
+					</tbody>
+				</table>
+			</div>
+		</div>
+	)
+}
+
+// Product Edit Modal Component - REMOVED
+// const ProductEditModal: React.FC<{
+	open: boolean
+	onClose: () => void
+	product: Product | null
+	onUpdate: (product: Product, data: Partial<ProductFormData>) => void
+}> = ({ open, onClose, product, onUpdate }) => {
+	const [formData, setFormData] = useState({
+		name: '',
+		amount: 0,
+		count: 0,
+		unit: 'pieces' as ProductUnit,
+		purchaseSite: '',
+		supplier: '',
+		contact: '',
+		monthlyUsage: 0,
+		price: 0,
+		category: 'main-products' as ProductCategory,
+		isActive: true,
+	})
+	const [loading, setLoading] = useState(false)
+
+	useEffect(() => {
+		if (product) {
+			setFormData({
+				name: product.name,
+				amount: product.amount || 0,
+				count: product.count || 0,
+				unit: product.unit,
+				purchaseSite: product.purchaseSite || '',
+				supplier: product.supplier || '',
+				contact: product.contact || '',
+				monthlyUsage: product.monthlyUsage || 0,
+				price: product.price,
+				category: product.category,
+				isActive: product.isActive,
+			})
+		}
+	}, [product])
+
+	const handleSubmit = async (e: React.FormEvent) => {
+		e.preventDefault()
+		if (!product) return
+
+		setLoading(true)
+		try {
+			await onUpdate(product, formData)
+			toast.success('Product updated successfully!')
+			onClose()
+		} catch (error) {
+			console.error('Error updating product:', error)
+			toast.error('Failed to update product')
+		} finally {
+			setLoading(false)
+		}
+	}
+
+	if (!product) return null
+
+	return (
+		<Dialog open={open} onOpenChange={onClose}>
+			<DialogContent className='max-w-4xl max-h-[90vh] overflow-y-auto'>
+				<DialogHeader>
+					<DialogTitle className='flex items-center gap-2'>
+						<Edit className='h-5 w-5' />
+						Edit Product
+					</DialogTitle>
+				</DialogHeader>
+
+				<form onSubmit={handleSubmit} className='space-y-6'>
+					<div className='grid grid-cols-2 gap-6'>
+						<div>
+							<Label htmlFor='edit-name'>Product Name *</Label>
+							<Input
+								id='edit-name'
+								value={formData.name}
+								onChange={e =>
+									setFormData(prev => ({ ...prev, name: e.target.value }))
+								}
+								placeholder='Enter product name'
+								required
+							/>
+						</div>
+						<div>
+							<Label htmlFor='edit-amount'>Amount (₩) *</Label>
+							<Input
+								id='edit-amount'
+								type='number'
+								value={formData.amount}
+								onChange={e =>
+									setFormData(prev => ({
+										...prev,
+										amount: Number(e.target.value),
+									}))
+								}
+								placeholder='0'
+								min='0.01'
+								step='0.01'
+								required
+							/>
+						</div>
+						<div>
+							<Label htmlFor='edit-count'>Count *</Label>
+							<Input
+								id='edit-count'
+								type='number'
+								value={formData.count}
+								onChange={e =>
+									setFormData(prev => ({
+										...prev,
+										count: Number(e.target.value),
+									}))
+								}
+								placeholder='0'
+								min='0'
+								required
+							/>
+						</div>
+						<div>
+							<Label htmlFor='edit-unit'>Unit *</Label>
+							<Select
+								value={formData.unit}
+								onValueChange={value =>
+									setFormData(prev => ({ ...prev, unit: value as ProductUnit }))
+								}
+							>
+								<SelectTrigger>
+									<SelectValue />
+								</SelectTrigger>
+								<SelectContent>
+									{UNITS.map(unit => (
+										<SelectItem key={unit} value={unit}>
+											{unit}
+										</SelectItem>
+									))}
+								</SelectContent>
+							</Select>
+						</div>
+						<div>
+							<Label htmlFor='edit-purchaseSite'>Purchase Site *</Label>
+							<Input
+								id='edit-purchaseSite'
+								value={formData.purchaseSite}
+								onChange={e =>
+									setFormData(prev => ({
+										...prev,
+										purchaseSite: e.target.value,
+									}))
+								}
+								placeholder='Enter purchase site'
+								required
+							/>
+						</div>
+						<div>
+							<Label htmlFor='edit-supplier'>Supplier *</Label>
+							<Input
+								id='edit-supplier'
+								value={formData.supplier}
+								onChange={e =>
+									setFormData(prev => ({ ...prev, supplier: e.target.value }))
+								}
+								placeholder='Enter supplier name'
+								required
+							/>
+						</div>
+						<div>
+							<Label htmlFor='edit-contact'>Contact *</Label>
+							<Input
+								id='edit-contact'
+								value={formData.contact}
+								onChange={e =>
+									setFormData(prev => ({ ...prev, contact: e.target.value }))
+								}
+								placeholder='Enter contact information'
+								required
+							/>
+						</div>
+						<div>
+							<Label htmlFor='edit-monthlyUsage'>Monthly Usage *</Label>
+							<Input
+								id='edit-monthlyUsage'
+								type='number'
+								value={formData.monthlyUsage}
+								onChange={e =>
+									setFormData(prev => ({
+										...prev,
+										monthlyUsage: Number(e.target.value),
+									}))
+								}
+								placeholder='0'
+								min='0'
+								required
+							/>
+						</div>
+						<div>
+							<Label htmlFor='edit-price'>Unit Price (₩) *</Label>
+							<Input
+								id='edit-price'
+								type='number'
+								value={formData.price}
+								onChange={e =>
+									setFormData(prev => ({
+										...prev,
+										price: Number(e.target.value),
+									}))
+								}
+								placeholder='0'
+								min='0.01'
+								step='0.01'
+								required
+							/>
+						</div>
+						<div>
+							<Label htmlFor='edit-category'>Category *</Label>
+							<Select
+								value={formData.category}
+								onValueChange={value =>
+									setFormData(prev => ({
+										...prev,
+										category: value as ProductCategory,
+									}))
+								}
+							>
+								<SelectTrigger>
+									<SelectValue />
+								</SelectTrigger>
+								<SelectContent>
+									{CATEGORIES.map(cat => (
+										<SelectItem key={cat} value={cat}>
+											{cat
+												.replace('-', ' ')
+												.replace(/\b\w/g, l => l.toUpperCase())}
+										</SelectItem>
+									))}
+								</SelectContent>
+							</Select>
+						</div>
+						<div>
+							<Label htmlFor='edit-isActive'>Status</Label>
+							<Select
+								value={formData.isActive ? 'active' : 'inactive'}
+								onValueChange={value =>
+									setFormData(prev => ({
+										...prev,
+										isActive: value === 'active',
+									}))
+								}
+							>
+								<SelectTrigger>
+									<SelectValue />
+								</SelectTrigger>
+								<SelectContent>
+									<SelectItem value='active'>Active</SelectItem>
+									<SelectItem value='inactive'>Inactive</SelectItem>
+								</SelectContent>
+							</Select>
+						</div>
+					</div>
+
+					<div className='flex justify-end gap-3 pt-4 border-t'>
+						<Button type='button' variant='outline' onClick={onClose}>
+							Cancel
+						</Button>
+						<Button type='submit' disabled={loading}>
+							<Edit className='h-4 w-4 mr-2' />
+							{loading ? 'Updating...' : 'Update Product'}
+						</Button>
+					</div>
+				</form>
+			</DialogContent>
+		</Dialog>
+	)
+}
+
+// Buy with Edit Modal Component
+const BuyWithEditModal: React.FC<{
+	open: boolean
+	onClose: () => void
+	product: Product | null
+	onBuy: (product: Product, updatedData?: Partial<ProductFormData>) => void
+}> = ({ open, onClose, product, onBuy }) => {
+	const [formData, setFormData] = useState({
+		name: '',
+		amount: 0,
+		count: 0,
+		unit: 'pieces' as ProductUnit,
+		purchaseSite: '',
+		supplier: '',
+		contact: '',
+		monthlyUsage: 0,
+		price: 0,
+		category: 'main-products' as ProductCategory,
+		description: '',
+	})
+	const [loading, setLoading] = useState(false)
+	const [hasChanges, setHasChanges] = useState(false)
+
+	useEffect(() => {
+		if (product) {
+			const initialData = {
+				name: product.name,
+				amount: product.amount || 0,
+				count: product.count || 0,
+				unit: product.unit,
+				purchaseSite: product.purchaseSite || '',
+				supplier: product.supplier || '',
+				contact: product.contact || '',
+				monthlyUsage: product.monthlyUsage || 0,
+				price: product.price,
+				category: product.category,
+				description: product.description || '',
+			}
+			setFormData(initialData)
+			setHasChanges(false)
+		}
+	}, [product])
+
+	const handleInputChange = (field: string, value: string | number) => {
+		setFormData(prev => ({ ...prev, [field]: value }))
+		setHasChanges(true)
+	}
+
+	const handleBuy = async () => {
+		setLoading(true)
+		try {
+			if (hasChanges) {
+				// Update product first, then buy
+				await productsApi.updateProduct(product!._id, formData)
+				toast.success('Product updated successfully!')
+			}
+			
+			// Create purchase
+			onBuy(product!, hasChanges ? formData : undefined)
+			onClose()
+		} catch (error) {
+			console.error('Error updating product:', error)
+			toast.error('Failed to update product')
+		} finally {
+			setLoading(false)
+		}
+	}
+
+	if (!product) return null
+
+	return (
+		<Dialog open={open} onOpenChange={onClose}>
+			<DialogContent className='max-w-2xl max-h-[90vh] overflow-y-auto'>
+				<DialogHeader>
+					<DialogTitle className='flex items-center gap-2'>
+						<ShoppingCart className='h-5 w-5' />
+						Buy Product - {product.name}
+					</DialogTitle>
+				</DialogHeader>
+
+				<div className='space-y-6'>
+					{/* Product Image */}
+					<div className='flex justify-center'>
+						{product.images && product.images.length > 0 ? (
+							<div className='w-32 h-32 rounded-lg overflow-hidden shadow-lg border border-gray-200'>
+								<Image
+									src={product.images[0].url}
+									alt={product.name}
+									width={128}
+									height={128}
+									className='w-full h-full object-cover'
+								/>
+							</div>
+						) : (
+							<div className='w-32 h-32 bg-gradient-to-br from-gray-100 to-gray-200 rounded-lg flex items-center justify-center shadow-lg border border-gray-200'>
+								<Package className='h-16 w-16 text-gray-400' />
+							</div>
+						)}
+					</div>
+
+					{/* Product Details Form */}
+					<div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
+						<div>
+							<Label htmlFor='name'>Product Name</Label>
+							<Input
+								id='name'
+								value={formData.name}
+								onChange={e => handleInputChange('name', e.target.value)}
+								className='mt-1'
+							/>
+						</div>
+
+						<div>
+							<Label htmlFor='category'>Category</Label>
+							<Select
+								value={formData.category}
+								onValueChange={value => handleInputChange('category', value)}
+							>
+								<SelectTrigger className='mt-1'>
+									<SelectValue />
+								</SelectTrigger>
+								<SelectContent>
+									<SelectItem value='main-products'>Main Products</SelectItem>
+									<SelectItem value='side-products'>Side Products</SelectItem>
+									<SelectItem value='beverages'>Beverages</SelectItem>
+									<SelectItem value='snacks'>Snacks</SelectItem>
+									<SelectItem value='supplies'>Supplies</SelectItem>
+								</SelectContent>
+							</Select>
+						</div>
+
+						<div>
+							<Label htmlFor='amount'>Amount</Label>
+							<Input
+								id='amount'
+								type='number'
+								value={formData.amount}
+								onChange={e => handleInputChange('amount', parseInt(e.target.value) || 0)}
+								className='mt-1'
+							/>
+						</div>
+
+						<div>
+							<Label htmlFor='count'>Count</Label>
+							<Input
+								id='count'
+								type='number'
+								value={formData.count}
+								onChange={e => handleInputChange('count', parseInt(e.target.value) || 0)}
+								className='mt-1'
+							/>
+						</div>
+
+						<div>
+							<Label htmlFor='unit'>Unit</Label>
+							<Select
+								value={formData.unit}
+								onValueChange={value => handleInputChange('unit', value)}
+							>
+								<SelectTrigger className='mt-1'>
+									<SelectValue />
+								</SelectTrigger>
+								<SelectContent>
+									<SelectItem value='pieces'>Pieces</SelectItem>
+									<SelectItem value='kg'>Kilograms</SelectItem>
+									<SelectItem value='liters'>Liters</SelectItem>
+									<SelectItem value='boxes'>Boxes</SelectItem>
+									<SelectItem value='bottles'>Bottles</SelectItem>
+									<SelectItem value='cans'>Cans</SelectItem>
+									<SelectItem value='packets'>Packets</SelectItem>
+								</SelectContent>
+							</Select>
+						</div>
+
+						<div>
+							<Label htmlFor='price'>Unit Price (₩)</Label>
+							<Input
+								id='price'
+								type='number'
+								value={formData.price}
+								onChange={e => handleInputChange('price', parseFloat(e.target.value) || 0)}
+								className='mt-1'
+							/>
+						</div>
+
+						<div>
+							<Label htmlFor='supplier'>Supplier</Label>
+							<Input
+								id='supplier'
+								value={formData.supplier}
+								onChange={e => handleInputChange('supplier', e.target.value)}
+								className='mt-1'
+							/>
+						</div>
+
+						<div>
+							<Label htmlFor='purchaseSite'>Purchase Site</Label>
+							<Input
+								id='purchaseSite'
+								value={formData.purchaseSite}
+								onChange={e => handleInputChange('purchaseSite', e.target.value)}
+								className='mt-1'
+								placeholder='https://...'
+							/>
+						</div>
+
+						<div>
+							<Label htmlFor='contact'>Contact</Label>
+							<Input
+								id='contact'
+								value={formData.contact}
+								onChange={e => handleInputChange('contact', e.target.value)}
+								className='mt-1'
+							/>
+						</div>
+
+						<div>
+							<Label htmlFor='monthlyUsage'>Monthly Usage</Label>
+							<Input
+								id='monthlyUsage'
+								type='number'
+								value={formData.monthlyUsage}
+								onChange={e => handleInputChange('monthlyUsage', parseInt(e.target.value) || 0)}
+								className='mt-1'
+							/>
+						</div>
+					</div>
+
+					<div>
+						<Label htmlFor='description'>Description</Label>
+						<Input
+							id='description'
+							value={formData.description}
+							onChange={e => handleInputChange('description', e.target.value)}
+							className='mt-1'
+						/>
+					</div>
+
+					{/* Purchase Summary */}
+					<div className='bg-gradient-to-r from-blue-50 to-indigo-50 p-4 rounded-lg border border-blue-200'>
+						<h4 className='font-semibold text-gray-800 mb-2'>Purchase Summary</h4>
+						<div className='grid grid-cols-2 gap-4 text-sm'>
+							<div>
+								<span className='text-gray-600'>Total Quantity:</span>
+								<span className='font-medium ml-2'>{formData.amount * formData.count} {formData.unit}</span>
+							</div>
+							<div>
+								<span className='text-gray-600'>Total Price:</span>
+								<span className='font-bold text-green-600 ml-2'>
+									₩{(formData.amount * formData.count * formData.price).toLocaleString()}
+								</span>
+							</div>
+						</div>
+					</div>
+				</div>
+
+				<div className='flex justify-end gap-3 pt-4'>
+					<Button variant='outline' onClick={onClose} disabled={loading}>
+						Cancel
+					</Button>
+					<Button
+						onClick={handleBuy}
+						disabled={loading}
+						className='bg-blue-600 hover:bg-blue-700 text-white'
+					>
+						{loading ? (
+							<>
+								<div className='animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2'></div>
+								Processing...
+							</>
+						) : (
+							<>
+								<ShoppingCart className='h-4 w-4 mr-2' />
+								{hasChanges ? 'Update & Buy' : 'Buy Now'}
+							</>
+						)}
+					</Button>
+				</div>
+			</DialogContent>
+		</Dialog>
+	)
+}
+
+// Add Product Modal Component
+const AddProductModal: React.FC<{
+	open: boolean
+	onClose: () => void
+	onProductCreated?: () => void
+}> = ({ open, onClose, onProductCreated }) => {
+	const [formData, setFormData] = useState({
+		name: '',
+		amount: 0,
+		count: 0,
+		unit: 'pieces' as ProductUnit,
+		purchaseSite: '',
+		supplier: '',
+		contact: '',
+		monthlyUsage: 0,
+		images: [] as ProductImage[],
+		category: 'main-products' as ProductCategory,
+		price: 0,
+		isActive: true,
+	})
+	const [loading, setLoading] = useState(false)
+
+	const handleSubmit = async (e: React.FormEvent) => {
+		e.preventDefault()
+		setLoading(true)
+		try {
+			console.log('Creating product with form data:', formData)
+			// Call the products API to create the product
+			const result = await productsApi.createProduct(formData)
+			console.log('Product created successfully:', result)
+			toast.success('Product created successfully!')
+			onClose()
+			onProductCreated?.()
+			// Reset form
+			setFormData({
+				name: '',
+				amount: 0,
+				count: 0,
+				unit: 'pieces',
+				purchaseSite: '',
+				supplier: '',
+				contact: '',
+				monthlyUsage: 0,
+				images: [],
+				category: 'main-products',
+				price: 0,
+				isActive: true,
+			})
+		} catch (error) {
+			console.error('Error creating product:', error)
+			toast.error('Failed to create product')
+		} finally {
+			setLoading(false)
+		}
+	}
+
+	return (
+		<Dialog open={open} onOpenChange={onClose}>
+			<DialogContent className='max-w-4xl max-h-[90vh] overflow-y-auto'>
+				<DialogHeader>
+					<DialogTitle className='flex items-center gap-2'>
+						<Package className='h-5 w-5' />
+						Add New Product
+					</DialogTitle>
+				</DialogHeader>
+
+				<form onSubmit={handleSubmit} className='space-y-6'>
+					<div className='grid grid-cols-2 gap-6'>
+						<div>
+							<Label htmlFor='name'>Product Name *</Label>
+							<Input
+								id='name'
+								value={formData.name}
+								onChange={e =>
+									setFormData(prev => ({ ...prev, name: e.target.value }))
+								}
+								placeholder='Enter product name'
+								required
+							/>
+						</div>
+						<div>
+							<Label htmlFor='amount'>Amount (₩) *</Label>
+							<Input
+								id='amount'
+								type='number'
+								value={formData.amount}
+								onChange={e =>
+									setFormData(prev => ({
+										...prev,
+										amount: Number(e.target.value),
+									}))
+								}
+								placeholder='0'
+								min='0'
+								step='0.01'
+								required
+							/>
+						</div>
+						<div>
+							<Label htmlFor='price'>Unit Price (₩) *</Label>
+							<Input
+								id='price'
+								type='number'
+								value={formData.price}
+								onChange={e =>
+									setFormData(prev => ({
+										...prev,
+										price: Number(e.target.value),
+									}))
+								}
+								placeholder='0'
+								min='0.01'
+								step='0.01'
+								required
+							/>
+						</div>
+						<div>
+							<Label htmlFor='count'>Count *</Label>
+							<Input
+								id='count'
+								type='number'
+								value={formData.count}
+								onChange={e =>
+									setFormData(prev => ({
+										...prev,
+										count: Number(e.target.value),
+									}))
+								}
+								placeholder='0'
+								min='0'
+								required
+							/>
+						</div>
+						<div>
+							<Label htmlFor='unit'>Unit *</Label>
+							<Select
+								value={formData.unit}
+								onValueChange={value =>
+									setFormData(prev => ({ ...prev, unit: value as ProductUnit }))
+								}
+							>
+								<SelectTrigger>
+									<SelectValue />
+								</SelectTrigger>
+								<SelectContent>
+									{UNITS.map(unit => (
+										<SelectItem key={unit} value={unit}>
+											{unit}
+										</SelectItem>
+									))}
+								</SelectContent>
+							</Select>
+						</div>
+						<div>
+							<Label htmlFor='purchaseSite'>Purchase Site *</Label>
+							<Input
+								id='purchaseSite'
+								value={formData.purchaseSite}
+								onChange={e =>
+									setFormData(prev => ({
+										...prev,
+										purchaseSite: e.target.value,
+									}))
+								}
+								placeholder='Enter purchase site'
+								required
+							/>
+						</div>
+						<div>
+							<Label htmlFor='supplier'>Supplier *</Label>
+							<Input
+								id='supplier'
+								value={formData.supplier}
+								onChange={e =>
+									setFormData(prev => ({ ...prev, supplier: e.target.value }))
+								}
+								placeholder='Enter supplier name'
+								required
+							/>
+						</div>
+						<div>
+							<Label htmlFor='contact'>Contact *</Label>
+							<Input
+								id='contact'
+								value={formData.contact}
+								onChange={e =>
+									setFormData(prev => ({ ...prev, contact: e.target.value }))
+								}
+								placeholder='Enter contact information'
+								required
+							/>
+						</div>
+						<div>
+							<Label htmlFor='monthlyUsage'>Monthly Usage *</Label>
+							<Input
+								id='monthlyUsage'
+								type='number'
+								value={formData.monthlyUsage}
+								onChange={e =>
+									setFormData(prev => ({
+										...prev,
+										monthlyUsage: Number(e.target.value),
+									}))
+								}
+								placeholder='0'
+								min='0'
+								required
+							/>
+						</div>
+						<div>
+							<Label htmlFor='category'>Category *</Label>
+							<Select
+								value={formData.category}
+								onValueChange={value =>
+									setFormData(prev => ({
+										...prev,
+										category: value as ProductCategory,
+									}))
+								}
+							>
+								<SelectTrigger>
+									<SelectValue />
+								</SelectTrigger>
+								<SelectContent>
+									{CATEGORIES.map(cat => (
+										<SelectItem key={cat} value={cat}>
+											{cat
+												.replace('-', ' ')
+												.replace(/\b\w/g, l => l.toUpperCase())}
+										</SelectItem>
+									))}
+								</SelectContent>
+							</Select>
+						</div>
+						<div>
+							<Label htmlFor='isActive'>Status</Label>
+							<Select
+								value={formData.isActive ? 'active' : 'inactive'}
+								onValueChange={value =>
+									setFormData(prev => ({
+										...prev,
+										isActive: value === 'active',
+									}))
+								}
+							>
+								<SelectTrigger>
+									<SelectValue />
+								</SelectTrigger>
+								<SelectContent>
+									<SelectItem value='active'>Active</SelectItem>
+									<SelectItem value='inactive'>Inactive</SelectItem>
+								</SelectContent>
+							</Select>
+						</div>
+					</div>
+
+					{/* Image Upload */}
+					<div>
+						<Label>Product Images</Label>
+						<ImageUpload
+							images={formData.images}
+							onImagesChange={images =>
+								setFormData(prev => ({ ...prev, images }))
+							}
+							maxImages={5}
+						/>
+					</div>
+
+					{/* Action Buttons */}
+					<div className='flex justify-end gap-3 pt-4 border-t'>
+						<Button type='button' variant='outline' onClick={onClose}>
+							Cancel
+						</Button>
+						<Button type='submit' disabled={loading}>
+							<Plus className='h-4 w-4 mr-2' />
+							{loading ? 'Creating...' : 'Create Product'}
+						</Button>
+					</div>
+				</form>
+			</DialogContent>
+		</Dialog>
+	)
+}
+
+const PurchasesPage: React.FC = () => {
+	const [purchases, setPurchases] = useState<ProductPurchase[]>([])
+	const [pagination, setPagination] = useState<PaginationInfo>({
+		current: 1,
+		pages: 1,
+		total: 0,
+	})
+	const [loading, setLoading] = useState(true)
+	const [actionLoading, setActionLoading] = useState<string | null>(null)
+	const [showForm, setShowForm] = useState(false)
+	const [editingPurchase, setEditingPurchase] =
+		useState<ProductPurchase | null>(null)
+	const [viewingPurchase, setViewingPurchase] =
+		useState<ProductPurchase | null>(null)
+	const [filters, setFilters] = useState<ProductPurchaseFilters>({
+		category: 'all',
+		branch: 'all',
+		status: 'all',
+		search: '',
+		page: 1,
+		limit: 12,
+	})
+
+	// New state for product list functionality
+	const [selectedProduct, setSelectedProduct] = useState<Product | null>(null)
+	const [showQuickPurchaseModal, setShowQuickPurchaseModal] = useState(false)
+	const [showAddProductModal, setShowAddProductModal] = useState(false)
+	const [productRefreshTrigger, setProductRefreshTrigger] = useState(0)
+	const [selectedProductForBuy, setSelectedProductForBuy] =
+		useState<Product | null>(null)
+	const [showBuyWithEditModal, setShowBuyWithEditModal] = useState(false)
+
+	// Handler for product buy
+	const handleProductBuy = (product: Product) => {
+		setSelectedProductForBuy(product)
+		setShowBuyWithEditModal(true)
+	}
+
+
+	// Handler for buy with edit
+	const handleBuyWithEdit = async (product: Product, updatedData?: Partial<ProductFormData>) => {
+		try {
+			console.log('Creating purchase from product:', product)
+			console.log('Updated data:', updatedData)
+			
+			// Use updated data if available, otherwise use original product data
+			const finalData = updatedData || product
+			
+			const purchaseData: ProductPurchaseFormData = {
+				date: new Date().toISOString().split('T')[0],
+				category: finalData.category || product.category,
+				productName: finalData.name || product.name,
+				price: finalData.price || product.price,
+				providerName: finalData.supplier || product.supplier || '',
+				paymentWay: 'cash',
+				quantity: finalData.count || product.count || 1,
+				unit: finalData.unit || product.unit,
+				branch: 'Main Branch', // Default branch
+				notes: `Purchase from product catalog: ${finalData.name || product.name}`,
+				images: product.images || [],
+			}
+
+			console.log('Purchase data:', purchaseData)
+			const result = await purchasesApi.createPurchase(purchaseData)
+			console.log('Purchase created:', result)
+			toast.success('Purchase order created successfully!')
+
+			// Refresh purchases list
+			fetchPurchases()
+			// Refresh product list if product was updated
+			if (updatedData) {
+				setProductRefreshTrigger(prev => prev + 1)
+			}
+		} catch (error) {
+			console.error('Error creating purchase:', error)
+			toast.error('Failed to create purchase order')
+		}
+	}
+
+
+	const fetchPurchases = useCallback(async () => {
+		setLoading(true)
+		console.log('Fetching purchases with filters:', filters)
+		try {
+			const response = await purchasesApi.getPurchases(filters)
+			console.log('API Response:', response)
+			// The response structure
+			const purchases = response.purchases || []
+			const pagination = response.pagination || {
+				current: 1,
+				pages: 1,
+				total: 0,
+			}
+			console.log('Extracted purchases:', purchases)
+			console.log('Extracted pagination:', pagination)
+			setPurchases(purchases)
+			setPagination(pagination)
+		} catch (error: unknown) {
+			console.error('Error fetching purchases:', error)
+			const errorWithResponse = error as { response?: { data?: unknown } }
+			console.error('Error details:', errorWithResponse.response?.data)
+			toast.error('Failed to fetch purchases')
+			// Reset to default values on error
+			setPurchases([])
+			setPagination({
+				current: 1,
+				pages: 1,
+				total: 0,
+			})
+		} finally {
+			setLoading(false)
+		}
+	}, [filters])
+
+	useEffect(() => {
+		fetchPurchases()
+	}, [fetchPurchases])
+
+	const handleCreatePurchase = async (data: ProductPurchaseFormData) => {
+		setActionLoading('create')
+		try {
+			const newPurchase = await purchasesApi.createPurchase(data)
+			setPurchases(prev => [newPurchase, ...prev])
+			setShowForm(false)
+			toast.success('Purchase added successfully!')
+		} catch (error: unknown) {
+			console.error('Error creating purchase:', error)
+			console.error(
+				'Error response:',
+				(error as { response?: { data?: unknown } })?.response?.data
+			)
+
+			let errorMessage = 'Failed to add purchase'
+
+			const errorWithResponse = error as {
+				response?: {
+					data?: { message?: string; errors?: Array<{ message: string }> }
+				}
+				message?: string
+			}
+
+			if (errorWithResponse.response?.data?.message) {
+				errorMessage = errorWithResponse.response.data.message
+			} else if (errorWithResponse.response?.data?.errors) {
+				// Handle validation errors
+				const validationErrors = errorWithResponse.response.data.errors
+				if (Array.isArray(validationErrors) && validationErrors.length > 0) {
+					errorMessage = `Validation error: ${validationErrors
+						.map((err: { message: string }) => err.message)
+						.join(', ')}`
+				}
+			} else if (errorWithResponse.message) {
+				errorMessage = errorWithResponse.message
+			}
+
+			toast.error(errorMessage)
+		} finally {
+			setActionLoading(null)
+		}
+	}
+
+	const handleUpdatePurchase = async (data: ProductPurchaseFormData) => {
+		if (!editingPurchase) return
+
+		setActionLoading('update')
+		try {
+			const updatedPurchase = await purchasesApi.updatePurchase(
+				editingPurchase._id,
+				data
+			)
+			setPurchases(prev =>
+				prev.map(p => (p._id === editingPurchase._id ? updatedPurchase : p))
+			)
+			setEditingPurchase(null)
+			toast.success('Purchase updated successfully!')
+		} catch (error) {
+			console.error('Error updating purchase:', error)
+			toast.error('Failed to update purchase')
+		} finally {
+			setActionLoading(null)
+		}
+	}
+
+	const handleDeletePurchase = async (id: string) => {
+		setActionLoading('delete')
+		try {
+			await purchasesApi.deletePurchase(id)
+			setPurchases(prev => prev.filter(p => p._id !== id))
+			toast.success('Purchase deleted successfully!')
+		} catch (error) {
+			console.error('Error deleting purchase:', error)
+			toast.error('Failed to delete purchase')
+		} finally {
+			setActionLoading(null)
+		}
+	}
+
+	const handleSearch = (query: string) => {
+		setFilters(prev => ({ ...prev, search: query, page: 1 }))
+	}
+
+	// Handler for quick purchase form submission
+	const handleQuickPurchaseSubmit = async (data: ProductPurchaseFormData) => {
+		setActionLoading('create')
+		try {
+			await purchasesApi.createPurchase(data)
+			toast.success('Purchase created successfully')
+			setShowQuickPurchaseModal(false)
+			setSelectedProduct(null)
+			fetchPurchases()
+		} catch (error) {
+			console.error('Create purchase error:', error)
+			toast.error('Failed to create purchase')
+		} finally {
+			setActionLoading(null)
+		}
+	}
+
+	const PurchasesSkeleton = () => (
+		<>
+			{/* Desktop Table Skeleton */}
+			<div className='hidden lg:block'>
+				<Card>
+					<CardContent className='p-0'>
+						<div className='overflow-x-auto'>
+							<table className='w-full'>
+								<thead className='bg-gray-50 border-b'>
+									<tr>
+										<th className='px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
+											Image
+										</th>
+										<th className='px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
+											Product
+										</th>
+										<th className='px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
+											Status
+										</th>
+										<th className='px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
+											Date
+										</th>
+										<th className='px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
+											Category
+										</th>
+										<th className='px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
+											Branch
+										</th>
+										<th className='px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
+											Payment
+										</th>
+										<th className='px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
+											Quantity
+										</th>
+										<th className='px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
+											Unit Price
+										</th>
+										<th className='px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
+											Total
+										</th>
+										<th className='px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
+											Actions
+										</th>
+									</tr>
+								</thead>
+								<tbody className='bg-white divide-y divide-gray-200'>
+									{Array.from({ length: 6 }).map((_, index) => (
+										<tr key={index} className='hover:bg-gray-50'>
+											<td className='px-4 py-3'>
+												<Skeleton className='h-12 w-12 rounded-lg' />
+											</td>
+											<td className='px-4 py-3'>
+												<Skeleton className='h-4 w-32 mb-1' />
+												<Skeleton className='h-3 w-24' />
+											</td>
+											<td className='px-4 py-3'>
+												<Skeleton className='h-6 w-16 rounded-full' />
+											</td>
+											<td className='px-4 py-3'>
+												<Skeleton className='h-4 w-20' />
+											</td>
+											<td className='px-4 py-3'>
+												<Skeleton className='h-4 w-24' />
+											</td>
+											<td className='px-4 py-3'>
+												<Skeleton className='h-4 w-20' />
+											</td>
+											<td className='px-4 py-3'>
+												<Skeleton className='h-4 w-16' />
+											</td>
+											<td className='px-4 py-3'>
+												<Skeleton className='h-4 w-16' />
+											</td>
+											<td className='px-4 py-3'>
+												<Skeleton className='h-4 w-20' />
+											</td>
+											<td className='px-4 py-3'>
+												<Skeleton className='h-4 w-24' />
+											</td>
+											<td className='px-4 py-3'>
+												<div className='flex items-center gap-2'>
+													<Skeleton className='h-8 w-8 rounded' />
+													<Skeleton className='h-8 w-8 rounded' />
+												</div>
+											</td>
+										</tr>
+									))}
+								</tbody>
+							</table>
+						</div>
+					</CardContent>
+				</Card>
+			</div>
+
+			{/* Mobile Card Skeleton */}
+			<div className='lg:hidden space-y-4'>
+				{Array.from({ length: 6 }).map((_, index) => (
+					<Card key={index}>
+						<CardContent className='p-4'>
+							<div className='flex justify-between items-start mb-3'>
+								<div className='flex items-start gap-3 flex-1'>
+									<Skeleton className='h-16 w-16 rounded-lg flex-shrink-0' />
+									<div className='flex-1'>
+										<Skeleton className='h-6 w-3/4 mb-2' />
+										<Skeleton className='h-4 w-1/2 mb-2' />
+										<Skeleton className='h-6 w-16 rounded-full' />
+									</div>
+								</div>
+								<div className='flex items-center gap-2'>
+									<Skeleton className='h-8 w-8 rounded' />
+									<Skeleton className='h-8 w-8 rounded' />
+								</div>
+							</div>
+							<div className='grid grid-cols-2 gap-3 mb-3'>
+								<Skeleton className='h-4 w-full' />
+								<Skeleton className='h-4 w-full' />
+								<Skeleton className='h-4 w-full' />
+								<Skeleton className='h-4 w-full' />
+							</div>
+							<div className='flex justify-between items-center pt-3 border-t'>
+								<Skeleton className='h-4 w-20' />
+								<Skeleton className='h-6 w-24' />
+							</div>
+						</CardContent>
+					</Card>
+				))}
+			</div>
+		</>
+	)
+
+	return (
+		<ProtectedRoute requiredRole='admin'>
+			<AdminLayout>
+				<div className='h-full overflow-y-auto'>
+					<div className='min-h-full p-4 sm:p-6 space-y-6'>
+						{/* Header */}
+						<div className='flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4'>
+							<div>
+								<h1 className='text-xl sm:text-2xl font-bold text-gray-900'>
+									Product Purchases
+								</h1>
+								<p className='text-sm sm:text-base text-gray-600'>
+									Manage product purchases for branches
+								</p>
+							</div>
+							<div className='flex gap-2'>
+								<Button
+									onClick={() => setShowForm(true)}
+									className='w-full sm:w-auto'
+									variant='outline'
+								>
+									<Plus className='h-4 w-4 mr-2' />
+									Manual Purchase
+								</Button>
+								<Button
+									onClick={() => {
+										setSelectedProduct(null)
+										setShowQuickPurchaseModal(true)
+									}}
+									className='w-full sm:w-auto'
+								>
+									<ShoppingCart className='h-4 w-4 mr-2' />
+									Add Product Purchase
+								</Button>
+							</div>
+						</div>
+
+						{/* Tabs */}
+						<Tabs defaultValue='purchases' className='w-full'>
+							<TabsList className='grid w-full grid-cols-2'>
+								<TabsTrigger value='purchases'>Purchase History</TabsTrigger>
+								<TabsTrigger value='products'>Product Catalog</TabsTrigger>
+							</TabsList>
+
+							<TabsContent value='purchases' className='space-y-6'>
+								{/* Filters */}
+								<Card>
+									<CardContent className='p-4'>
+										<div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4'>
+											<div className='relative'>
+												<Search className='absolute left-3 top-3 h-4 w-4 text-gray-400' />
+												<Input
+													placeholder='Search purchases...'
+													value={filters.search || ''}
+													onChange={e => handleSearch(e.target.value)}
+													className='pl-10'
+												/>
+											</div>
+											<Select
+												value={filters.category || 'all'}
+												onValueChange={value =>
+													setFilters(prev => ({
+														...prev,
+														category: value as ProductCategory | 'all',
+														page: 1,
+													}))
+												}
+											>
+												<SelectTrigger>
+													<SelectValue placeholder='Category' />
+												</SelectTrigger>
+												<SelectContent>
+													<SelectItem value='all'>All Categories</SelectItem>
+													{CATEGORIES.map(cat => (
+														<SelectItem key={cat} value={cat}>
+															{cat
+																.replace('-', ' ')
+																.replace(/\b\w/g, l => l.toUpperCase())}
+														</SelectItem>
+													))}
+												</SelectContent>
+											</Select>
+											<Input
+												placeholder='Branch'
+												value={
+													filters.branch === 'all' ? '' : filters.branch || ''
+												}
+												onChange={e =>
+													setFilters(prev => ({
+														...prev,
+														branch: e.target.value || 'all',
+														page: 1,
+													}))
+												}
+											/>
+											<Button
+												variant='outline'
+												onClick={() =>
+													setFilters({
+														category: 'all',
+														branch: 'all',
+														search: '',
+														page: 1,
+														limit: 12,
+													})
+												}
+											>
+												<Filter className='h-4 w-4 mr-2' />
+												Clear
+											</Button>
+										</div>
+									</CardContent>
+								</Card>
+
+								{/* Stats Cards */}
+								<div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4'>
+									<Card>
+										<CardContent className='p-4'>
+											<div className='flex items-center justify-between'>
+												<div>
+													<p className='text-sm font-medium text-gray-600'>
+														Total Purchases
+													</p>
+													<p className='text-2xl font-bold'>
+														{pagination?.total || 0}
+													</p>
+												</div>
+												<Package className='h-8 w-8 text-blue-600' />
+											</div>
+										</CardContent>
+									</Card>
+									<Card>
+										<CardContent className='p-4'>
+											<div className='flex items-center justify-between'>
+												<div>
+													<p className='text-sm font-medium text-gray-600'>
+														Pending
+													</p>
+													<p className='text-2xl font-bold text-yellow-600'>
+														{
+															purchases.filter(p => p.status === 'pending')
+																.length
+														}
+													</p>
+												</div>
+												<Calendar className='h-8 w-8 text-yellow-600' />
+											</div>
+										</CardContent>
+									</Card>
+									<Card>
+										<CardContent className='p-4'>
+											<div className='flex items-center justify-between'>
+												<div>
+													<p className='text-sm font-medium text-gray-600'>
+														Completed
+													</p>
+													<p className='text-2xl font-bold text-green-600'>
+														{
+															purchases.filter(p => p.status === 'received')
+																.length
+														}
+													</p>
+												</div>
+												<Package className='h-8 w-8 text-green-600' />
+											</div>
+										</CardContent>
+									</Card>
+									<Card>
+										<CardContent className='p-4'>
+											<div className='flex items-center justify-between'>
+												<div>
+													<p className='text-sm font-medium text-gray-600'>
+														Total Value
+													</p>
+													<p className='text-2xl font-bold text-blue-600'>
+														₩
+														{purchases
+															.reduce((sum, p) => sum + p.totalAmount, 0)
+															.toLocaleString()}
+													</p>
+												</div>
+												<DollarSign className='h-8 w-8 text-blue-600' />
+											</div>
+										</CardContent>
+									</Card>
+								</div>
+
+								{/* Purchases List */}
+								{loading ? (
+									<PurchasesSkeleton />
+								) : purchases.length === 0 ? (
+									<Card>
+										<CardContent className='p-8 text-center'>
+											<Package className='h-12 w-12 mx-auto text-gray-400 mb-4' />
+											<h3 className='text-lg font-medium text-gray-900 mb-2'>
+												No purchases found
+											</h3>
+											<p className='text-gray-600 mb-4'>
+												Get started by adding your first purchase.
+											</p>
+											<Button onClick={() => setShowForm(true)}>
+												<Plus className='h-4 w-4 mr-2' />
+												Add Purchase
+											</Button>
+										</CardContent>
+									</Card>
+								) : (
+									<>
+										{/* Desktop Table View */}
+										<div className='hidden lg:block'>
+											<Card>
+												<CardContent className='p-0'>
+													<div className='overflow-x-auto'>
+														<table className='w-full'>
+															<thead className='bg-gray-50 border-b'>
+																<tr>
+																	<th className='px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
+																		Image
+																	</th>
+																	<th className='px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
+																		Product
+																	</th>
+																	<th className='px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
+																		Date
+																	</th>
+																	<th className='px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
+																		Category
+																	</th>
+																	<th className='px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
+																		Branch
+																	</th>
+																	<th className='px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
+																		Payment
+																	</th>
+																	<th className='px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
+																		Quantity
+																	</th>
+																	<th className='px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
+																		Unit Price
+																	</th>
+																	<th className='px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
+																		Total
+																	</th>
+																	<th className='px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
+																		Actions
+																	</th>
+																</tr>
+															</thead>
+															<tbody className='bg-white divide-y divide-gray-200'>
+																{purchases.map(purchase => (
+																	<PurchaseItem
+																		key={purchase._id}
+																		purchase={purchase}
+																		onEdit={setEditingPurchase}
+																		onDelete={handleDeletePurchase}
+																		onView={setViewingPurchase}
+																	/>
+																))}
+															</tbody>
+														</table>
+													</div>
+												</CardContent>
+											</Card>
+										</div>
+
+										{/* Mobile Card View */}
+										<div className='lg:hidden space-y-4'>
+											{purchases.map(purchase => (
+												<MobilePurchaseCard
+													key={purchase._id}
+													purchase={purchase}
+													onEdit={setEditingPurchase}
+													onDelete={handleDeletePurchase}
+													onView={setViewingPurchase}
+												/>
+											))}
+										</div>
+									</>
+								)}
+
+								{/* Pagination */}
+								{(pagination?.pages || 0) > 1 && (
+									<div className='flex justify-center items-center gap-2'>
+										<Button
+											variant='outline'
+											disabled={(pagination?.current || 1) === 1}
+											onClick={() =>
+												setFilters(prev => ({ ...prev, page: prev.page! - 1 }))
+											}
+										>
+											Previous
+										</Button>
+										<span className='text-sm text-gray-600'>
+											Page {pagination?.current || 1} of{' '}
+											{pagination?.pages || 1}
+										</span>
+										<Button
+											variant='outline'
+											disabled={
+												(pagination?.current || 1) === (pagination?.pages || 1)
+											}
+											onClick={() =>
+												setFilters(prev => ({ ...prev, page: prev.page! + 1 }))
+											}
+										>
+											Next
+										</Button>
+									</div>
+								)}
+							</TabsContent>
+
+							<TabsContent value='products' className='space-y-6'>
+								<div className='grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6'>
+									{/* Add New Product Card */}
+									<Card>
+										<CardContent className='p-8 text-center'>
+											<Package className='h-16 w-16 mx-auto text-gray-400 mb-4' />
+											<h3 className='text-xl font-semibold text-gray-900 mb-2'>
+												Add New Product
+											</h3>
+											<p className='text-gray-600 mb-6'>
+												Create a new product to add to your catalog
+											</p>
+											<Button
+												onClick={() => setShowAddProductModal(true)}
+												size='lg'
+											>
+												<Plus className='h-5 w-5 mr-2' />
+												Add Product
+											</Button>
+										</CardContent>
+									</Card>
+
+									{/* Quick Order Card */}
+									<Card>
+										<CardContent className='p-8 text-center'>
+											<ShoppingCart className='h-16 w-16 mx-auto text-blue-400 mb-4' />
+											<h3 className='text-xl font-semibold text-gray-900 mb-2'>
+												Quick Order
+											</h3>
+											<p className='text-gray-600 mb-6'>
+												Create a purchase order manually
+											</p>
+											<Button
+												onClick={() => setShowQuickPurchaseModal(true)}
+												size='lg'
+												variant='outline'
+											>
+												<ShoppingCart className='h-5 w-5 mr-2' />
+												Create Order
+											</Button>
+										</CardContent>
+									</Card>
+								</div>
+
+								{/* Product Catalog List */}
+								<Card>
+									<CardHeader>
+										<CardTitle className='flex items-center gap-2'>
+											<Package className='h-5 w-5' />
+											Product Catalog
+										</CardTitle>
+									</CardHeader>
+									<CardContent>
+										<ProductCatalogList
+											refreshTrigger={productRefreshTrigger}
+											onProductBuy={handleProductBuy}
+										/>
+									</CardContent>
+								</Card>
+							</TabsContent>
+						</Tabs>
+					</div>
+				</div>
+
+				{/* Add/Edit Purchase Dialog */}
+				<Dialog
+					open={showForm || editingPurchase !== null}
+					onOpenChange={open => {
+						if (!open) {
+							setShowForm(false)
+							setEditingPurchase(null)
+						}
+					}}
+				>
+					<DialogContent className='max-w-2xl max-h-[90vh] overflow-y-auto'>
+						<DialogHeader>
+							<DialogTitle>
+								{editingPurchase ? 'Edit Purchase' : 'Add New Purchase'}
+							</DialogTitle>
+						</DialogHeader>
+						<PurchaseForm
+							purchase={editingPurchase || undefined}
+							onSubmit={
+								editingPurchase ? handleUpdatePurchase : handleCreatePurchase
+							}
+							onCancel={() => {
+								setShowForm(false)
+								setEditingPurchase(null)
+							}}
+							loading={actionLoading === 'create' || actionLoading === 'update'}
+						/>
+					</DialogContent>
+				</Dialog>
+
+				{/* Purchase Details Dialog */}
+				<PurchaseDetailsDialog
+					purchase={viewingPurchase}
+					open={viewingPurchase !== null}
+					onClose={() => setViewingPurchase(null)}
+				/>
+
+				{/* Quick Purchase Modal */}
+				<QuickPurchaseModal
+					product={selectedProduct}
+					open={showQuickPurchaseModal}
+					onClose={() => {
+						setShowQuickPurchaseModal(false)
+						setSelectedProduct(null)
+					}}
+					onSubmit={handleQuickPurchaseSubmit}
+					loading={actionLoading === 'create'}
+				/>
+
+				{/* Add Product Modal */}
+				<AddProductModal
+					open={showAddProductModal}
+					onClose={() => setShowAddProductModal(false)}
+					onProductCreated={() => setProductRefreshTrigger(prev => prev + 1)}
+				/>
+
+				{/* Buy with Edit Modal */}
+				<BuyWithEditModal
+					open={showBuyWithEditModal}
+					onClose={() => setShowBuyWithEditModal(false)}
+					product={selectedProductForBuy}
+					onBuy={handleBuyWithEdit}
+				/>
+
+			</AdminLayout>
+		</ProtectedRoute>
+	)
+}
+
+export default PurchasesPage

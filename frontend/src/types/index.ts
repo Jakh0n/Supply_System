@@ -41,6 +41,11 @@ export interface Product {
 	description?: string
 	supplier?: string
 	price: number
+	amount: number
+	count: number
+	purchaseSite?: string
+	contact?: string
+	monthlyUsage?: number
 	images: ProductImage[]
 	isActive: boolean
 	createdBy: {
@@ -77,6 +82,11 @@ export interface ProductFormData {
 	description?: string
 	supplier?: string
 	price: number
+	amount: number
+	count: number
+	purchaseSite?: string
+	contact?: string
+	monthlyUsage?: number
 	images?: ProductImage[]
 }
 

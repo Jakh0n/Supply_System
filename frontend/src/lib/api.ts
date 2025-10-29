@@ -53,6 +53,8 @@ const createDeletedProductPlaceholder = (): Product => ({
 	description: 'This product has been deleted',
 	supplier: '',
 	price: 0,
+	amount: 0,
+	count: 0,
 	images: [],
 	isActive: false,
 	createdBy: { _id: 'system', username: 'System' },
@@ -460,35 +462,38 @@ export const productsApi = {
 	createProduct: async (
 		data: ProductFormData
 	): Promise<{ product: Product }> => {
-		// Clean up the data before sending
+		// Clean up the data before sending - only send fields the backend expects
 		const cleanData = {
-			...data,
-			// Ensure empty strings become undefined for optional fields
+			name: data.name,
+			category: data.category,
+			unit: data.unit,
 			description: data.description?.trim() || undefined,
 			supplier: data.supplier?.trim() || undefined,
-			// Ensure price is a number
 			price:
 				typeof data.price === 'string' ? parseFloat(data.price) : data.price,
+			amount: data.amount || 0,
+			count: data.count || 0,
+			purchaseSite: data.purchaseSite?.trim() || undefined,
+			contact: data.contact?.trim() || undefined,
+			monthlyUsage: data.monthlyUsage || 0,
+			images: data.images || [],
 		}
 
 		console.log('Sending product data to API:', cleanData)
-		console.log('Original data:', data)
-		console.log(
-			'Price type:',
-			typeof cleanData.price,
-			'Value:',
-			cleanData.price
-		)
-		console.log(
-			'Category type:',
-			typeof cleanData.category,
-			'Value:',
-			cleanData.category
-		)
-		console.log('Unit type:', typeof cleanData.unit, 'Value:', cleanData.unit)
-		console.log('Category exact value:', JSON.stringify(cleanData.category))
-		const response = await api.post('/products', cleanData)
-		return response.data
+		try {
+			const response = await api.post('/products', cleanData)
+			return response.data
+		} catch (error) {
+			if (axios.isAxiosError(error)) {
+				console.error(
+					'API Error creating product:',
+					error.response?.data || error.message
+				)
+				console.error('Error status:', error.response?.status)
+				console.error('Request data:', cleanData)
+			}
+			throw error
+		}
 	},
 
 	updateProduct: async (
@@ -550,7 +555,9 @@ export const purchasesApi = {
 		if (filters?.limit) params.append('limit', filters.limit.toString())
 
 		const response = await api.get(`/purchases?${params.toString()}`)
-		return response.data
+		// Backend returns { data: { purchases: [...], pagination: {...} } }
+		// We need to return { purchases: [...], pagination: {...} }
+		return response.data.data
 	},
 
 	getPurchase: async (id: string): Promise<{ data: ProductPurchase }> => {
