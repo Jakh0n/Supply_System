@@ -32,6 +32,7 @@ import {
 	UserStats,
 } from '@/types'
 import axios from 'axios'
+import { handleApiError } from './errorUtils'
 
 const API_BASE_URL =
 	process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api'
@@ -479,20 +480,11 @@ export const productsApi = {
 			images: data.images || [],
 		}
 
-		console.log('Sending product data to API:', cleanData)
 		try {
 			const response = await api.post('/products', cleanData)
 			return response.data
 		} catch (error) {
-			if (axios.isAxiosError(error)) {
-				console.error(
-					'API Error creating product:',
-					error.response?.data || error.message
-				)
-				console.error('Error status:', error.response?.status)
-				console.error('Request data:', cleanData)
-			}
-			throw error
+			throw handleApiError(error)
 		}
 	},
 

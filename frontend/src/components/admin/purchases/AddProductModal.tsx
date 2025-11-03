@@ -3,6 +3,7 @@
 import ImageUpload from '@/components/shared/ImageUpload'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
+import { CharacterCounterWithError } from '@/components/ui/character-counter'
 import {
 	Dialog,
 	DialogContent,
@@ -19,10 +20,20 @@ import {
 	SelectValue,
 } from '@/components/ui/select'
 import { productsApi } from '@/lib/api'
+import {
+	formatValidationErrors,
+	getErrorMessage,
+	getValidationErrors,
+} from '@/lib/errorUtils'
+import {
+	validateProductFormWithToast,
+	VALIDATION_RULES,
+} from '@/lib/validationUtils'
 import { ProductCategory, ProductFormData, ProductUnit } from '@/types'
 import { Package } from 'lucide-react'
 import React, { useState } from 'react'
 import { toast } from 'sonner'
+import { getPurchaseCategoryOptions } from './categoryDisplay'
 
 interface AddProductModalProps {
 	open: boolean
@@ -35,13 +46,13 @@ const AddProductModal: React.FC<AddProductModalProps> = ({
 	onClose,
 	onProductCreated,
 }) => {
-	const [formData, setFormData] = useState<ProductFormData>({
+	const getInitialFormData = (): ProductFormData => ({
 		name: '',
 		description: '',
 		price: 0,
-		category: 'main-products',
+		category: 'food-products' as ProductCategory,
 		unit: 'pieces',
-		amount: 0, // Keep for compatibility but won't be used in UI
+		amount: 0,
 		count: 0,
 		purchaseSite: '',
 		supplier: '',
@@ -49,6 +60,10 @@ const AddProductModal: React.FC<AddProductModalProps> = ({
 		monthlyUsage: 0,
 		images: [],
 	})
+
+	const [formData, setFormData] = useState<ProductFormData>(
+		getInitialFormData()
+	)
 	const [loading, setLoading] = useState(false)
 
 	const handleInputChange = (
@@ -68,6 +83,12 @@ const AddProductModal: React.FC<AddProductModalProps> = ({
 
 	const handleSubmit = async (e: React.FormEvent) => {
 		e.preventDefault()
+
+		// Frontend validation
+		if (!validateProductFormWithToast(formData)) {
+			return
+		}
+
 		setLoading(true)
 
 		try {
@@ -75,24 +96,21 @@ const AddProductModal: React.FC<AddProductModalProps> = ({
 			toast.success('Product created successfully!')
 			onProductCreated()
 			onClose()
-			// Reset form
-			setFormData({
-				name: '',
-				description: '',
-				price: 0,
-				category: 'main-products',
-				unit: 'pieces',
-				amount: 0, // Keep for compatibility
-				count: 0,
-				purchaseSite: '',
-				supplier: '',
-				contact: '',
-				monthlyUsage: 0,
-				images: [],
-			})
+			setFormData(getInitialFormData())
 		} catch (error) {
-			console.error('Error creating product:', error)
-			toast.error('Failed to create product')
+			console.error('Error creating product - Full error:', error)
+
+			const validationErrors = getValidationErrors(error)
+
+			if (validationErrors.length > 0) {
+				const errorMessages = formatValidationErrors(validationErrors)
+				toast.error(`Validation failed: ${errorMessages}`)
+			} else {
+				const errorMessage = getErrorMessage(error)
+				toast.error(
+					errorMessage || 'Failed to create product. Please try again.'
+				)
+			}
 		} finally {
 			setLoading(false)
 		}
@@ -150,18 +168,11 @@ const AddProductModal: React.FC<AddProductModalProps> = ({
 									<SelectValue />
 								</SelectTrigger>
 								<SelectContent>
-									<SelectItem value='main-products'>Main Products</SelectItem>
-									<SelectItem value='frozen-products'>
-										Frozen Products
-									</SelectItem>
-									<SelectItem value='desserts'>Desserts</SelectItem>
-									<SelectItem value='drinks'>Drinks</SelectItem>
-									<SelectItem value='packaging-materials'>
-										Packaging Materials
-									</SelectItem>
-									<SelectItem value='cleaning-materials'>
-										Cleaning Materials
-									</SelectItem>
+									{getPurchaseCategoryOptions().map(category => (
+										<SelectItem key={category.value} value={category.value}>
+											{category.label}
+										</SelectItem>
+									))}
 								</SelectContent>
 							</Select>
 						</div>
@@ -173,15 +184,29 @@ const AddProductModal: React.FC<AddProductModalProps> = ({
 							<Input
 								id='price'
 								type='number'
-								value={formData.price}
-								onChange={e =>
-									handleInputChange('price', parseFloat(e.target.value) || 0)
-								}
+								value={formData.price || ''}
+								onChange={e => {
+									const value = e.target.value
+									if (value === '') {
+										handleInputChange('price', 0)
+									} else {
+										const numValue = parseFloat(value)
+										if (!isNaN(numValue) && numValue >= 0) {
+											handleInputChange('price', numValue)
+										}
+									}
+								}}
 								required
-								min='0'
+								min='0.01'
 								step='0.01'
+								placeholder='0.00'
 								className='mt-1 text-sm'
 							/>
+							{formData.price <= 0 && (
+								<p className='text-xs text-red-500 mt-1'>
+									Price must be greater than 0
+								</p>
+							)}
 						</div>
 
 						<div>
@@ -267,7 +292,18 @@ const AddProductModal: React.FC<AddProductModalProps> = ({
 								id='contact'
 								value={formData.contact}
 								onChange={e => handleInputChange('contact', e.target.value)}
+								maxLength={VALIDATION_RULES.product.contact.maxLength}
 								className='mt-1 text-sm'
+							/>
+							<CharacterCounterWithError
+								current={formData.contact?.length || 0}
+								max={VALIDATION_RULES.product.contact.maxLength}
+								warningThreshold={0.8}
+								showError={
+									(formData.contact?.length || 0) >
+									VALIDATION_RULES.product.contact.maxLength
+								}
+								errorMessage='Contact cannot exceed 100 characters'
 							/>
 						</div>
 
@@ -281,8 +317,19 @@ const AddProductModal: React.FC<AddProductModalProps> = ({
 								onChange={e =>
 									handleInputChange('purchaseSite', e.target.value)
 								}
+								maxLength={VALIDATION_RULES.product.purchaseSite.maxLength}
 								placeholder='https://...'
 								className='mt-1 text-sm'
+							/>
+							<CharacterCounterWithError
+								current={formData.purchaseSite?.length || 0}
+								max={VALIDATION_RULES.product.purchaseSite.maxLength}
+								warningThreshold={0.9}
+								showError={
+									(formData.purchaseSite?.length || 0) >
+									VALIDATION_RULES.product.purchaseSite.maxLength
+								}
+								errorMessage='Purchase site cannot exceed 200 characters'
 							/>
 						</div>
 

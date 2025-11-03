@@ -124,7 +124,11 @@ const EditOrder: React.FC = () => {
 					usersApi.getBranches(),
 				])
 
-				setProducts(productsResponse.products)
+				// Filter out products with suppliers (these are for purchase catalog only)
+				const workerProducts = (productsResponse.products || []).filter(
+					product => !product.supplier || product.supplier.trim() === ''
+				)
+				setProducts(workerProducts)
 				setBranches(branchesResponse.branches)
 			} catch (err) {
 				console.error('Error fetching data:', err)

@@ -22,6 +22,7 @@ import { Package, ShoppingCart } from 'lucide-react'
 import Image from 'next/image'
 import React, { useEffect, useState } from 'react'
 import { toast } from 'sonner'
+import { getPurchaseCategoryOptions } from './categoryDisplay'
 
 interface BuyWithEditModalProps {
 	open: boolean
@@ -45,7 +46,7 @@ const BuyWithEditModal: React.FC<BuyWithEditModalProps> = ({
 		contact: '',
 		monthlyUsage: 0,
 		price: 0,
-		category: 'main-products' as ProductCategory,
+		category: 'food-products' as ProductCategory,
 		description: '',
 	})
 	const [loading, setLoading] = useState(false)
@@ -181,18 +182,11 @@ const BuyWithEditModal: React.FC<BuyWithEditModalProps> = ({
 									<SelectValue />
 								</SelectTrigger>
 								<SelectContent>
-									<SelectItem value='main-products'>Main Products</SelectItem>
-									<SelectItem value='frozen-products'>
-										Frozen Products
-									</SelectItem>
-									<SelectItem value='desserts'>Desserts</SelectItem>
-									<SelectItem value='drinks'>Drinks</SelectItem>
-									<SelectItem value='packaging-materials'>
-										Packaging Materials
-									</SelectItem>
-									<SelectItem value='cleaning-materials'>
-										Cleaning Materials
-									</SelectItem>
+									{getPurchaseCategoryOptions().map(category => (
+										<SelectItem key={category.value} value={category.value}>
+											{category.label}
+										</SelectItem>
+									))}
 								</SelectContent>
 							</Select>
 						</div>

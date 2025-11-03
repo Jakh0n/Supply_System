@@ -131,8 +131,12 @@ const NewOrder: React.FC = () => {
 		try {
 			setLoading(true)
 			const response = await productsApi.getProducts({ active: 'true' })
-			setProducts(response.products)
-			setFilteredProducts(response.products)
+			// Filter out products with suppliers (these are for purchase catalog only)
+			const workerProducts = (response.products || []).filter(
+				product => !product.supplier || product.supplier.trim() === ''
+			)
+			setProducts(workerProducts)
+			setFilteredProducts(workerProducts)
 		} catch (err) {
 			setError('Failed to load products')
 			console.error('Products fetch error:', err)

@@ -16,6 +16,10 @@ import { Product } from '@/types'
 import { Package, Plus, Search, ShoppingCart, Trash2 } from 'lucide-react'
 import Image from 'next/image'
 import React, { useEffect, useState } from 'react'
+import {
+	getCategoryDisplayName,
+	getPurchaseCategoryOptions,
+} from './categoryDisplay'
 
 interface ProductCatalogProps {
 	refreshTrigger?: number
@@ -75,16 +79,17 @@ const ProductCatalog: React.FC<ProductCatalogProps> = ({
 
 	const getCategoryColor = (category: string) => {
 		const colors: { [key: string]: string } = {
-			'main-products': 'bg-blue-100 text-blue-800',
-			'side-products': 'bg-green-100 text-green-800',
-			beverages: 'bg-purple-100 text-purple-800',
-			snacks: 'bg-yellow-100 text-yellow-800',
-			supplies: 'bg-gray-100 text-gray-800',
-			'packaging-materials': 'bg-indigo-100 text-indigo-800',
-			'cleaning-materials': 'bg-pink-100 text-pink-800',
+			'store-supplies': 'bg-blue-100 text-blue-800',
+			'food-products': 'bg-orange-100 text-orange-800',
+			'cleaning-materials': 'bg-green-100 text-green-800',
 			'frozen-products': 'bg-cyan-100 text-cyan-800',
-			desserts: 'bg-orange-100 text-orange-800',
-			drinks: 'bg-teal-100 text-teal-800',
+			others: 'bg-gray-100 text-gray-800',
+			beverages: 'bg-purple-100 text-purple-800',
+			'packaging-materials': 'bg-indigo-100 text-indigo-800',
+			// Legacy category colors (for old data)
+			'main-products': 'bg-orange-100 text-orange-800',
+			desserts: 'bg-gray-100 text-gray-800',
+			drinks: 'bg-purple-100 text-purple-800',
 		}
 		return colors[category] || 'bg-gray-100 text-gray-800'
 	}
@@ -157,20 +162,11 @@ const ProductCatalog: React.FC<ProductCatalogProps> = ({
 							</SelectTrigger>
 							<SelectContent>
 								<SelectItem value='all'>All Categories</SelectItem>
-								<SelectItem value='main-products'>Main Products</SelectItem>
-								<SelectItem value='side-products'>Side Products</SelectItem>
-								<SelectItem value='beverages'>Beverages</SelectItem>
-								<SelectItem value='snacks'>Snacks</SelectItem>
-								<SelectItem value='supplies'>Supplies</SelectItem>
-								<SelectItem value='packaging-materials'>
-									Packaging Materials
-								</SelectItem>
-								<SelectItem value='cleaning-materials'>
-									Cleaning Materials
-								</SelectItem>
-								<SelectItem value='frozen-products'>Frozen Products</SelectItem>
-								<SelectItem value='desserts'>Desserts</SelectItem>
-								<SelectItem value='drinks'>Drinks</SelectItem>
+								{getPurchaseCategoryOptions().map(category => (
+									<SelectItem key={category.value} value={category.value}>
+										{category.label}
+									</SelectItem>
+								))}
 							</SelectContent>
 						</Select>
 
@@ -308,9 +304,7 @@ const ProductCatalog: React.FC<ProductCatalogProps> = ({
 														product.category
 													)}`}
 												>
-													{product.category
-														.replace(/-/g, ' ')
-														.replace(/\b\w/g, l => l.toUpperCase())}
+													{getCategoryDisplayName(product.category)}
 												</span>
 											</td>
 											<td className='p-1 sm:p-2 font-medium text-gray-800 text-xs hidden lg:table-cell'>

@@ -28,6 +28,7 @@ import {
 } from '@/types'
 import { Package } from 'lucide-react'
 import React, { useState } from 'react'
+import { getPurchaseCategoryOptions } from './categoryDisplay'
 
 interface QuickPurchaseModalProps {
 	product: Product | null
@@ -46,7 +47,7 @@ const QuickPurchaseModal: React.FC<QuickPurchaseModalProps> = ({
 }) => {
 	const [formData, setFormData] = useState<ProductPurchaseFormData>({
 		date: new Date().toISOString().split('T')[0],
-		category: 'main-products',
+		category: 'food-products' as ProductCategory,
 		productName: '',
 		price: 0,
 		providerName: '',
@@ -106,16 +107,11 @@ const QuickPurchaseModal: React.FC<QuickPurchaseModalProps> = ({
 								<SelectValue placeholder='Select category' />
 							</SelectTrigger>
 							<SelectContent>
-								<SelectItem value='frozen-products'>Frozen Products</SelectItem>
-								<SelectItem value='main-products'>Main Products</SelectItem>
-								<SelectItem value='desserts'>Desserts</SelectItem>
-								<SelectItem value='drinks'>Drinks</SelectItem>
-								<SelectItem value='packaging-materials'>
-									Packaging Materials
-								</SelectItem>
-								<SelectItem value='cleaning-materials'>
-									Cleaning Materials
-								</SelectItem>
+								{getPurchaseCategoryOptions().map(category => (
+									<SelectItem key={category.value} value={category.value}>
+										{category.label}
+									</SelectItem>
+								))}
 							</SelectContent>
 						</Select>
 					</div>

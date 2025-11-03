@@ -267,12 +267,13 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
 							className='relative group rounded-lg overflow-hidden border border-gray-200'
 						>
 							{/* Image */}
-							<div className='aspect-square relative'>
+							<div className='aspect-square relative bg-gray-50'>
 								<ProductImageComponent
 									src={image}
 									alt={`Product image ${index + 1}`}
 									fill
-									className='object-cover'
+									objectFit='contain'
+									className='p-1'
 									showLoading={true}
 									containerClassName='w-full h-full'
 								/>
