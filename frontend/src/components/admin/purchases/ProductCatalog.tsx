@@ -86,6 +86,7 @@ const ProductCatalog: React.FC<ProductCatalogProps> = ({
 			others: 'bg-gray-100 text-gray-800',
 			beverages: 'bg-purple-100 text-purple-800',
 			'packaging-materials': 'bg-indigo-100 text-indigo-800',
+			vegetables: 'bg-emerald-100 text-emerald-800',
 			// Legacy category colors (for old data)
 			'main-products': 'bg-orange-100 text-orange-800',
 			desserts: 'bg-gray-100 text-gray-800',

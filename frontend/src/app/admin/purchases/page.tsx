@@ -144,6 +144,8 @@ const PurchasesPage: React.FC = () => {
 	// Handler for product created
 	const handleProductCreated = () => {
 		setProductRefreshTrigger(prev => prev + 1)
+		// Also refresh purchases in case a purchase was created with the product
+		setPurchaseRefreshTrigger(prev => prev + 1)
 	}
 
 	// Calculate stats

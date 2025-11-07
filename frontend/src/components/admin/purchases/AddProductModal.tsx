@@ -19,7 +19,7 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from '@/components/ui/select'
-import { productsApi } from '@/lib/api'
+import { productsApi, purchasesApi } from '@/lib/api'
 import {
 	formatValidationErrors,
 	getErrorMessage,
@@ -29,8 +29,13 @@ import {
 	validateProductFormWithToast,
 	VALIDATION_RULES,
 } from '@/lib/validationUtils'
-import { ProductCategory, ProductFormData, ProductUnit } from '@/types'
-import { Package } from 'lucide-react'
+import {
+	PaymentMethod,
+	ProductCategory,
+	ProductFormData,
+	ProductUnit,
+} from '@/types'
+import { CreditCard, Package } from 'lucide-react'
 import React, { useState } from 'react'
 import { toast } from 'sonner'
 import { getPurchaseCategoryOptions } from './categoryDisplay'
@@ -64,6 +69,8 @@ const AddProductModal: React.FC<AddProductModalProps> = ({
 	const [formData, setFormData] = useState<ProductFormData>(
 		getInitialFormData()
 	)
+	const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('cash')
+	const [createPurchase, setCreatePurchase] = useState(false)
 	const [loading, setLoading] = useState(false)
 
 	const handleInputChange = (
@@ -92,11 +99,41 @@ const AddProductModal: React.FC<AddProductModalProps> = ({
 		setLoading(true)
 
 		try {
-			await productsApi.createProduct(formData)
+			// Create the product
+			const createdProduct = await productsApi.createProduct(formData)
 			toast.success('Product created successfully!')
+
+			// If createPurchase is enabled, also create a purchase record
+			if (createPurchase && formData.count > 0 && formData.price > 0) {
+				try {
+					const totalPrice = formData.count * formData.price
+					const purchaseData = {
+						productId: createdProduct.product._id,
+						productName: formData.name,
+						category: formData.category,
+						quantity: formData.count,
+						price: totalPrice,
+						providerName: formData.supplier || '',
+						paymentWay: paymentMethod,
+						unit: formData.unit,
+						date: new Date().toISOString(),
+						branch: 'main', // Default branch
+						images: formData.images || [],
+					}
+
+					await purchasesApi.createPurchase(purchaseData)
+					toast.success('Purchase created successfully!')
+				} catch (purchaseError) {
+					console.error('Error creating purchase:', purchaseError)
+					toast.error('Product created but failed to create purchase')
+				}
+			}
+
 			onProductCreated()
 			onClose()
 			setFormData(getInitialFormData())
+			setPaymentMethod('cash')
+			setCreatePurchase(false)
 		} catch (error) {
 			console.error('Error creating product - Full error:', error)
 
@@ -351,6 +388,31 @@ const AddProductModal: React.FC<AddProductModalProps> = ({
 								className='mt-1 text-sm'
 							/>
 						</div>
+
+						<div>
+							<Label
+								htmlFor='paymentMethod'
+								className='text-sm font-medium flex items-center gap-2'
+							>
+								<CreditCard className='h-4 w-4' />
+								Payment Method *
+							</Label>
+							<Select
+								value={paymentMethod}
+								onValueChange={value =>
+									setPaymentMethod(value as PaymentMethod)
+								}
+							>
+								<SelectTrigger className='mt-1 text-sm'>
+									<SelectValue placeholder='Select payment method' />
+								</SelectTrigger>
+								<SelectContent>
+									<SelectItem value='cash'>Cash</SelectItem>
+									<SelectItem value='credit-card'>Card</SelectItem>
+									<SelectItem value='bank-transfer'>Transfer</SelectItem>
+								</SelectContent>
+							</Select>
+						</div>
 					</div>
 
 					{/* Description */}
@@ -366,11 +428,28 @@ const AddProductModal: React.FC<AddProductModalProps> = ({
 						/>
 					</div>
 
+					{/* Create Purchase Option */}
+					<div className='flex items-center gap-2 p-3 bg-gray-50 rounded-lg border border-gray-200'>
+						<input
+							type='checkbox'
+							id='createPurchase'
+							checked={createPurchase}
+							onChange={e => setCreatePurchase(e.target.checked)}
+							className='w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500'
+						/>
+						<Label
+							htmlFor='createPurchase'
+							className='text-sm font-medium text-gray-700 cursor-pointer'
+						>
+							Create purchase record for this product
+						</Label>
+					</div>
+
 					{/* Total Price Preview */}
 					<Card className='bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200'>
 						<CardContent className='p-4'>
 							<h4 className='font-semibold text-gray-800 mb-2 text-sm'>
-								Total Price Preview
+								{createPurchase ? 'Purchase Summary' : 'Total Price Preview'}
 							</h4>
 							<div className='text-2xl font-bold text-green-600'>
 								₩{(formData.count * formData.price).toLocaleString()}
@@ -379,6 +458,20 @@ const AddProductModal: React.FC<AddProductModalProps> = ({
 								{formData.count} × ₩{formData.price.toLocaleString()} = ₩
 								{(formData.count * formData.price).toLocaleString()}
 							</p>
+							{createPurchase && (
+								<div className='mt-2 pt-2 border-t border-blue-200'>
+									<p className='text-sm text-gray-600'>
+										Payment Method:{' '}
+										<span className='font-medium capitalize'>
+											{paymentMethod === 'credit-card'
+												? 'Card'
+												: paymentMethod === 'bank-transfer'
+												? 'Transfer'
+												: 'Cash'}
+										</span>
+									</p>
+								</div>
+							)}
 						</CardContent>
 					</Card>
 

@@ -63,6 +63,7 @@ export type ProductCategory =
 	| 'drinks'
 	| 'packaging-materials'
 	| 'cleaning-materials'
+	| 'vegetables'
 
 export type ProductUnit =
 	| 'kg'

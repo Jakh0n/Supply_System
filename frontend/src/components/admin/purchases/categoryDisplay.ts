@@ -11,6 +11,7 @@ export const getCategoryDisplayName = (category: string): string => {
 		others: '기타 (Diger)',
 		beverages: '음료 (Icecek)',
 		'packaging-materials': '포장지 (Paket Malz.)',
+		vegetables: '야채/과일 (Sebze/Meyve)',
 		// Legacy category mappings (for old data)
 		'main-products': '식량품 (Gidalar)',
 		desserts: '기타 (Diger)',
@@ -35,5 +36,6 @@ export const getPurchaseCategoryOptions = () => {
 		{ value: 'others', label: '기타 (Diger)' },
 		{ value: 'beverages', label: '음료 (Icecek)' },
 		{ value: 'packaging-materials', label: '포장지 (Paket Malz.)' },
+		{ value: 'vegetables', label: '야채/과일 (Sebze/Meyve)' },
 	]
 }
