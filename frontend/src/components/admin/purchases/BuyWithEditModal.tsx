@@ -17,8 +17,14 @@ import {
 	SelectValue,
 } from '@/components/ui/select'
 import { productsApi } from '@/lib/api'
-import { Product, ProductCategory, ProductFormData, ProductUnit } from '@/types'
-import { Package, ShoppingCart } from 'lucide-react'
+import {
+	PaymentMethod,
+	Product,
+	ProductCategory,
+	ProductFormData,
+	ProductUnit,
+} from '@/types'
+import { CreditCard, Package, ShoppingCart } from 'lucide-react'
 import Image from 'next/image'
 import React, { useEffect, useState } from 'react'
 import { toast } from 'sonner'
@@ -28,7 +34,11 @@ interface BuyWithEditModalProps {
 	open: boolean
 	onClose: () => void
 	product: Product | null
-	onBuy: (product: Product, updatedData?: Partial<ProductFormData>) => void
+	onBuy: (
+		product: Product,
+		updatedData?: Partial<ProductFormData>,
+		paymentMethod?: PaymentMethod
+	) => void
 }
 
 const BuyWithEditModal: React.FC<BuyWithEditModalProps> = ({
@@ -49,6 +59,7 @@ const BuyWithEditModal: React.FC<BuyWithEditModalProps> = ({
 		category: 'food-products' as ProductCategory,
 		description: '',
 	})
+	const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('cash')
 	const [loading, setLoading] = useState(false)
 	const [hasChanges, setHasChanges] = useState(false)
 
@@ -72,6 +83,7 @@ const BuyWithEditModal: React.FC<BuyWithEditModalProps> = ({
 			}
 			console.log('📝 Product details loaded:', initialData)
 			setFormData(initialData)
+			setPaymentMethod('cash') // Reset payment method to default
 			setHasChanges(false)
 		}
 	}, [product])
@@ -112,8 +124,9 @@ const BuyWithEditModal: React.FC<BuyWithEditModalProps> = ({
 			}
 
 			console.log('📦 Creating purchase with data:', formData)
+			console.log('💳 Payment method:', paymentMethod)
 			// Create purchase
-			onBuy(product!, hasChanges ? formData : undefined)
+			onBuy(product!, hasChanges ? formData : undefined, paymentMethod)
 			console.log('✅ Purchase process completed!')
 			onClose()
 		} catch (error) {
@@ -300,6 +313,31 @@ const BuyWithEditModal: React.FC<BuyWithEditModalProps> = ({
 								className='mt-1 text-sm'
 							/>
 						</div>
+
+						<div>
+							<Label
+								htmlFor='paymentMethod'
+								className='text-sm font-medium flex items-center gap-2'
+							>
+								<CreditCard className='h-4 w-4' />
+								Payment Method *
+							</Label>
+							<Select
+								value={paymentMethod}
+								onValueChange={value =>
+									setPaymentMethod(value as PaymentMethod)
+								}
+							>
+								<SelectTrigger className='mt-1 text-sm'>
+									<SelectValue placeholder='Select payment method' />
+								</SelectTrigger>
+								<SelectContent>
+									<SelectItem value='cash'>Cash</SelectItem>
+									<SelectItem value='credit-card'>Card</SelectItem>
+									<SelectItem value='bank-transfer'>Transfer</SelectItem>
+								</SelectContent>
+							</Select>
+						</div>
 					</div>
 
 					<div>
@@ -332,11 +370,16 @@ const BuyWithEditModal: React.FC<BuyWithEditModalProps> = ({
 									₩{(formData.count * formData.price).toLocaleString()}
 								</span>
 							</div>
-						</div>
-						{/* Debug info */}
-						<div className='mt-2 text-xs text-gray-500 border-t pt-2'>
-							Debug: Count={formData.count}, Price={formData.price}, Total=
-							{formData.count * formData.price}
+							<div>
+								<span className='text-gray-600'>Payment Method:</span>
+								<span className='font-medium ml-2 capitalize'>
+									{paymentMethod === 'credit-card'
+										? 'Card'
+										: paymentMethod === 'bank-transfer'
+										? 'Transfer'
+										: 'Cash'}
+								</span>
+							</div>
 						</div>
 					</div>
 				</div>

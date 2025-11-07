@@ -24,7 +24,7 @@ export const getCategoryDisplayName = (category: string): string => {
 
 /**
  * Get category options for purchase product catalog select dropdowns
- * Only includes new categories allowed by backend validation
+ * Only inclu	des new categories allowed by backend validation
  */
 export const getPurchaseCategoryOptions = () => {
 	return [

@@ -11,7 +11,12 @@ import ProtectedRoute from '@/components/shared/ProtectedRoute'
 import { Card, CardContent } from '@/components/ui/card'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { productsApi, purchasesApi } from '@/lib/api'
-import { Product, ProductFormData, ProductPurchase } from '@/types'
+import {
+	PaymentMethod,
+	Product,
+	ProductFormData,
+	ProductPurchase,
+} from '@/types'
 import { Activity, DollarSign, ShoppingCart, TrendingUp } from 'lucide-react'
 import React, { useEffect, useState } from 'react'
 import { toast } from 'sonner'
@@ -78,7 +83,8 @@ const PurchasesPage: React.FC = () => {
 	// Handler for buy with edit
 	const handleBuyWithEdit = async (
 		product: Product,
-		updatedData?: Partial<ProductFormData>
+		updatedData?: Partial<ProductFormData>,
+		paymentMethod: PaymentMethod = 'cash'
 	) => {
 		console.log('🛒 Creating purchase with product details:')
 		console.log('📦 Product:', product)
@@ -113,7 +119,7 @@ const PurchasesPage: React.FC = () => {
 				quantity: totalQuantity,
 				price: totalPrice,
 				providerName: updatedData?.supplier || product.supplier || '',
-				paymentWay: 'cash' as const,
+				paymentWay: paymentMethod,
 				unit: updatedData?.unit || product.unit,
 				date: new Date().toISOString(),
 				branch: 'main', // Default branch
