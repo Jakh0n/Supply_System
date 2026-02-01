@@ -7,6 +7,8 @@ interface BranchAnalyticsHeaderProps {
 	monthOptions: { value: number; label: string }[]
 	onRefresh: () => void
 	onExportReport: () => void
+	exportLabel?: string
+	exportLoading?: boolean
 }
 
 const BranchAnalyticsHeader: React.FC<BranchAnalyticsHeaderProps> = ({
@@ -15,6 +17,8 @@ const BranchAnalyticsHeader: React.FC<BranchAnalyticsHeaderProps> = ({
 	monthOptions,
 	onRefresh,
 	onExportReport,
+	exportLabel = 'Export Report',
+	exportLoading = false,
 }) => {
 	return (
 		<div className='flex flex-col sm:flex-row sm:justify-between sm:items-start gap-4'>
@@ -42,10 +46,11 @@ const BranchAnalyticsHeader: React.FC<BranchAnalyticsHeaderProps> = ({
 					variant='outline'
 					size='sm'
 					onClick={onExportReport}
+					disabled={exportLoading}
 					className='w-full sm:w-auto'
 				>
 					<Download className='h-4 w-4 mr-2' />
-					Export Report
+					{exportLoading ? 'Generating PDF...' : exportLabel}
 				</Button>
 			</div>
 		</div>

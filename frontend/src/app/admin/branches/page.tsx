@@ -8,9 +8,22 @@ import AdminLayout from '@/components/shared/AdminLayout'
 import ProtectedRoute from '@/components/shared/ProtectedRoute'
 import { ordersApi } from '@/lib/api'
 import { BranchReportData, PDFGenerator } from '@/lib/pdfGenerator'
-import { BranchAnalytics, BranchFilter } from '@/types'
+import { BranchAnalytics, BranchFilter, Order } from '@/types'
 import { Activity, TrendingDown, TrendingUp } from 'lucide-react'
 import { useCallback, useEffect, useState } from 'react'
+import { toast } from 'sonner'
+
+const DELIVERY_BRANCHES = [
+	'Kondae New',
+	'Hongdae',
+	'Seulde',
+	'Seulde Tantuni',
+	'Gangnam',
+	'Kondae',
+	'Itewon',
+	'Paket',
+	'Posco',
+]
 
 const BranchPerformancePage: React.FC = () => {
 	const [branchAnalytics, setBranchAnalytics] = useState<BranchAnalytics[]>([])
@@ -32,6 +45,7 @@ const BranchPerformancePage: React.FC = () => {
 			end: '',
 		},
 	})
+	const [pdfLoading, setPdfLoading] = useState(false)
 
 	// Month and year options
 	const monthOptions = [
@@ -178,6 +192,64 @@ const BranchPerformancePage: React.FC = () => {
 		setSelectedYear(new Date().getFullYear())
 	}
 
+	const handleDownloadBranchOrdersPDF = useCallback(async () => {
+		const branchNames =
+			branchAnalytics.length > 0
+				? branchAnalytics.map(b => b.branch)
+				: DELIVERY_BRANCHES
+		const data: Record<
+			string,
+			Array<{ name: string; unit: string; quantity: number }>
+		> = {}
+
+		try {
+			setPdfLoading(true)
+			for (const branchName of branchNames) {
+				const res = await ordersApi.getOrders({
+					branch: branchName,
+					month: selectedMonth,
+					year: selectedYear,
+					limit: 500,
+				})
+				const byProduct = new Map<string, { name: string; unit: string; quantity: number }>()
+				for (const order of res.orders) {
+					for (const item of order.items) {
+						const name = item.product?.name ?? '—'
+						const unit = item.product?.unit ?? ''
+						const key = `${name}|${unit}`
+						const existing = byProduct.get(key)
+						if (existing) {
+							existing.quantity += item.quantity
+						} else {
+							byProduct.set(key, { name, unit, quantity: item.quantity })
+						}
+					}
+				}
+				if (byProduct.size > 0) {
+					data[branchName] = Array.from(byProduct.values()).sort((a, b) =>
+						a.name.localeCompare(b.name)
+					)
+				}
+			}
+			const monthLabel =
+				monthOptions.find(m => m.value === selectedMonth)?.label ??
+				String(selectedMonth)
+			await PDFGenerator.generateBranchOrdersMonthPDF(
+				data,
+				selectedMonth,
+				selectedYear,
+				monthLabel,
+				{ orientation: 'landscape', format: 'a4' }
+			)
+			toast.success('PDF downloaded')
+		} catch (error) {
+			console.error('Branch orders PDF error:', error)
+			toast.error('Failed to download PDF')
+		} finally {
+			setPdfLoading(false)
+		}
+	}, [branchAnalytics, selectedMonth, selectedYear])
+
 	if (loading) {
 		return (
 			<ProtectedRoute requiredRole='admin'>
@@ -203,7 +275,9 @@ const BranchPerformancePage: React.FC = () => {
 						selectedYear={selectedYear}
 						monthOptions={monthOptions}
 						onRefresh={fetchBranchData}
-						onExportReport={handleExportReport}
+						onExportReport={handleDownloadBranchOrdersPDF}
+						exportLabel="Monthly report (PDF)"
+						exportLoading={pdfLoading}
 					/>
 
 					{/* Filters */}
