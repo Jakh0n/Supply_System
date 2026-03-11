@@ -6,11 +6,12 @@ import BranchAnalyticsStats from "@/components/admin/branches/BranchAnalyticsSta
 import BranchPerformanceCards from "@/components/admin/branches/BranchPerformanceCards";
 import AdminLayout from "@/components/shared/AdminLayout";
 import ProtectedRoute from "@/components/shared/ProtectedRoute";
+import { downloadBranchOrdersExcel } from "@/lib/branchOrdersExcel";
 import { ordersApi } from "@/lib/api";
 import { PDFGenerator } from "@/lib/pdfGenerator";
 import { BranchAnalytics, BranchFilter } from "@/types";
 import { Activity, TrendingDown, TrendingUp } from "lucide-react";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 
 const DELIVERY_BRANCHES = [
@@ -46,27 +47,34 @@ const BranchPerformancePage: React.FC = () => {
     },
   });
   const [pdfLoading, setPdfLoading] = useState(false);
+  const [excelLoading, setExcelLoading] = useState(false);
 
-  // Month and year options
-  const monthOptions = [
-    { value: 1, label: "January" },
-    { value: 2, label: "February" },
-    { value: 3, label: "March" },
-    { value: 4, label: "April" },
-    { value: 5, label: "May" },
-    { value: 6, label: "June" },
-    { value: 7, label: "July" },
-    { value: 8, label: "August" },
-    { value: 9, label: "September" },
-    { value: 10, label: "October" },
-    { value: 11, label: "November" },
-    { value: 12, label: "December" },
-  ];
+  const monthOptions = useMemo(
+    () => [
+      { value: 1, label: "January" },
+      { value: 2, label: "February" },
+      { value: 3, label: "March" },
+      { value: 4, label: "April" },
+      { value: 5, label: "May" },
+      { value: 6, label: "June" },
+      { value: 7, label: "July" },
+      { value: 8, label: "August" },
+      { value: 9, label: "September" },
+      { value: 10, label: "October" },
+      { value: 11, label: "November" },
+      { value: 12, label: "December" },
+    ],
+    [],
+  );
 
-  const yearOptions = Array.from({ length: 6 }, (_, i) => {
-    const year = new Date().getFullYear() - i;
-    return { value: year, label: year.toString() };
-  });
+  const yearOptions = useMemo(
+    () =>
+      Array.from({ length: 6 }, (_, i) => {
+        const year = new Date().getFullYear() - i;
+        return { value: year, label: year.toString() };
+      }),
+    [],
+  );
 
   const fetchBranchData = useCallback(async () => {
     try {
@@ -222,6 +230,66 @@ const BranchPerformancePage: React.FC = () => {
     }
   }, [branchAnalytics, selectedMonth, selectedYear, monthOptions]);
 
+  const handleDownloadBranchOrdersExcel = useCallback(async () => {
+    const branchNames =
+      branchAnalytics.length > 0
+        ? branchAnalytics.map((b) => b.branch)
+        : DELIVERY_BRANCHES;
+    const data: Record<
+      string,
+      Array<{ name: string; unit: string; quantity: number }>
+    > = {};
+
+    try {
+      setExcelLoading(true);
+      for (const branchName of branchNames) {
+        const res = await ordersApi.getOrders({
+          branch: branchName,
+          month: selectedMonth,
+          year: selectedYear,
+          limit: 500,
+        });
+        const byProduct = new Map<
+          string,
+          { name: string; unit: string; quantity: number }
+        >();
+        for (const order of res.orders) {
+          for (const item of order.items) {
+            const name = item.product?.name ?? "—";
+            const unit = item.product?.unit ?? "";
+            const key = `${name}|${unit}`;
+            const existing = byProduct.get(key);
+            if (existing) {
+              existing.quantity += item.quantity;
+            } else {
+              byProduct.set(key, { name, unit, quantity: item.quantity });
+            }
+          }
+        }
+        if (byProduct.size > 0) {
+          data[branchName] = Array.from(byProduct.values()).sort((a, b) =>
+            a.name.localeCompare(b.name),
+          );
+        }
+      }
+      const monthLabel =
+        monthOptions.find((m) => m.value === selectedMonth)?.label ??
+        String(selectedMonth);
+      await downloadBranchOrdersExcel(
+        data,
+        selectedMonth,
+        selectedYear,
+        monthLabel,
+      );
+      toast.success("Excel downloaded");
+    } catch (error) {
+      console.error("Branch orders Excel error:", error);
+      toast.error("Failed to download Excel");
+    } finally {
+      setExcelLoading(false);
+    }
+  }, [branchAnalytics, selectedMonth, selectedYear, monthOptions]);
+
   if (loading) {
     return (
       <ProtectedRoute requiredRole="admin">
@@ -247,9 +315,9 @@ const BranchPerformancePage: React.FC = () => {
             selectedYear={selectedYear}
             monthOptions={monthOptions}
             onRefresh={fetchBranchData}
-            onExportReport={handleDownloadBranchOrdersPDF}
-            exportLabel="Monthly report (PDF)"
-            exportLoading={pdfLoading}
+            onExportPdf={handleDownloadBranchOrdersPDF}
+            onExportExcel={handleDownloadBranchOrdersExcel}
+            exportLoading={pdfLoading || excelLoading}
           />
 
           {/* Filters */}
