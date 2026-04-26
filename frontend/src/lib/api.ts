@@ -5,6 +5,10 @@ import {
 	BranchesResponse,
 	CategoriesResponse,
 	DashboardStats,
+	DrinkOrder,
+	DrinkOrderFilters,
+	DrinkOrderFormData,
+	DrinkOrdersResponse,
 	FinancialMetrics,
 	LoginCredentials,
 	Order,
@@ -102,6 +106,15 @@ interface RawOrdersResponse {
 	}
 }
 
+interface RawDrinkOrdersResponse {
+	drinkOrders: RawOrder[]
+	pagination: {
+		current: number
+		pages: number
+		total: number
+	}
+}
+
 // Helper function to clean order data by replacing null products with placeholders
 const cleanOrderData = (order: RawOrder): Order => {
 	return {
@@ -118,6 +131,17 @@ const cleanOrdersData = (data: RawOrdersResponse): OrdersResponse => {
 	return {
 		...data,
 		orders: data.orders.map(cleanOrderData),
+	}
+}
+
+const cleanDrinkOrdersData = (
+	data: RawDrinkOrdersResponse
+): DrinkOrdersResponse => {
+	return {
+		...data,
+		drinkOrders: data.drinkOrders.map(order =>
+			cleanOrderData(order)
+		) as DrinkOrder[],
 	}
 }
 
@@ -295,6 +319,63 @@ export const ordersApi = {
 			`/orders/analytics/financial?timeframe=${timeframe}`
 		)
 		return response.data
+	},
+}
+
+export const drinkOrdersApi = {
+	getDrinkOrders: async (
+		filters?: DrinkOrderFilters
+	): Promise<DrinkOrdersResponse> => {
+		const params = new URLSearchParams()
+		if (filters?.date) params.append('date', filters.date)
+		if (filters?.branch && filters.branch !== 'all')
+			params.append('branch', filters.branch)
+		if (filters?.status && filters.status !== 'all')
+			params.append('status', filters.status)
+		if (filters?.page) params.append('page', filters.page.toString())
+		if (filters?.limit) params.append('limit', filters.limit.toString())
+		if (filters?.viewAll) params.append('viewAll', filters.viewAll)
+
+		const response = await api.get(`/drink-orders?${params.toString()}`)
+		return cleanDrinkOrdersData(response.data)
+	},
+
+	getDrinkOrder: async (id: string): Promise<{ drinkOrder: DrinkOrder }> => {
+		const response = await api.get(`/drink-orders/${id}`)
+		return {
+			drinkOrder: cleanOrderData(response.data.drinkOrder) as DrinkOrder,
+		}
+	},
+
+	createDrinkOrder: async (
+		data: DrinkOrderFormData
+	): Promise<{ drinkOrder: DrinkOrder }> => {
+		const response = await api.post('/drink-orders', data)
+		return response.data
+	},
+
+	updateDrinkOrder: async (
+		id: string,
+		data: Partial<DrinkOrderFormData>
+	): Promise<{ drinkOrder: DrinkOrder }> => {
+		const response = await api.put(`/drink-orders/${id}`, data)
+		return response.data
+	},
+
+	updateDrinkOrderStatus: async (
+		id: string,
+		status: OrderStatus,
+		adminNotes?: string
+	): Promise<{ drinkOrder: DrinkOrder }> => {
+		const response = await api.patch(`/drink-orders/${id}/status`, {
+			status,
+			adminNotes,
+		})
+		return response.data
+	},
+
+	deleteDrinkOrder: async (id: string): Promise<void> => {
+		await api.delete(`/drink-orders/${id}`)
 	},
 }
 

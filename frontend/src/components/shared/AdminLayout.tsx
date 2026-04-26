@@ -17,6 +17,7 @@ import {
 	ChevronLeft,
 	ChevronRight,
 	CreditCard,
+	CupSoda,
 	LogOut,
 	Menu,
 	Package,
@@ -62,6 +63,11 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
 			title: 'Orders',
 			href: '/admin/orders',
 			icon: ShoppingCart,
+		},
+		{
+			title: 'Drink Orders',
+			href: '/admin/drink-orders',
+			icon: CupSoda,
 		},
 		{
 			title: 'Products',

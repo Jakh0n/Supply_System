@@ -12,6 +12,7 @@ import {
 import { useAuth } from '@/contexts/AuthContext'
 import {
 	BarChart3,
+	CupSoda,
 	LogOut,
 	MapPin,
 	Menu,
@@ -163,6 +164,17 @@ const Navbar: React.FC = () => {
 									>
 										<Package className='h-4 w-4 mr-2' />
 										New Order
+									</Link>
+									<Link
+										href='/worker/drink-orders'
+										className={`px-3 py-2 rounded-md text-sm font-medium flex items-center transition-colors ${
+											isActiveLink('/worker/drink-orders')
+												? 'text-blue-600 bg-blue-50'
+												: 'text-gray-700 hover:text-blue-600 hover:bg-gray-50'
+										}`}
+									>
+										<CupSoda className='h-4 w-4 mr-2' />
+										Drink Orders
 									</Link>
 								</>
 							)}
@@ -320,6 +332,19 @@ const Navbar: React.FC = () => {
 												>
 													<Package className='h-4 w-4 mr-3' />
 													New Order
+												</Link>
+											</DropdownMenuItem>
+											<DropdownMenuItem asChild>
+												<Link
+													href='/worker/drink-orders'
+													className={`flex items-center w-full ${
+														isActiveLink('/worker/drink-orders')
+															? 'text-blue-600 bg-blue-50'
+															: 'text-gray-700'
+													}`}
+												>
+													<CupSoda className='h-4 w-4 mr-3' />
+													Drink Orders
 												</Link>
 											</DropdownMenuItem>
 										</>

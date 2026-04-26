@@ -130,14 +130,17 @@ router.post(
 					typeof value
 				)
 				const allowedCategories = [
-					'store-supplies', // 매장 용품 (Dukkan Malz.)
-					'food-products', // 식량품 (Gidalar)
-					'cleaning-materials', // 청소용품 (Temizlik Malz.)
-					'frozen-products', // 냉동 체품 (Donuk Malz.)
-					'others', // 기타 (Diger)
-					'beverages', // 음료 (Icecek)
-					'packaging-materials', // 포장지 (Paket Malz.)
-					'vegetables', // 야채/과일 (Sebze/Meyve)
+					'store-supplies',
+					'food-products',
+					'main-products',
+					'desserts',
+					'drinks',
+					'beverages',
+					'cleaning-materials',
+					'frozen-products',
+					'packaging-materials',
+					'vegetables',
+					'others',
 				]
 				console.log('Allowed categories:', allowedCategories)
 				console.log(
@@ -323,13 +326,17 @@ router.put(
 		body('category')
 			.optional()
 			.isIn([
-				'frozen-products',
+				'store-supplies',
+				'food-products',
 				'main-products',
 				'desserts',
 				'drinks',
-				'packaging-materials',
+				'beverages',
 				'cleaning-materials',
+				'frozen-products',
+				'packaging-materials',
 				'vegetables',
+				'others',
 			])
 			.withMessage('Invalid category'),
 		body('unit')
@@ -457,12 +464,17 @@ router.delete('/:id', authenticate, requireAdmin, async (req, res) => {
 router.get('/meta/categories', authenticate, async (req, res) => {
 	try {
 		const categories = [
-			'frozen-products',
+			'store-supplies',
+			'food-products',
 			'main-products',
 			'desserts',
 			'drinks',
-			'packaging-materials',
+			'beverages',
 			'cleaning-materials',
+			'frozen-products',
+			'packaging-materials',
+			'vegetables',
+			'others',
 		]
 		res.json({ categories })
 	} catch (error) {

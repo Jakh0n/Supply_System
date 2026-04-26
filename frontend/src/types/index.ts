@@ -132,6 +132,50 @@ export interface OrderFormData {
 	notes?: string
 }
 
+export interface DrinkOrder {
+	_id: string
+	orderNumber: string
+	worker: {
+		_id: string
+		username: string
+		branch: string
+	}
+	branch: string
+	requestedDate: string
+	items: Array<{
+		product: Product
+		quantity: number
+		notes?: string
+	}>
+	status: OrderStatus
+	notes?: string
+	adminNotes?: string
+	processedBy?: {
+		_id: string
+		username: string
+	}
+	processedAt?: string
+	createdAt: string
+	updatedAt: string
+}
+
+export interface DrinkOrderFormData {
+	requestedDate: string
+	branch: string
+	items: OrderItem[]
+	notes?: string
+}
+
+export interface DrinkOrderFilters {
+	date?: string
+	branch?: string
+	status?: OrderStatus | 'all'
+	page?: number
+	limit?: number
+	viewAll?: string
+}
+
+
 export interface OrderFilters {
 	date?: string
 	month?: number
@@ -174,6 +218,12 @@ export interface OrdersResponse {
 	orders: Order[]
 	pagination: PaginationInfo
 }
+
+export interface DrinkOrdersResponse {
+	drinkOrders: DrinkOrder[]
+	pagination: PaginationInfo
+}
+
 
 export interface ProductsResponse {
 	products: Product[]
