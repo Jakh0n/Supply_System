@@ -40,6 +40,7 @@ router.get('/', authenticate, async (req, res) => {
 		const products = await Product.find(filter)
 			.populate('createdBy', 'username')
 			.sort({ name: 1 })
+			.lean()
 
 		res.json({
 			products,

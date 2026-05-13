@@ -34,6 +34,7 @@ router.get('/', authenticate, requireAdmin, async (req, res) => {
 		const users = await User.find(filter)
 			.select('-password')
 			.sort({ createdAt: -1 })
+			.lean()
 
 		res.json({
 			users,

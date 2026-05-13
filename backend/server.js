@@ -1,6 +1,8 @@
 const express = require('express')
 const mongoose = require('mongoose')
 const cors = require('cors')
+const compression = require('compression')
+const helmet = require('helmet')
 const dotenv = require('dotenv')
 
 // Load environment variables
@@ -19,6 +21,13 @@ const app = express()
 
 // One proxy hop (e.g. Render) so req.ip / rate-limit use X-Forwarded-For correctly
 app.set('trust proxy', 1)
+
+app.use(compression())
+app.use(
+	helmet({
+		crossOriginResourcePolicy: { policy: 'cross-origin' },
+	})
+)
 
 // Middleware
 
