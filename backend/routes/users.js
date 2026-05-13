@@ -2,6 +2,7 @@ const express = require('express')
 const { body, validationResult } = require('express-validator')
 const User = require('../models/User')
 const { authenticate, requireAdmin } = require('../middleware/auth')
+const { escapeRegex } = require('../utils/escapeRegex')
 
 const router = express.Router()
 
@@ -23,9 +24,10 @@ router.get('/', authenticate, requireAdmin, async (req, res) => {
 
 		// Search functionality
 		if (search) {
+			const safe = escapeRegex(search)
 			filter.$or = [
-				{ username: { $regex: search, $options: 'i' } },
-				{ branch: { $regex: search, $options: 'i' } },
+				{ username: { $regex: safe, $options: 'i' } },
+				{ branch: { $regex: safe, $options: 'i' } },
 			]
 		}
 
@@ -193,7 +195,7 @@ router.put(
 			}
 
 			// Remove branch if changing from worker to admin
-			if (newPosition === 'admin' && user.position === 'worker') {
+			if (req.body.position === 'admin' && user.position === 'worker') {
 				req.body.branch = undefined
 			}
 

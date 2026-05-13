@@ -1,6 +1,7 @@
 const express = require('express')
 const ProductPurchase = require('../models/ProductPurchase')
 const { authenticate } = require('../middleware/auth')
+const { escapeRegex } = require('../utils/escapeRegex')
 const {
 	cloudinary,
 	upload,
@@ -183,10 +184,11 @@ router.get('/', authenticate, async (req, res) => {
 
 		// Search filter
 		if (search) {
+			const safe = escapeRegex(search)
 			filter.$or = [
-				{ productName: { $regex: search, $options: 'i' } },
-				{ providerName: { $regex: search, $options: 'i' } },
-				{ notes: { $regex: search, $options: 'i' } },
+				{ productName: { $regex: safe, $options: 'i' } },
+				{ providerName: { $regex: safe, $options: 'i' } },
+				{ notes: { $regex: safe, $options: 'i' } },
 			]
 		}
 
