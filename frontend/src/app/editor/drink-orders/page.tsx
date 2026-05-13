@@ -152,7 +152,7 @@ const EditorDrinkOrdersPage = () => {
   };
 
   const handlePrintOrder = () => {
-    toast.info("Print is not yet available for drink orders");
+    toast.info("Print is no yet available for drink orders");
   };
 
   const handleClearFilters = () => {
