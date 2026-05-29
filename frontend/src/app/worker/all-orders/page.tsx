@@ -127,14 +127,6 @@ const WorkerAllOrders: React.FC = () => {
 	const fetchAllOrders = useCallback(async () => {
 		try {
 			setLoading(true)
-			console.log('🔍 [FRONTEND DEBUG] Fetching all orders with params:', {
-				date: selectedDate || undefined,
-				branch: branchFilter !== 'all' ? branchFilter : undefined,
-				status: statusFilter !== 'all' ? statusFilter : undefined,
-				page: currentPage,
-				limit: 15,
-				viewAll: 'true',
-			})
 
 			const response = await ordersApi.getOrders({
 				date: selectedDate || undefined,
@@ -145,19 +137,12 @@ const WorkerAllOrders: React.FC = () => {
 				viewAll: 'true', // Special parameter to allow workers to see all orders
 			})
 
-			console.log('✅ [FRONTEND DEBUG] Response received:', {
-				ordersCount: response.orders.length,
-				totalOrders: response.pagination.total,
-				currentPage: response.pagination.current,
-				totalPages: response.pagination.pages,
-			})
-
 			setOrders(response.orders)
 			setTotalPages(response.pagination.pages)
 			setTotalOrders(response.pagination.total)
 			setError('')
 		} catch (err) {
-			console.error('❌ [FRONTEND DEBUG] Orders fetch error:', err)
+			console.error('Orders fetch error:', err)
 			setError(
 				`Failed to load orders: ${
 					err instanceof Error ? err.message : 'Unknown error'
@@ -197,34 +182,27 @@ const WorkerAllOrders: React.FC = () => {
 	}
 
 	const applyQuickFilter = (filterType: string) => {
-		console.log('🔄 [FILTER DEBUG] Applying quick filter:', filterType)
-
 		switch (filterType) {
 			case 'today':
 				const todayDate = getTodayDate()
-				console.log('📅 [FILTER DEBUG] Setting today date:', todayDate)
 				setSelectedDate(todayDate)
 				setStatusFilter('all') // Clear status filter when applying date filter
 				break
 			case 'yesterday':
 				const yesterdayDate = getYesterdayDate()
-				console.log('📅 [FILTER DEBUG] Setting yesterday date:', yesterdayDate)
 				setSelectedDate(yesterdayDate)
 				setStatusFilter('all')
 				break
 			case 'thisWeek':
 				const weekStartDate = getThisWeekStart()
-				console.log('📅 [FILTER DEBUG] Setting week start date:', weekStartDate)
 				setSelectedDate(weekStartDate)
 				setStatusFilter('all')
 				break
 			case 'pending':
-				console.log('🔄 [FILTER DEBUG] Setting status to pending')
 				setStatusFilter('pending')
 				setSelectedDate('')
 				break
 			case 'approved':
-				console.log('✅ [FILTER DEBUG] Setting status to approved')
 				setStatusFilter('approved')
 				setSelectedDate('')
 				break
@@ -233,7 +211,6 @@ const WorkerAllOrders: React.FC = () => {
 	}
 
 	const clearFilters = () => {
-		console.log('🧹 [FILTER DEBUG] Clearing all filters')
 		setSelectedDate('')
 		setBranchFilter('all')
 		setStatusFilter('all')

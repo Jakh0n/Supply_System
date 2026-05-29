@@ -7,15 +7,20 @@ import {
 	WorkerDashboardHeaderSkeleton,
 } from '@/components/skeletonLoadings/worker'
 import { useAuth } from '@/contexts/AuthContext'
-import { ordersApi } from '@/lib/api'
-import { Order } from '@/types'
-import React, { lazy, Suspense, useCallback, useEffect, useState } from 'react'
+import { useOrderDetail, useOrdersList } from '@/hooks/queries'
+import {
+	getDateFilterValue,
+	WorkerDateFilter,
+} from '@/lib/orderDateFilters'
+import React, { lazy, Suspense, useMemo, useState } from 'react'
 
-// Lazy load all worker components for better code splitting
 const WorkerDashboardHeader = lazy(
 	() => import('@/components/worker/WorkerDashboardHeader')
 )
 const QuickActions = lazy(() => import('@/components/worker/QuickActions'))
+const HolidayDayNotice = lazy(
+	() => import('@/components/worker/HolidayDayNotice')
+)
 const RecentOrdersList = lazy(
 	() => import('@/components/worker/RecentOrdersList')
 )
@@ -23,142 +28,91 @@ const OrderDetailsModal = lazy(
 	() => import('@/components/worker/OrderDetailsModal')
 )
 
+const ORDERS_PER_PAGE = 7
+
 const WorkerDashboard: React.FC = () => {
 	const { user } = useAuth()
-	const [recentOrders, setRecentOrders] = useState<Order[]>([])
-	const [loading, setLoading] = useState(true)
-	const [error, setError] = useState('')
-	const [selectedOrder, setSelectedOrder] = useState<Order | null>(null)
+	const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null)
 	const [isModalOpen, setIsModalOpen] = useState(false)
-
-	// Pagination states
 	const [currentPage, setCurrentPage] = useState(1)
-	const [totalPages, setTotalPages] = useState(1)
-	const [totalOrders, setTotalOrders] = useState(0)
+	const [dateFilter, setDateFilter] = useState<WorkerDateFilter>('all')
 
-	// Filter states
-	const [dateFilter, setDateFilter] = useState<
-		'all' | 'today' | 'yesterday' | 'weekly'
-	>('all')
+	const orderFilters = useMemo(
+		() => ({
+			page: currentPage,
+			limit: ORDERS_PER_PAGE,
+			date: getDateFilterValue(dateFilter),
+		}),
+		[currentPage, dateFilter]
+	)
 
-	const ordersPerPage = 7
+	const {
+		data: ordersData,
+		isLoading,
+		isFetching,
+		isError,
+		refetch,
+	} = useOrdersList(orderFilters)
 
-	// Date helper functions
-	const getTodayDate = () => {
-		return new Date().toISOString().split('T')[0]
-	}
+	const { data: orderDetailData } = useOrderDetail(
+		isModalOpen ? selectedOrderId : null
+	)
 
-	const getYesterdayDate = () => {
-		const yesterday = new Date()
-		yesterday.setDate(yesterday.getDate() - 1)
-		return yesterday.toISOString().split('T')[0]
-	}
-
-	const getWeeklyStartDate = () => {
-		const today = new Date()
-		const firstDay = today.getDate() - today.getDay()
-		const weekStart = new Date(today.setDate(firstDay))
-		return weekStart.toISOString().split('T')[0]
-	}
-
-	const fetchRecentOrders = useCallback(async () => {
-		try {
-			setLoading(true)
-
-			let dateFilterValue: string | undefined = undefined
-			if (dateFilter === 'today') {
-				dateFilterValue = getTodayDate()
-			} else if (dateFilter === 'yesterday') {
-				dateFilterValue = getYesterdayDate()
-			} else if (dateFilter === 'weekly') {
-				dateFilterValue = getWeeklyStartDate()
-			}
-
-			const filters = {
-				page: currentPage,
-				limit: ordersPerPage,
-				date: dateFilterValue,
-			}
-
-			const response = await ordersApi.getOrders(filters)
-			setRecentOrders(response.orders)
-			setTotalPages(response.pagination.pages)
-			setTotalOrders(response.pagination.total)
-		} catch (err) {
-			setError('Failed to load recent orders')
-			console.error('Recent orders error:', err)
-		} finally {
-			setLoading(false)
-		}
-	}, [currentPage, dateFilter])
-
-	useEffect(() => {
-		fetchRecentOrders()
-	}, [fetchRecentOrders])
-
-	const handleViewOrder = async (orderId: string) => {
-		try {
-			const response = await ordersApi.getOrder(orderId)
-			setSelectedOrder(response.order)
-			setIsModalOpen(true)
-		} catch (err) {
-			console.error('Failed to fetch order details:', err)
-		}
+	const handleViewOrder = (orderId: string) => {
+		setSelectedOrderId(orderId)
+		setIsModalOpen(true)
 	}
 
 	const handlePageChange = (newPage: number) => {
 		setCurrentPage(newPage)
 	}
 
-	const handleDateFilterChange = (
-		dateFilter: 'all' | 'today' | 'yesterday' | 'weekly'
-	) => {
-		setDateFilter(dateFilter)
-		setCurrentPage(1) // Reset to first page when filtering
+	const handleDateFilterChange = (filter: WorkerDateFilter) => {
+		setDateFilter(filter)
+		setCurrentPage(1)
 	}
 
 	const handleCloseModal = () => {
 		setIsModalOpen(false)
-		setSelectedOrder(null)
+		setSelectedOrderId(null)
 	}
 
 	return (
 		<ProtectedRoute requiredRole='worker'>
 			<DashboardLayout>
 				<div className='space-y-4 sm:space-y-6 md:space-y-8'>
-					{/* Header with Suspense and skeleton */}
 					<Suspense fallback={<WorkerDashboardHeaderSkeleton />}>
-						<WorkerDashboardHeader
-							username={user?.username}
-							branch={user?.branch}
-						/>
+						<WorkerDashboardHeader username={user?.username} />
 					</Suspense>
 
-					{/* Quick Actions with Suspense and skeleton */}
 					<Suspense fallback={<QuickActionSkeleton />}>
 						<QuickActions />
 					</Suspense>
 
-					{/* Recent Orders - component handles its own loading state */}
+					<Suspense fallback={<div className='h-16' />}>
+						<HolidayDayNotice
+							requestedDate={new Date().toISOString().split('T')[0]}
+						/>
+					</Suspense>
+
 					<RecentOrdersList
-						orders={recentOrders}
-						totalOrders={totalOrders}
+						orders={ordersData?.orders ?? []}
+						totalOrders={ordersData?.pagination.total ?? 0}
 						currentPage={currentPage}
-						totalPages={totalPages}
-						loading={loading}
-						error={error}
+						totalPages={ordersData?.pagination.pages ?? 1}
+						loading={isLoading || isFetching}
+						error={isError ? 'Failed to load recent orders' : ''}
 						dateFilter={dateFilter}
 						onViewOrder={handleViewOrder}
 						onPageChange={handlePageChange}
 						onDateFilterChange={handleDateFilterChange}
-						onRetry={fetchRecentOrders}
+						onRetry={() => refetch()}
 					/>
 				</div>
 
-				{/* Order Details Modal with Suspense */}
 				<Suspense fallback={<div></div>}>
 					<OrderDetailsModal
-						order={selectedOrder}
+						order={orderDetailData?.order ?? null}
 						isOpen={isModalOpen}
 						onClose={handleCloseModal}
 					/>

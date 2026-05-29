@@ -12,15 +12,8 @@ import {
 } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import {
-	Select,
-	SelectContent,
-	SelectItem,
-	SelectTrigger,
-	SelectValue,
-} from '@/components/ui/select'
 import { useAuth } from '@/contexts/AuthContext'
-import { ordersApi, productsApi, usersApi } from '@/lib/api'
+import { ordersApi, productsApi } from '@/lib/api'
 import { Order, Product } from '@/types'
 import {
 	AlertCircle,
@@ -57,8 +50,6 @@ const EditOrder: React.FC = () => {
 
 	// Form state
 	const [products, setProducts] = useState<Product[]>([])
-	const [branches, setBranches] = useState<string[]>([])
-	const [selectedBranch, setSelectedBranch] = useState('')
 	const [requestedDate, setRequestedDate] = useState('')
 	const [orderItems, setOrderItems] = useState<OrderItem[]>([])
 	const [orderNotes, setOrderNotes] = useState('')
@@ -90,7 +81,6 @@ const EditOrder: React.FC = () => {
 				setOriginalOrder(order)
 
 				// Pre-fill form with order data
-				setSelectedBranch(order.branch)
 				setRequestedDate(order.requestedDate.split('T')[0])
 				setOrderNotes(order.notes || '')
 
@@ -115,28 +105,22 @@ const EditOrder: React.FC = () => {
 		}
 	}, [params.id, user])
 
-	// Fetch products and branches
+	// Fetch products
 	useEffect(() => {
-		const fetchData = async () => {
+		const fetchProducts = async () => {
 			try {
-				const [productsResponse, branchesResponse] = await Promise.all([
-					productsApi.getProducts({ active: 'true' }),
-					usersApi.getBranches(),
-				])
-
-				// Filter out products with suppliers (these are for purchase catalog only)
+				const productsResponse = await productsApi.getProducts({ active: 'true' })
 				const workerProducts = (productsResponse.products || []).filter(
 					product => !product.supplier || product.supplier.trim() === ''
 				)
 				setProducts(workerProducts)
-				setBranches(branchesResponse.branches)
 			} catch (err) {
-				console.error('Error fetching data:', err)
-				setError('Failed to load products and branches')
+				console.error('Error fetching products:', err)
+				setError('Failed to load products')
 			}
 		}
 
-		fetchData()
+		fetchProducts()
 	}, [])
 
 	// Filter products based on search
@@ -231,7 +215,6 @@ const EditOrder: React.FC = () => {
 		if (!originalOrder) return false
 
 		// Check basic fields
-		if (selectedBranch !== originalOrder.branch) return true
 		if (requestedDate !== originalOrder.requestedDate.split('T')[0]) return true
 		if (orderNotes !== (originalOrder.notes || '')) return true
 
@@ -250,18 +233,13 @@ const EditOrder: React.FC = () => {
 		}
 
 		return false
-	}, [originalOrder, selectedBranch, requestedDate, orderNotes, orderItems])
+	}, [originalOrder, requestedDate, orderNotes, orderItems])
 
 	// Submit updated order
 	const submitOrder = async () => {
 		if (!originalOrder) return
 
 		// Validation
-		if (!selectedBranch) {
-			setError('Please select a branch')
-			return
-		}
-
 		if (!requestedDate) {
 			setError('Please select a requested date')
 			return
@@ -278,7 +256,6 @@ const EditOrder: React.FC = () => {
 
 			const orderData = {
 				requestedDate,
-				branch: selectedBranch,
 				items: orderItems.map(item => ({
 					product: item.product._id,
 					quantity: item.quantity,
@@ -587,31 +564,6 @@ const EditOrder: React.FC = () => {
 									</CardDescription>
 								</CardHeader>
 								<CardContent className='p-3 sm:p-4 lg:p-6 pt-0 space-y-3 sm:space-y-4'>
-									{/* Branch Selection */}
-									<div>
-										<Label
-											htmlFor='branch'
-											className='text-xs sm:text-sm font-medium text-gray-700 block mb-1'
-										>
-											Branch *
-										</Label>
-										<Select
-											value={selectedBranch}
-											onValueChange={setSelectedBranch}
-										>
-											<SelectTrigger className='h-9 sm:h-10 lg:h-11'>
-												<SelectValue placeholder='Select branch' />
-											</SelectTrigger>
-											<SelectContent>
-												{branches.map(branch => (
-													<SelectItem key={branch} value={branch}>
-														{branch}
-													</SelectItem>
-												))}
-											</SelectContent>
-										</Select>
-									</div>
-
 									{/* Requested Date */}
 									<div>
 										<Label

@@ -29,9 +29,11 @@ import { usePathname, useRouter } from 'next/navigation'
 import React from 'react'
 
 const Navbar: React.FC = () => {
-	const { user, logout, isAdmin, isWorker } = useAuth()
+	const { user, logout, isAdmin, isWorker, isEditor } = useAuth()
 	const router = useRouter()
 	const pathname = usePathname()
+
+	const homeHref = isAdmin ? '/admin' : isEditor ? '/editor' : '/worker'
 
 	const handleLogout = async () => {
 		await logout()
@@ -62,10 +64,7 @@ const Navbar: React.FC = () => {
 				<div className='flex justify-between h-16'>
 					{/* Logo and main navigation */}
 					<div className='flex items-center'>
-						<Link
-							href={isAdmin ? '/admin' : '/worker'}
-							className='flex items-center flex-shrink-0'
-						>
+						<Link href={homeHref} className='flex items-center flex-shrink-0'>
 							<Image
 								src='/crown.png'
 								alt='King Kebab Supply'
@@ -113,6 +112,22 @@ const Navbar: React.FC = () => {
 									>
 										<MapPin className='h-4 w-4 mr-2 shrink-0' />
 										Branch Analytics
+									</Link>
+								</>
+							)}
+
+							{isEditor && (
+								<>
+									<Link href='/editor' className={navLinkClass('/editor')}>
+										<ShoppingCart className='h-4 w-4 mr-2 shrink-0' />
+										Orders
+									</Link>
+									<Link
+										href='/editor/drink-orders'
+										className={navLinkClass('/editor/drink-orders')}
+									>
+										<CupSoda className='h-4 w-4 mr-2 shrink-0' />
+										Drink Orders
 									</Link>
 								</>
 							)}
@@ -263,6 +278,26 @@ const Navbar: React.FC = () => {
 												>
 													<MapPin className='h-4 w-4 mr-3' />
 													Branch Analytics
+												</Link>
+											</DropdownMenuItem>
+										</>
+									)}
+
+									{isEditor && (
+										<>
+											<DropdownMenuItem asChild>
+												<Link href='/editor' className={mobileNavLinkClass('/editor')}>
+													<ShoppingCart className='h-4 w-4 mr-3 shrink-0' />
+													Orders
+												</Link>
+											</DropdownMenuItem>
+											<DropdownMenuItem asChild>
+												<Link
+													href='/editor/drink-orders'
+													className={mobileNavLinkClass('/editor/drink-orders')}
+												>
+													<CupSoda className='h-4 w-4 mr-3 shrink-0' />
+													Drink Orders
 												</Link>
 											</DropdownMenuItem>
 										</>

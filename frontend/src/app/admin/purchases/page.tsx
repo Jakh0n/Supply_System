@@ -86,10 +86,6 @@ const PurchasesPage: React.FC = () => {
 		updatedData?: Partial<ProductFormData>,
 		paymentMethod: PaymentMethod = 'cash'
 	) => {
-		console.log('🛒 Creating purchase with product details:')
-		console.log('📦 Product:', product)
-		console.log('📝 Updated data:', updatedData)
-
 		try {
 			// Calculate quantity and price based on count only
 			// Ensure we have valid values for calculation
@@ -97,12 +93,6 @@ const PurchasesPage: React.FC = () => {
 			const unitPrice = updatedData?.price || product.price || 0
 			const totalQuantity = count
 			const totalPrice = totalQuantity * unitPrice
-
-			console.log('📊 Purchase calculation:')
-			console.log('  Count:', count)
-			console.log('  Unit Price:', unitPrice)
-			console.log('  Total Quantity:', totalQuantity)
-			console.log('  Total Price:', totalPrice)
 
 			// Validate that we have valid values
 			if (totalQuantity <= 0) {
@@ -126,17 +116,14 @@ const PurchasesPage: React.FC = () => {
 				images: product.images || [],
 			}
 
-			console.log('📦 Final purchase data:', purchaseData)
-
 			await purchasesApi.createPurchase(purchaseData)
-			console.log('✅ Purchase created successfully!')
 			toast.success('Purchase created successfully!')
 
 			// Refresh both purchase history and product list
 			setPurchaseRefreshTrigger(prev => prev + 1)
 			setProductRefreshTrigger(prev => prev + 1)
 		} catch (error) {
-			console.error('❌ Error creating purchase:', error)
+			console.error('Error creating purchase:', error)
 			toast.error('Failed to create purchase')
 		}
 	}
@@ -156,15 +143,6 @@ const PurchasesPage: React.FC = () => {
 	)
 	const averageOrderValue =
 		totalPurchases > 0 ? totalAmount / totalPurchases : 0
-
-	// Debug logging
-	console.log('📊 Stats calculation:', {
-		purchases: purchases.length,
-		totalPurchases,
-		totalAmount,
-		averageOrderValue,
-		purchaseLoading,
-	})
 
 	return (
 		<ProtectedRoute requiredRole='admin'>

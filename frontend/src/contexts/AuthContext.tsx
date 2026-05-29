@@ -12,6 +12,7 @@ interface AuthContextType {
 	logout: () => Promise<void>
 	isAdmin: boolean
 	isWorker: boolean
+	isEditor: boolean
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
@@ -94,6 +95,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
 	const isAdmin = user?.position === 'admin'
 	const isWorker = user?.position === 'worker'
+	const isEditor = user?.position === 'editor'
 
 	const value: AuthContextType = {
 		user,
@@ -102,6 +104,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 		logout,
 		isAdmin,
 		isWorker,
+		isEditor,
 	}
 
 	return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

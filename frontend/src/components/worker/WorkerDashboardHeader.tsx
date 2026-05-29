@@ -2,12 +2,10 @@ import React from 'react'
 
 interface WorkerDashboardHeaderProps {
 	username?: string
-	branch?: string
 }
 
 const WorkerDashboardHeader: React.FC<WorkerDashboardHeaderProps> = ({
 	username,
-	branch,
 }) => {
 	return (
 		<div className='flex flex-col sm:flex-row sm:justify-between sm:items-start gap-3 sm:gap-4'>
@@ -18,12 +16,6 @@ const WorkerDashboardHeader: React.FC<WorkerDashboardHeaderProps> = ({
 				<p className='mt-1.5 sm:mt-2 md:mt-2 lg:mt-3 text-sm sm:text-base md:text-[0.9375rem] lg:text-lg text-gray-600 leading-relaxed'>
 					Welcome back,{' '}
 					<span className='font-semibold text-blue-600'>{username}</span>!
-					{branch && (
-						<span className='block sm:inline sm:ml-1'>
-							Managing orders for{' '}
-							<span className='font-medium text-gray-800'>{branch}</span>
-						</span>
-					)}
 				</p>
 			</div>
 		</div>

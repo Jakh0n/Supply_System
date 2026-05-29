@@ -16,6 +16,7 @@ import {
 	OrderFormData,
 	OrdersResponse,
 	OrderStatus,
+	OrderDayContextResponse,
 	Product,
 	ProductCategory,
 	ProductFilters,
@@ -219,6 +220,20 @@ export const ordersApi = {
 	getOrder: async (id: string): Promise<{ order: Order }> => {
 		const response = await api.get(`/orders/${id}`)
 		return { order: cleanOrderData(response.data.order) }
+	},
+
+	getOrderDayContext: async (
+		requestedDate?: string
+	): Promise<OrderDayContextResponse> => {
+		const search = new URLSearchParams()
+		if (requestedDate) {
+			search.append('requestedDate', requestedDate)
+		}
+		const query = search.toString()
+		const response = await api.get(
+			`/orders/day-context${query ? `?${query}` : ''}`
+		)
+		return response.data
 	},
 
 	createOrder: async (data: OrderFormData): Promise<{ order: Order }> => {
@@ -641,17 +656,8 @@ export const purchasesApi = {
 	createPurchase: async (
 		data: ProductPurchaseFormData
 	): Promise<ProductPurchase> => {
-		console.log('Creating purchase with data:', data)
-		console.log('Data types:', {
-			price: typeof data.price,
-			quantity: typeof data.quantity,
-			category: typeof data.category,
-			paymentWay: typeof data.paymentWay,
-			unit: typeof data.unit,
-		})
 		try {
 			const response = await api.post('/purchases', data)
-			console.log('Purchase created successfully:', response.data)
 			return response.data.data
 		} catch (error) {
 			if (axios.isAxiosError(error)) {
@@ -671,7 +677,6 @@ export const purchasesApi = {
 		id: string,
 		data: Partial<ProductPurchaseFormData>
 	): Promise<ProductPurchase> => {
-		console.log('Updating purchase with data:', data)
 		const response = await api.put(`/purchases/${id}`, data)
 		return response.data.data
 	},

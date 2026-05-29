@@ -64,10 +64,6 @@ const BuyWithEditModal: React.FC<BuyWithEditModalProps> = ({
 	const [hasChanges, setHasChanges] = useState(false)
 
 	useEffect(() => {
-		console.log('🔄 Modal opened with product:', product)
-		console.log('📊 Product count value:', product?.count)
-		console.log('📊 Product price value:', product?.price)
-
 		if (product) {
 			const initialData = {
 				name: product.name,
@@ -81,56 +77,32 @@ const BuyWithEditModal: React.FC<BuyWithEditModalProps> = ({
 				category: product.category,
 				description: product.description || '',
 			}
-			console.log('📝 Product details loaded:', initialData)
 			setFormData(initialData)
 			setPaymentMethod('cash') // Reset payment method to default
 			setHasChanges(false)
 		}
 	}, [product])
 
-	// Track form data changes
-	useEffect(() => {
-		console.log('📊 Form data updated:', formData)
-		console.log('🔢 Current calculation:', {
-			count: formData.count,
-			price: formData.price,
-			total: formData.count * formData.price,
-		})
-	}, [formData])
-
 	const handleInputChange = (field: string, value: string | number) => {
-		console.log(`🔄 Field changed: ${field} = ${value}`)
 		setFormData(prev => {
 			const newData = { ...prev, [field]: value }
-			console.log('📝 New form data:', newData)
 			return newData
 		})
 		setHasChanges(true)
 	}
 
 	const handleBuy = async () => {
-		console.log('🛒 Buy Now clicked!')
-		console.log('📋 Current form data:', formData)
-		console.log('🔍 Product:', product)
-
 		setLoading(true)
 		try {
 			if (hasChanges) {
-				console.log('🔄 Updating product first...')
-				// Update product first, then buy
 				await productsApi.updateProduct(product!._id, formData)
-				console.log('✅ Product updated successfully!')
 				toast.success('Product updated successfully!')
 			}
 
-			console.log('📦 Creating purchase with data:', formData)
-			console.log('💳 Payment method:', paymentMethod)
-			// Create purchase
 			onBuy(product!, hasChanges ? formData : undefined, paymentMethod)
-			console.log('✅ Purchase process completed!')
 			onClose()
 		} catch (error) {
-			console.error('❌ Error updating product:', error)
+			console.error('Error updating product:', error)
 			toast.error('Failed to update product')
 		} finally {
 			setLoading(false)

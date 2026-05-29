@@ -1,6 +1,7 @@
 'use client'
 
 import { useAuth } from '@/contexts/AuthContext'
+import { getDashboardPathForRole } from '@/lib/authRouting'
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
 import { useEffect } from 'react'
@@ -12,12 +13,7 @@ export default function HomePage() {
 	useEffect(() => {
 		if (!loading) {
 			if (user) {
-				// Redirect authenticated users to their dashboard
-				if (user.position === 'admin') {
-					router.push('/admin')
-				} else {
-					router.push('/worker')
-				}
+				router.push(getDashboardPathForRole(user.position))
 			} else {
 				// Redirect unauthenticated users to login
 				router.push('/login')

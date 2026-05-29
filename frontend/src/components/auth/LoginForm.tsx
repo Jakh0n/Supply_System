@@ -11,6 +11,7 @@ import {
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { useAuth } from '@/contexts/AuthContext'
+import { getDashboardPathForRole } from '@/lib/authRouting'
 import { LoginCredentials } from '@/types'
 import { AlertCircle, Eye, EyeOff } from 'lucide-react'
 import Image from 'next/image'
@@ -50,13 +51,7 @@ const LoginForm: React.FC = () => {
 	// Handle navigation after user state changes
 	useEffect(() => {
 		if (user) {
-			if (user.position === 'admin') {
-				router.push('/admin')
-			} else if (user.position === 'editor') {
-				router.push('/editor')
-			} else {
-				router.push('/worker')
-			}
+			router.push(getDashboardPathForRole(user.position))
 		}
 	}, [user, router])
 

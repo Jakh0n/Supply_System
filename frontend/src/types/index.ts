@@ -187,6 +187,26 @@ export interface OrderFilters {
 	viewAll?: string // For workers to view all orders
 }
 
+export interface KoreanDayContext {
+	date: string
+	dayOfWeekKo: string
+	dayOfWeekEn: string
+	dayOfWeekIndex: number
+	isWeekend: boolean
+	isSunday: boolean
+	isHoliday: boolean
+	holidayNameKo: string | null
+	holidayNameEn: string | null
+	trafficHint: 'higher' | 'lower' | 'closed' | 'normal'
+	messages: string[]
+	weekdayLabel?: string
+	summary?: string
+}
+
+export interface OrderDayContextResponse {
+	dayContext: KoreanDayContext
+}
+
 export interface ProductFilters {
 	category?: ProductCategory | 'all'
 	search?: string

@@ -1,7 +1,7 @@
 'use client'
 
 import { useAuth } from '@/contexts/AuthContext'
-import { Package } from 'lucide-react'
+import { getDashboardPathForRole } from '@/lib/authRouting'
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
 import React, { useEffect, useState } from 'react'
@@ -32,13 +32,7 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
 
 			if (requiredRole && user.position !== requiredRole) {
 				setIsRedirecting(true)
-				if (user.position === 'admin') {
-					router.push('/admin')
-				} else if (user.position === 'editor') {
-					router.push('/editor')
-				} else {
-					router.push('/worker')
-				}
+				router.push(getDashboardPathForRole(user.position))
 				return
 			}
 		}
@@ -91,9 +85,15 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
 		return (
 			<div className='min-h-screen flex items-center justify-center bg-gray-50'>
 				<div className='text-center'>
-					<Package className='h-12 w-12 text-blue-600 mx-auto' />
-					<h2 className='mt-4 text-xl font-semibold text-gray-900'>
-						RestaurantSupply
+					<Image
+						src='/crown.png'
+						alt='King Kebab Supply'
+						width={48}
+						height={48}
+						className='h-12 w-12 mx-auto'
+					/>
+					<h2 className='mt-4 text-xl font-semibold text-blue-500'>
+						<span className='text-red-600'>King Kebab</span> Supply
 					</h2>
 					<p className='mt-2 text-gray-600'>Redirecting...</p>
 				</div>

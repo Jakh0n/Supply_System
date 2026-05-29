@@ -10,7 +10,6 @@ interface QuickActionItem {
 	icon: LucideIcon
 	iconBg: string
 	cardBg: string
-	hoverBg: string
 }
 
 const QUICK_ACTIONS: QuickActionItem[] = [
@@ -21,7 +20,6 @@ const QUICK_ACTIONS: QuickActionItem[] = [
 		icon: Plus,
 		iconBg: 'from-green-500 to-green-600',
 		cardBg: 'from-white to-green-50',
-		hoverBg: 'sm:hover:from-green-50 sm:hover:to-green-100',
 	},
 	{
 		href: '/worker/orders',
@@ -30,7 +28,6 @@ const QUICK_ACTIONS: QuickActionItem[] = [
 		icon: ShoppingCart,
 		iconBg: 'from-blue-500 to-blue-600',
 		cardBg: 'from-white to-blue-50',
-		hoverBg: 'sm:hover:from-blue-50 sm:hover:to-blue-100',
 	},
 	{
 		href: '/worker/all-orders',
@@ -39,7 +36,6 @@ const QUICK_ACTIONS: QuickActionItem[] = [
 		icon: Users,
 		iconBg: 'from-purple-500 to-purple-600',
 		cardBg: 'from-white to-purple-50',
-		hoverBg: 'sm:hover:from-purple-50 sm:hover:to-purple-100',
 	},
 	{
 		href: '/worker/new-drink-order',
@@ -49,7 +45,6 @@ const QUICK_ACTIONS: QuickActionItem[] = [
 		icon: CupSoda,
 		iconBg: 'from-cyan-500 to-cyan-600',
 		cardBg: 'from-white to-cyan-50',
-		hoverBg: 'sm:hover:from-cyan-50 sm:hover:to-cyan-100',
 	},
 ]
 
@@ -57,14 +52,14 @@ const QuickActionCard: React.FC<{ action: QuickActionItem }> = ({ action }) => {
 	const Icon = action.icon
 
 	return (
-		<Link href={action.href} className='block group h-full'>
+		<Link href={action.href} className='block h-full'>
 			<Card
-				className={`cursor-pointer transition-all duration-300 h-full border-0 bg-gradient-to-br ${action.cardBg} ${action.hoverBg} shadow-md md:shadow-lg sm:hover:shadow-xl lg:hover:scale-[1.02]`}
+				className={`cursor-pointer h-full border-0 bg-gradient-to-br ${action.cardBg} shadow-md md:shadow-lg`}
 			>
 				<CardHeader className='p-4 sm:p-5 md:p-3.5 lg:p-4 xl:p-6'>
 					<div className='flex items-start gap-2.5 sm:gap-3 md:gap-2 lg:gap-2.5 xl:gap-3'>
 						<div
-							className={`p-2 sm:p-2.5 md:p-2 lg:p-2.5 xl:p-3 bg-gradient-to-br ${action.iconBg} rounded-lg md:rounded-xl shrink-0 shadow-md sm:group-hover:shadow-lg transition-shadow`}
+							className={`p-2 sm:p-2.5 md:p-2 lg:p-2.5 xl:p-3 bg-gradient-to-br ${action.iconBg} rounded-lg md:rounded-xl shrink-0 shadow-md`}
 						>
 							<Icon className='h-4 w-4 sm:h-5 sm:w-5 md:h-4 md:w-4 lg:h-5 lg:w-5 xl:h-6 xl:w-6 text-white' />
 						</div>

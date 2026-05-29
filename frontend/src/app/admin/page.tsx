@@ -114,7 +114,7 @@ const AdminDashboard: React.FC = () => {
 					break
 
 				default:
-					console.log('Unknown action:', action)
+					break
 			}
 		} catch (error) {
 			console.error('Action error:', error)
@@ -266,7 +266,6 @@ const AdminDashboard: React.FC = () => {
 						format: 'a4',
 					})
 				}
-				console.log(`${timeframe} statistics PDF generated successfully`)
 			} else {
 				// Generate CSV
 				const csvContent = [
@@ -302,7 +301,6 @@ const AdminDashboard: React.FC = () => {
 				a.click()
 				document.body.removeChild(a)
 				URL.revokeObjectURL(url)
-				console.log(`${timeframe} statistics CSV generated successfully`)
 			}
 		} catch (error) {
 			console.error(`${timeframe} statistics generation error:`, error)
@@ -459,15 +457,6 @@ const AdminDashboard: React.FC = () => {
 					orderCount: hasOrders ? ordersResponse.orders.length : 0,
 				})
 
-				if (hasOrders) {
-					console.log(
-						`Branch report PDF generated successfully for ${timeframe} with ${ordersResponse.orders.length} orders from ${filteredBranchData.length} branches`
-					)
-				} else {
-					console.log(
-						`Branch report PDF generated for ${timeframe} - No orders found for ${dateInfo}`
-					)
-				}
 			} else {
 				// Generate CSV with appropriate messaging for empty data
 				const csvContent = [
@@ -516,16 +505,6 @@ const AdminDashboard: React.FC = () => {
 				a.click()
 				document.body.removeChild(a)
 				URL.revokeObjectURL(url)
-
-				if (hasOrders) {
-					console.log(
-						`Branch report CSV generated successfully for ${timeframe} with ${ordersResponse.orders.length} orders from ${filteredBranchData.length} branches`
-					)
-				} else {
-					console.log(
-						`Branch report CSV generated for ${timeframe} - No orders found for ${dateInfo}`
-					)
-				}
 			}
 		} catch (error) {
 			console.error('Branch report generation error:', error)

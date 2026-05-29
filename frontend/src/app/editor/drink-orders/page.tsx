@@ -28,10 +28,14 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { useAuth } from "@/contexts/AuthContext";
-import { branchesApi, drinkOrdersApi } from "@/lib/api";
+import {
+  useBranchNames,
+  useDrinkOrdersList,
+  useUpdateDrinkOrderStatus,
+} from "@/hooks/queries";
 import { DrinkOrder, Order, OrderStatus } from "@/types";
 import { CupSoda } from "lucide-react";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { toast } from "sonner";
 
 interface DrinkOrderFilterState {
@@ -47,17 +51,11 @@ const formatDate = (dateString: string) =>
 
 const EditorDrinkOrdersPage = () => {
   const { user, logout } = useAuth();
-  const [drinkOrders, setDrinkOrders] = useState<DrinkOrder[]>([]);
-  const [branches, setBranches] = useState<Array<{ name: string }>>([]);
-  const [totalPages, setTotalPages] = useState(1);
-  const [totalCount, setTotalCount] = useState(0);
-  const [loading, setLoading] = useState(true);
   const [selectedOrder, setSelectedOrder] = useState<DrinkOrder | null>(null);
   const [showOrderDialog, setShowOrderDialog] = useState(false);
   const [showStatusDialog, setShowStatusDialog] = useState(false);
   const [newStatus, setNewStatus] = useState<OrderStatus>("pending");
   const [adminNotes, setAdminNotes] = useState("");
-  const [updatingStatus, setUpdatingStatus] = useState(false);
   const [filters, setFilters] = useState<DrinkOrderFilterState>({
     date: "",
     branch: "",
@@ -66,44 +64,31 @@ const EditorDrinkOrdersPage = () => {
     limit: 10,
   });
 
-  const fetchBranches = useCallback(async () => {
-    try {
-      const response = await branchesApi.getBranchNames();
-      setBranches(response.branches || []);
-    } catch (error) {
-      console.error("Failed to fetch branches:", error);
-    }
-  }, []);
+  const drinkOrderFilters = useMemo(
+    () => ({
+      date: filters.date || undefined,
+      branch: filters.branch || undefined,
+      status: filters.status !== "all" ? filters.status : undefined,
+      page: filters.page,
+      limit: filters.limit,
+      viewAll: "true",
+    }),
+    [filters],
+  );
 
-  const fetchDrinkOrders = useCallback(async () => {
-    try {
-      setLoading(true);
-      const response = await drinkOrdersApi.getDrinkOrders({
-        date: filters.date || undefined,
-        branch: filters.branch || undefined,
-        status: filters.status !== "all" ? filters.status : undefined,
-        page: filters.page,
-        limit: filters.limit,
-        viewAll: "true",
-      });
-      setDrinkOrders(response.drinkOrders);
-      setTotalPages(response.pagination.pages);
-      setTotalCount(response.pagination.total);
-    } catch (error) {
-      console.error("Error fetching drink orders:", error);
-      toast.error("Failed to load drink orders");
-    } finally {
-      setLoading(false);
-    }
-  }, [filters]);
+  const { data: branches = [] } = useBranchNames();
+  const {
+    data: drinkOrdersData,
+    isLoading,
+    isFetching,
+  } = useDrinkOrdersList(drinkOrderFilters);
 
-  useEffect(() => {
-    fetchBranches();
-  }, [fetchBranches]);
+  const updateStatusMutation = useUpdateDrinkOrderStatus();
 
-  useEffect(() => {
-    fetchDrinkOrders();
-  }, [fetchDrinkOrders]);
+  const drinkOrders = drinkOrdersData?.drinkOrders ?? [];
+  const totalPages = drinkOrdersData?.pagination.pages ?? 1;
+  const totalCount = drinkOrdersData?.pagination.total ?? 0;
+  const loading = isLoading || isFetching;
 
   const stats = useMemo(() => {
     const pending = drinkOrders.filter((o) => o.status === "pending").length;
@@ -131,24 +116,21 @@ const EditorDrinkOrdersPage = () => {
     setShowStatusDialog(true);
   };
 
-  const handleStatusUpdate = async () => {
+  const handleStatusUpdate = () => {
     if (!selectedOrder) return;
-    try {
-      setUpdatingStatus(true);
-      await drinkOrdersApi.updateDrinkOrderStatus(
-        selectedOrder._id,
-        newStatus,
-        adminNotes || undefined,
-      );
-      await fetchDrinkOrders();
-      setShowStatusDialog(false);
-      toast.success("Drink order status updated successfully");
-    } catch (error) {
-      console.error("Error updating drink order status:", error);
-      toast.error("Failed to update drink order status");
-    } finally {
-      setUpdatingStatus(false);
-    }
+
+    updateStatusMutation.mutate(
+      {
+        id: selectedOrder._id,
+        status: newStatus,
+        adminNotes: adminNotes || undefined,
+      },
+      {
+        onSuccess: () => {
+          setShowStatusDialog(false);
+        },
+      },
+    );
   };
 
   const handlePrintOrder = () => {
@@ -165,8 +147,8 @@ const EditorDrinkOrdersPage = () => {
     });
   };
 
-  if (!user || user.position !== "editor") {
-    return <div>Access denied. Editor privileges required.</div>;
+  if (!user) {
+    return null;
   }
 
   return (
@@ -487,16 +469,16 @@ const EditorDrinkOrdersPage = () => {
               <Button
                 variant="outline"
                 onClick={() => setShowStatusDialog(false)}
-                disabled={updatingStatus}
+                disabled={updateStatusMutation.isPending}
               >
                 Cancel
               </Button>
               <Button
                 onClick={handleStatusUpdate}
-                disabled={updatingStatus}
+                disabled={updateStatusMutation.isPending}
                 className="bg-cyan-600 hover:bg-cyan-700"
               >
-                {updatingStatus ? "Updating..." : "Update Status"}
+                {updateStatusMutation.isPending ? "Updating..." : "Update Status"}
               </Button>
             </div>
           </div>

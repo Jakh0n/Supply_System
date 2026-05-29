@@ -13,16 +13,10 @@ import {
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { ProductThumbnail } from '@/components/ui/ProductImage'
-import {
-	Select,
-	SelectContent,
-	SelectItem,
-	SelectTrigger,
-	SelectValue,
-} from '@/components/ui/select'
 import { useAuth } from '@/contexts/AuthContext'
 import { drinkOrdersApi, productsApi } from '@/lib/api'
 import { getPrimaryImage } from '@/lib/imageUtils'
+import { getWorkerBranch } from '@/lib/workerBranch'
 import { Product } from '@/types'
 import {
 	AlertCircle,
@@ -42,28 +36,16 @@ interface DrinkOrderItem {
 	quantity: number
 }
 
-const DELIVERY_BRANCHES = [
-	'Kondae New',
-	'Hongdae',
-	'Seulde',
-	'Seulde Tantuni',
-	'Gangnam',
-	'Kondae',
-	'Itewon',
-	'Paket',
-	'Posco',
-]
-
 const getTodayDate = (): string => new Date().toISOString().split('T')[0]
 
 const NewDrinkOrderPage: React.FC = () => {
 	const { user } = useAuth()
 	const router = useRouter()
+	const orderBranch = getWorkerBranch(user)
 
 	const [loading, setLoading] = useState(true)
 	const [submitting, setSubmitting] = useState(false)
 	const [searchTerm, setSearchTerm] = useState('')
-	const [selectedBranch, setSelectedBranch] = useState(user?.branch || '')
 	const [requestedDate, setRequestedDate] = useState(getTodayDate())
 	const [orderNotes, setOrderNotes] = useState('')
 	const [allDrinkProducts, setAllDrinkProducts] = useState<Product[]>([])
@@ -127,8 +109,8 @@ const NewDrinkOrderPage: React.FC = () => {
 	}
 
 	const submitDrinkOrder = async () => {
-		if (!selectedBranch) {
-			toast.error('Please select a delivery branch')
+		if (!orderBranch) {
+			toast.error('Could not determine your branch. Contact an admin.')
 			return
 		}
 		if (!requestedDate) {
@@ -143,7 +125,7 @@ const NewDrinkOrderPage: React.FC = () => {
 		try {
 			setSubmitting(true)
 			await drinkOrdersApi.createDrinkOrder({
-				branch: selectedBranch,
+				branch: orderBranch,
 				requestedDate,
 				items: orderItems.map(item => ({
 					product: item.product._id,
@@ -277,22 +259,6 @@ const NewDrinkOrderPage: React.FC = () => {
 								</CardHeader>
 								<CardContent className='space-y-4 p-4 sm:p-6 pt-0'>
 									<div className='space-y-2'>
-										<Label>Delivery Branch</Label>
-										<Select value={selectedBranch} onValueChange={setSelectedBranch}>
-											<SelectTrigger className='h-10 sm:h-11'>
-												<SelectValue placeholder='Select branch' />
-											</SelectTrigger>
-											<SelectContent>
-												{DELIVERY_BRANCHES.map(branch => (
-													<SelectItem key={branch} value={branch}>
-														{branch}
-													</SelectItem>
-												))}
-											</SelectContent>
-										</Select>
-									</div>
-
-									<div className='space-y-2'>
 										<Label className='flex items-center gap-2'>
 											<Calendar className='h-4 w-4' />
 											Requested Date
@@ -351,7 +317,9 @@ const NewDrinkOrderPage: React.FC = () => {
 
 									<Button
 										onClick={submitDrinkOrder}
-										disabled={submitting || orderItems.length === 0}
+										disabled={
+											submitting || !orderBranch || orderItems.length === 0
+										}
 										className='hidden lg:flex w-full bg-cyan-600 hover:bg-cyan-700 h-11'
 									>
 										{submitting ? 'Submitting...' : 'Submit Drink Order'}

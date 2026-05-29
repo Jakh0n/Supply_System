@@ -1058,8 +1058,8 @@ export default function EditorDashboard() {
 			})
 	}
 
-	if (!user || user.position !== 'editor') {
-		return <div>Access denied. Editor privileges required.</div>
+	if (!user) {
+		return null
 	}
 
 	return (

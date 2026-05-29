@@ -17,7 +17,10 @@ import {
 	DialogHeader,
 	DialogTitle,
 } from '@/components/ui/dialog'
-import { drinkOrdersApi } from '@/lib/api'
+import {
+	useDeleteDrinkOrder,
+	useDrinkOrdersList,
+} from '@/hooks/queries'
 import { DrinkOrder, OrderStatus } from '@/types'
 import {
 	AlertCircle,
@@ -30,7 +33,7 @@ import {
 	XCircle,
 } from 'lucide-react'
 import Link from 'next/link'
-import React, { useCallback, useEffect, useState } from 'react'
+import React, { useState } from 'react'
 import { toast } from 'sonner'
 
 const formatDate = (dateString: string): string =>
@@ -76,30 +79,21 @@ const getStatusDisplay = (status: OrderStatus) => {
 }
 
 const DrinkOrdersPage: React.FC = () => {
-	const [loading, setLoading] = useState(true)
-	const [error, setError] = useState('')
-	const [drinkOrders, setDrinkOrders] = useState<DrinkOrder[]>([])
 	const [selectedOrder, setSelectedOrder] = useState<DrinkOrder | null>(null)
 	const [isDetailDialogOpen, setIsDetailDialogOpen] = useState(false)
 
-	const fetchDrinkOrders = useCallback(async () => {
-		try {
-			setLoading(true)
-			const response = await drinkOrdersApi.getDrinkOrders({ page: 1, limit: 20 })
-			setDrinkOrders(response.drinkOrders)
-		} catch (err) {
-			console.error('Drink orders fetch error:', err)
-			setError('Failed to load drink orders')
-		} finally {
-			setLoading(false)
-		}
-	}, [])
+	const {
+		data,
+		isLoading,
+		isError,
+		refetch,
+	} = useDrinkOrdersList({ page: 1, limit: 20 })
 
-	useEffect(() => {
-		fetchDrinkOrders()
-	}, [fetchDrinkOrders])
+	const deleteDrinkOrderMutation = useDeleteDrinkOrder()
 
-	const deleteDrinkOrder = async (order: DrinkOrder) => {
+	const drinkOrders = data?.drinkOrders ?? []
+
+	const deleteDrinkOrder = (order: DrinkOrder) => {
 		if (order.status !== 'pending') {
 			toast.error('Only pending drink orders can be deleted')
 			return
@@ -109,14 +103,7 @@ const DrinkOrdersPage: React.FC = () => {
 			return
 		}
 
-		try {
-			await drinkOrdersApi.deleteDrinkOrder(order._id)
-			toast.success('Drink order deleted')
-			await fetchDrinkOrders()
-		} catch (err) {
-			console.error('Delete drink order error:', err)
-			toast.error('Failed to delete drink order')
-		}
+		deleteDrinkOrderMutation.mutate(order._id)
 	}
 
 	return (
@@ -141,9 +128,12 @@ const DrinkOrdersPage: React.FC = () => {
 						</Link>
 					</div>
 
-					{error && (
-						<div className='bg-red-50 border border-red-200 rounded-md p-3'>
-							<p className='text-sm text-red-700'>{error}</p>
+					{isError && (
+						<div className='bg-red-50 border border-red-200 rounded-md p-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2'>
+							<p className='text-sm text-red-700'>Failed to load drink orders</p>
+							<Button variant='outline' size='sm' onClick={() => refetch()}>
+								Retry
+							</Button>
 						</div>
 					)}
 
@@ -155,7 +145,7 @@ const DrinkOrdersPage: React.FC = () => {
 							</CardDescription>
 						</CardHeader>
 						<CardContent className='p-4 sm:p-6 pt-0'>
-							{loading ? (
+							{isLoading ? (
 								<p className='text-sm text-gray-500'>Loading drink orders...</p>
 							) : drinkOrders.length === 0 ? (
 								<div className='text-center py-10'>
@@ -207,6 +197,7 @@ const DrinkOrdersPage: React.FC = () => {
 															variant='outline'
 															size='sm'
 															className='text-red-600 h-9'
+															disabled={deleteDrinkOrderMutation.isPending}
 															onClick={() => deleteDrinkOrder(order)}
 														>
 															<Trash2 className='h-4 w-4 mr-1' />
@@ -233,7 +224,9 @@ const DrinkOrdersPage: React.FC = () => {
 							<div className='space-y-3'>
 								<div className='text-sm text-gray-600 space-y-1'>
 									<div>Branch: {selectedOrder.branch}</div>
-									<div>Requested Date: {formatDate(selectedOrder.requestedDate)}</div>
+									<div>
+										Requested Date: {formatDate(selectedOrder.requestedDate)}
+									</div>
 								</div>
 								<div className='border rounded-md max-h-72 overflow-y-auto'>
 									{selectedOrder.items.map(item => (

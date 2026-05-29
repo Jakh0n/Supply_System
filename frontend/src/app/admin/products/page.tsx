@@ -129,12 +129,6 @@ const ProductsManagement: React.FC = () => {
 		try {
 			setFormLoading(true)
 
-			// Debug log the data being sent
-			console.log(
-				'Creating product with data:',
-				JSON.stringify(formData, null, 2)
-			)
-
 			const response = await productsApi.createProduct(formData)
 			setProducts(prev => [response.product, ...prev])
 			setIsCreateDialogOpen(false)
