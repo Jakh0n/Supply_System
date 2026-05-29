@@ -274,6 +274,21 @@ export const ordersApi = {
 		return response.data
 	},
 
+	bulkUpdateAllOrderStatus: async (options: {
+		status: OrderStatus
+		adminNotes?: string
+		scope?: 'all' | 'filtered'
+		date?: string
+		branch?: string
+	}): Promise<{
+		message: string
+		updatedCount: number
+		matchedCount: number
+	}> => {
+		const response = await api.patch('/orders/bulk/status-all', options)
+		return response.data
+	},
+
 	deleteOrder: async (id: string): Promise<void> => {
 		await api.delete(`/orders/${id}`)
 	},
@@ -391,6 +406,21 @@ export const drinkOrdersApi = {
 
 	deleteDrinkOrder: async (id: string): Promise<void> => {
 		await api.delete(`/drink-orders/${id}`)
+	},
+
+	bulkUpdateAllDrinkOrderStatus: async (options: {
+		status: OrderStatus
+		adminNotes?: string
+		scope?: 'all' | 'filtered'
+		date?: string
+		branch?: string
+	}): Promise<{
+		message: string
+		updatedCount: number
+		matchedCount: number
+	}> => {
+		const response = await api.patch('/drink-orders/bulk/status-all', options)
+		return response.data
 	},
 }
 

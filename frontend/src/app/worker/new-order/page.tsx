@@ -116,6 +116,14 @@ const NewOrder: React.FC = () => {
     fetchProducts();
   }, [fetchProducts]);
 
+  useEffect(() => {
+    const onFocus = () => {
+      fetchProducts();
+    };
+    window.addEventListener("focus", onFocus);
+    return () => window.removeEventListener("focus", onFocus);
+  }, [fetchProducts]);
+
   // Filter products based on search and category
   useEffect(() => {
     let filtered = products;

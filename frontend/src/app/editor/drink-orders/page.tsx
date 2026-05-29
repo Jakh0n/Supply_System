@@ -1,7 +1,15 @@
 "use client";
 
-import EditorHeader from "@/components/editor/EditorHeader";
+import EditorShell from "@/components/editor/EditorShell";
+import { editorTouchSm } from "@/components/editor/editorUi";
+import MarkAllCompletedDialog, {
+  MarkAllScope,
+} from "@/components/editor/MarkAllCompletedDialog";
+import { OrderStatusFilter } from "@/components/editor/orderStatus";
+import OrderStatusTabs from "@/components/editor/OrderStatusTabs";
+import OrdersPagination from "@/components/editor/OrdersPagination";
 import OrdersTable from "@/components/editor/OrdersTable";
+import PendingOrdersSection from "@/components/editor/PendingOrdersSection";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -30,9 +38,12 @@ import {
 import { useAuth } from "@/contexts/AuthContext";
 import {
   useBranchNames,
+  useBulkUpdateAllOrdersStatus,
+  useDrinkOrderStatusCounts,
   useDrinkOrdersList,
   useUpdateDrinkOrderStatus,
 } from "@/hooks/queries";
+import { formatDate } from "@/lib/formatDate";
 import { DrinkOrder, Order, OrderStatus } from "@/types";
 import { CupSoda } from "lucide-react";
 import { useMemo, useState } from "react";
@@ -46,9 +57,6 @@ interface DrinkOrderFilterState {
   limit: number;
 }
 
-const formatDate = (dateString: string) =>
-  new Date(dateString).toLocaleDateString();
-
 const EditorDrinkOrdersPage = () => {
   const { user, logout } = useAuth();
   const [selectedOrder, setSelectedOrder] = useState<DrinkOrder | null>(null);
@@ -56,6 +64,7 @@ const EditorDrinkOrdersPage = () => {
   const [showStatusDialog, setShowStatusDialog] = useState(false);
   const [newStatus, setNewStatus] = useState<OrderStatus>("pending");
   const [adminNotes, setAdminNotes] = useState("");
+  const [updatingOrderId, setUpdatingOrderId] = useState<string | null>(null);
   const [filters, setFilters] = useState<DrinkOrderFilterState>({
     date: "",
     branch: "",
@@ -64,16 +73,38 @@ const EditorDrinkOrdersPage = () => {
     limit: 10,
   });
 
-  const drinkOrderFilters = useMemo(
+  const statusFilter = filters.status as OrderStatusFilter;
+
+  const countBaseFilters = useMemo(
     () => ({
       date: filters.date || undefined,
       branch: filters.branch || undefined,
-      status: filters.status !== "all" ? filters.status : undefined,
+    }),
+    [filters.date, filters.branch],
+  );
+
+  const drinkOrderFilters = useMemo(
+    () => ({
+      ...countBaseFilters,
+      status: statusFilter !== "all" ? statusFilter : undefined,
       page: filters.page,
       limit: filters.limit,
       viewAll: "true",
     }),
-    [filters],
+    [countBaseFilters, statusFilter, filters.page, filters.limit],
+  );
+
+  const showPendingSection = statusFilter === "all";
+
+  const pendingPreviewFilters = useMemo(
+    () => ({
+      ...countBaseFilters,
+      status: "pending" as const,
+      page: 1,
+      limit: 5,
+      viewAll: "true",
+    }),
+    [countBaseFilters],
   );
 
   const { data: branches = [] } = useBranchNames();
@@ -83,15 +114,41 @@ const EditorDrinkOrdersPage = () => {
     isFetching,
   } = useDrinkOrdersList(drinkOrderFilters);
 
+  const { data: pendingPreviewData, isLoading: pendingPreviewLoading } =
+    useDrinkOrdersList(pendingPreviewFilters, { enabled: showPendingSection });
+
+  const { counts: statusCounts, isLoading: statusCountsLoading } =
+    useDrinkOrderStatusCounts(countBaseFilters);
+
   const updateStatusMutation = useUpdateDrinkOrderStatus();
+  const markAllCompletedMutation = useBulkUpdateAllOrdersStatus();
+  const hasDateOrBranchFilter = Boolean(filters.date || filters.branch);
 
   const drinkOrders = drinkOrdersData?.drinkOrders ?? [];
+  const pendingPreview =
+    (pendingPreviewData?.drinkOrders as unknown as Order[]) ?? [];
   const totalPages = drinkOrdersData?.pagination.pages ?? 1;
   const totalCount = drinkOrdersData?.pagination.total ?? 0;
+  const currentPage = filters.page ?? 1;
   const loading = isLoading || isFetching;
 
+  const handleStatusTabChange = (status: OrderStatusFilter) => {
+    setFilters({ ...filters, status, page: 1 });
+  };
+
+  const handleInlineStatusChange = (order: Order, status: OrderStatus) => {
+    const drinkOrder = order as DrinkOrder;
+    if (status === drinkOrder.status) return;
+
+    setUpdatingOrderId(drinkOrder._id);
+    updateStatusMutation.mutate(
+      { id: drinkOrder._id, status },
+      { onSettled: () => setUpdatingOrderId(null) },
+    );
+  };
+
   const stats = useMemo(() => {
-    const pending = drinkOrders.filter((o) => o.status === "pending").length;
+    const pending = statusCounts.pending;
     const completed = drinkOrders.filter(
       (o) => o.status === "completed",
     ).length;
@@ -101,7 +158,7 @@ const EditorDrinkOrdersPage = () => {
       0,
     );
     return { pending, completed, totalQuantity };
-  }, [drinkOrders]);
+  }, [drinkOrders, statusCounts.pending]);
 
   const handleViewOrder = (order: Order) => {
     setSelectedOrder(order as DrinkOrder);
@@ -134,7 +191,20 @@ const EditorDrinkOrdersPage = () => {
   };
 
   const handlePrintOrder = () => {
-    toast.info("Print is no yet available for drink orders");
+    toast.info("Print is not yet available for drink orders");
+  };
+
+  const handleMarkAllCompleted = (
+    scope: MarkAllScope,
+    includeDrinkOrders: boolean,
+  ) => {
+    markAllCompletedMutation.mutate({
+      status: "completed",
+      scope,
+      date: filters.date || undefined,
+      branch: filters.branch || undefined,
+      includeDrinkOrders,
+    });
   };
 
   const handleClearFilters = () => {
@@ -152,10 +222,8 @@ const EditorDrinkOrdersPage = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <EditorHeader username={user.username} onLogout={logout} />
-
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6 lg:py-8 space-y-6">
+    <EditorShell username={user.username} onLogout={logout}>
+      <div className="space-y-6">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
           <div>
             <h2 className="text-xl sm:text-2xl font-bold text-gray-900 flex items-center gap-2">
@@ -217,7 +285,7 @@ const EditorDrinkOrdersPage = () => {
             <CardTitle className="text-base sm:text-lg">Filters</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
               <div className="space-y-1.5">
                 <Label className="text-xs sm:text-sm">Date</Label>
                 <Input
@@ -226,6 +294,7 @@ const EditorDrinkOrdersPage = () => {
                   onChange={(e) =>
                     setFilters({ ...filters, date: e.target.value, page: 1 })
                   }
+                  className="h-12 sm:h-10 text-base"
                 />
               </div>
               <div className="space-y-1.5">
@@ -240,7 +309,7 @@ const EditorDrinkOrdersPage = () => {
                     })
                   }
                 >
-                  <SelectTrigger>
+                  <SelectTrigger className="h-12 sm:h-10 text-base">
                     <SelectValue placeholder="All branches" />
                   </SelectTrigger>
                   <SelectContent>
@@ -253,34 +322,10 @@ const EditorDrinkOrdersPage = () => {
                   </SelectContent>
                 </Select>
               </div>
-              <div className="space-y-1.5">
-                <Label className="text-xs sm:text-sm">Status</Label>
-                <Select
-                  value={filters.status}
-                  onValueChange={(value) =>
-                    setFilters({
-                      ...filters,
-                      status: value as OrderStatus | "all",
-                      page: 1,
-                    })
-                  }
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="All statuses" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Status</SelectItem>
-                    <SelectItem value="pending">Pending</SelectItem>
-                    <SelectItem value="approved">Approved</SelectItem>
-                    <SelectItem value="rejected">Rejected</SelectItem>
-                    <SelectItem value="completed">Completed</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="flex items-end">
+              <div className="flex items-end sm:col-span-1">
                 <Button
                   variant="outline"
-                  className="w-full"
+                  className={`${editorTouchSm} w-full`}
                   onClick={handleClearFilters}
                 >
                   Clear Filters
@@ -290,55 +335,59 @@ const EditorDrinkOrdersPage = () => {
           </CardContent>
         </Card>
 
+        {showPendingSection && (
+          <PendingOrdersSection
+            orders={pendingPreview}
+            loading={pendingPreviewLoading}
+            totalPending={statusCounts.pending}
+            updatingOrderId={updatingOrderId}
+            onViewOrder={handleViewOrder}
+            onStatusChange={handleInlineStatusChange}
+            onPrintOrder={handlePrintOrder}
+            onViewAllPending={() => handleStatusTabChange("pending")}
+          />
+        )}
+
         <Card>
-          <CardHeader className="pb-4">
+          <CardHeader className="pb-4 space-y-4">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-              <CardTitle className="text-lg sm:text-xl">
-                All Drink Orders
-              </CardTitle>
+              <CardTitle className="text-lg sm:text-xl">All Drink Orders</CardTitle>
+              <MarkAllCompletedDialog
+                loading={markAllCompletedMutation.isPending}
+                hasDateOrBranchFilter={hasDateOrBranchFilter}
+                onConfirm={handleMarkAllCompleted}
+              />
             </div>
+            <OrderStatusTabs
+              value={statusFilter}
+              counts={statusCounts}
+              loading={statusCountsLoading}
+              onChange={handleStatusTabChange}
+            />
           </CardHeader>
           <CardContent className="pt-0">
             <OrdersTable
               orders={drinkOrders as unknown as Order[]}
               loading={loading}
+              inlineStatus
+              updatingOrderId={updatingOrderId}
               onViewOrder={handleViewOrder}
+              onStatusChange={handleInlineStatusChange}
               onUpdateStatus={handleUpdateStatus}
               onPrintOrder={handlePrintOrder}
             />
 
-            {totalPages > 1 && (
-              <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-4 border-t mt-4">
-                <div className="text-sm text-gray-500">
-                  Page {filters.page} of {totalPages} ({totalCount} total)
-                </div>
-                <div className="flex gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    disabled={filters.page === 1}
-                    onClick={() =>
-                      setFilters({ ...filters, page: filters.page - 1 })
-                    }
-                  >
-                    Previous
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    disabled={filters.page === totalPages}
-                    onClick={() =>
-                      setFilters({ ...filters, page: filters.page + 1 })
-                    }
-                  >
-                    Next
-                  </Button>
-                </div>
-              </div>
-            )}
+            <OrdersPagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              totalCount={totalCount}
+              loading={loading}
+              itemLabel="drink orders"
+              onPageChange={(page) => setFilters({ ...filters, page })}
+            />
           </CardContent>
         </Card>
-      </main>
+      </div>
 
       <Dialog open={showOrderDialog} onOpenChange={setShowOrderDialog}>
         <DialogContent className="w-[95vw] max-w-3xl max-h-[90vh] overflow-y-auto mx-auto">
@@ -351,12 +400,6 @@ const EditorDrinkOrdersPage = () => {
           {selectedOrder && (
             <div className="space-y-4">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
-                <div>
-                  <span className="text-gray-500">Worker:</span>{" "}
-                  <span className="font-medium">
-                    {selectedOrder.worker.username}
-                  </span>
-                </div>
                 <div>
                   <span className="text-gray-500">Branch:</span>{" "}
                   <span className="font-medium">{selectedOrder.branch}</span>
@@ -443,7 +486,7 @@ const EditorDrinkOrdersPage = () => {
                 value={newStatus}
                 onValueChange={(value: OrderStatus) => setNewStatus(value)}
               >
-                <SelectTrigger className="mt-1">
+                <SelectTrigger className="mt-1 h-12 sm:h-10 text-base">
                   <SelectValue placeholder="Select status" />
                 </SelectTrigger>
                 <SelectContent>
@@ -470,13 +513,14 @@ const EditorDrinkOrdersPage = () => {
                 variant="outline"
                 onClick={() => setShowStatusDialog(false)}
                 disabled={updateStatusMutation.isPending}
+                className={`${editorTouchSm} w-full sm:w-auto`}
               >
                 Cancel
               </Button>
               <Button
                 onClick={handleStatusUpdate}
                 disabled={updateStatusMutation.isPending}
-                className="bg-cyan-600 hover:bg-cyan-700"
+                className={`${editorTouchSm} w-full sm:w-auto bg-cyan-600 hover:bg-cyan-700`}
               >
                 {updateStatusMutation.isPending ? "Updating..." : "Update Status"}
               </Button>
@@ -484,7 +528,7 @@ const EditorDrinkOrdersPage = () => {
           </div>
         </DialogContent>
       </Dialog>
-    </div>
+    </EditorShell>
   );
 };
 

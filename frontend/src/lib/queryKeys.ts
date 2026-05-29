@@ -1,4 +1,4 @@
-import { DrinkOrderFilters, OrderFilters } from '@/types'
+import { DrinkOrderFilters, OrderFilters, ProductFilters } from '@/types'
 
 export const queryKeys = {
 	orders: {
@@ -10,6 +10,7 @@ export const queryKeys = {
 		detail: (id: string) => [...queryKeys.orders.details(), id] as const,
 		dayContext: (requestedDate?: string) =>
 			[...queryKeys.orders.all, 'dayContext', requestedDate ?? 'today'] as const,
+		dashboardStats: () => [...queryKeys.orders.all, 'dashboardStats'] as const,
 	},
 	drinkOrders: {
 		all: ['drinkOrders'] as const,
@@ -19,5 +20,11 @@ export const queryKeys = {
 	},
 	branches: {
 		names: ['branches', 'names'] as const,
+	},
+	products: {
+		all: ['products'] as const,
+		lists: () => [...queryKeys.products.all, 'list'] as const,
+		list: (filters: ProductFilters = {}) =>
+			[...queryKeys.products.lists(), filters] as const,
 	},
 }

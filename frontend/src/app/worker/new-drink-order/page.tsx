@@ -28,7 +28,7 @@ import {
 	Trash2,
 } from 'lucide-react'
 import { useRouter } from 'next/navigation'
-import React, { useEffect, useMemo, useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { toast } from 'sonner'
 
 interface DrinkOrderItem {
@@ -52,25 +52,33 @@ const NewDrinkOrderPage: React.FC = () => {
 	const [orderItems, setOrderItems] = useState<DrinkOrderItem[]>([])
 	const totalQuantity = orderItems.reduce((acc, item) => acc + item.quantity, 0)
 
-	useEffect(() => {
-		const loadDrinkProducts = async () => {
-			try {
-				setLoading(true)
-				const response = await productsApi.getProducts({ active: 'true' })
-				const drinkProducts = (response.products || []).filter(product =>
-					['drinks', 'beverages'].includes(product.category)
-				)
-				setAllDrinkProducts(drinkProducts)
-			} catch (error) {
-				console.error('Failed to fetch drink products:', error)
-				toast.error('Failed to load drink products')
-			} finally {
-				setLoading(false)
-			}
+	const loadDrinkProducts = useCallback(async () => {
+		try {
+			setLoading(true)
+			const response = await productsApi.getProducts({ active: 'true' })
+			const drinkProducts = (response.products || []).filter(product =>
+				['drinks', 'beverages'].includes(product.category)
+			)
+			setAllDrinkProducts(drinkProducts)
+		} catch (error) {
+			console.error('Failed to fetch drink products:', error)
+			toast.error('Failed to load drink products')
+		} finally {
+			setLoading(false)
 		}
-
-		loadDrinkProducts()
 	}, [])
+
+	useEffect(() => {
+		loadDrinkProducts()
+	}, [loadDrinkProducts])
+
+	useEffect(() => {
+		const onFocus = () => {
+			loadDrinkProducts()
+		}
+		window.addEventListener('focus', onFocus)
+		return () => window.removeEventListener('focus', onFocus)
+	}, [loadDrinkProducts])
 
 	const filteredDrinkProducts = useMemo(() => {
 		if (!searchTerm.trim()) {

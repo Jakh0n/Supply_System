@@ -20,6 +20,11 @@ import {
 	X,
 } from 'lucide-react'
 import { useCallback, useEffect, useState } from 'react'
+import {
+	editorHorizontalScroll,
+	editorSnapItem,
+	editorTouchCompact,
+} from './editorUi'
 
 interface OrdersFiltersProps {
 	filters: OrderFilters
@@ -27,6 +32,7 @@ interface OrdersFiltersProps {
 	onFiltersChange: (filters: OrderFilters) => void
 	onDownloadCSV: () => void
 	onDownloadPDF: () => void
+	hideStatusFilter?: boolean
 }
 
 const OrdersFilters: React.FC<OrdersFiltersProps> = ({
@@ -35,6 +41,7 @@ const OrdersFilters: React.FC<OrdersFiltersProps> = ({
 	onFiltersChange,
 	onDownloadCSV,
 	onDownloadPDF,
+	hideStatusFilter = false,
 }) => {
 	const [branches, setBranches] = useState<Array<{ name: string }>>([])
 	const [branchesLoading, setBranchesLoading] = useState(false)
@@ -88,7 +95,7 @@ const OrdersFilters: React.FC<OrdersFiltersProps> = ({
 	const activeFiltersCount = [
 		filters.date,
 		filters.branch,
-		filters.status !== 'all' ? filters.status : null,
+		!hideStatusFilter && filters.status !== 'all' ? filters.status : null,
 	].filter(Boolean).length
 
 	// Clear all filters
@@ -108,58 +115,76 @@ const OrdersFilters: React.FC<OrdersFiltersProps> = ({
 	}
 
 	return (
-		<div className='space-y-4'>
-			{/* Quick Actions & Toggle */}
-			<div className='flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3'>
-				{/* Quick Filter Presets - Mobile: Horizontal scroll, Desktop: Regular */}
-				<div className='flex items-center gap-2 overflow-x-auto sm:overflow-visible w-full sm:w-auto'>
-					<div className='flex items-center gap-2 flex-shrink-0'>
-						{quickFilters.map(preset => (
-							<Button
-								key={preset.label}
-								variant={filters.date === preset.date ? 'default' : 'outline'}
-								size='sm'
-								onClick={() => applyQuickFilter(preset.date)}
-								className='text-xs whitespace-nowrap'
-								disabled={loading}
-							>
-								{preset.label}
-							</Button>
-						))}
-					</div>
-				</div>
-
-				{/* Filter Toggle & Clear */}
-				<div className='flex items-center gap-2 flex-shrink-0'>
+		<div className='space-y-2 sm:space-y-4'>
+			{/* Quick date presets */}
+			<div className={editorHorizontalScroll}>
+				{quickFilters.map(preset => (
 					<Button
-						variant='outline'
-						size='sm'
-						onClick={() => setShowFilters(!showFilters)}
-						className='flex items-center gap-2'
+						key={preset.label}
+						variant={filters.date === preset.date ? 'default' : 'outline'}
+						onClick={() => applyQuickFilter(preset.date)}
+						className={`${editorSnapItem} ${editorTouchCompact} px-3 whitespace-nowrap`}
+						disabled={loading}
 					>
-						<Filter className='h-4 w-4' />
-						<span className='hidden sm:inline'>Advanced Filters</span>
-						<span className='sm:hidden'>Filters</span>
-						{activeFiltersCount > 0 && (
-							<Badge variant='secondary' className='ml-1 text-xs'>
-								{activeFiltersCount}
-							</Badge>
-						)}
+						{preset.label}
 					</Button>
+				))}
+			</div>
 
+			{/* Filters + exports — one compact row on mobile */}
+			<div className='grid grid-cols-3 sm:flex sm:flex-wrap sm:items-center gap-1.5 sm:gap-2'>
+				<Button
+					variant='outline'
+					onClick={() => setShowFilters(!showFilters)}
+					className={`${editorTouchCompact} flex items-center justify-center gap-1`}
+				>
+					<Filter className='h-3.5 w-3.5 sm:h-4 sm:w-4 shrink-0' />
+					<span className='hidden sm:inline'>Advanced Filters</span>
+					<span className='sm:hidden'>Filter</span>
 					{activeFiltersCount > 0 && (
-						<Button
-							variant='ghost'
-							size='sm'
-							onClick={clearAllFilters}
-							className='flex items-center gap-1 text-muted-foreground'
-							disabled={loading}
-						>
-							<RotateCcw className='h-3 w-3' />
-							<span className='hidden sm:inline text-xs'>Clear</span>
-						</Button>
+						<Badge variant='secondary' className='ml-0.5 h-4 min-w-4 px-1 text-[10px]'>
+							{activeFiltersCount}
+						</Badge>
 					)}
-				</div>
+				</Button>
+
+				<Button
+					onClick={onDownloadCSV}
+					disabled={loading}
+					variant='outline'
+					className={`${editorTouchCompact} flex items-center justify-center gap-1`}
+				>
+					<Download className='h-3.5 w-3.5 sm:h-4 sm:w-4 shrink-0' />
+					<span className='hidden sm:inline'>Download CSV</span>
+					<span className='sm:hidden'>CSV</span>
+				</Button>
+
+				<Button
+					onClick={onDownloadPDF}
+					disabled={loading || !filters.date || filters.date.trim() === ''}
+					className={`${editorTouchCompact} flex items-center justify-center gap-1 bg-blue-600 hover:bg-blue-700 text-white disabled:opacity-50`}
+					title={
+						!filters.date || filters.date.trim() === ''
+							? 'Please select a date to download PDF'
+							: 'Download PDF for selected date'
+					}
+				>
+					<FileText className='h-3.5 w-3.5 sm:h-4 sm:w-4 shrink-0' />
+					<span className='hidden sm:inline'>Download PDF</span>
+					<span className='sm:hidden'>PDF</span>
+				</Button>
+
+				{activeFiltersCount > 0 && (
+					<Button
+						variant='ghost'
+						onClick={clearAllFilters}
+						className={`${editorTouchCompact} hidden sm:flex px-3 text-muted-foreground`}
+						disabled={loading}
+					>
+						<RotateCcw className='h-4 w-4 mr-1' />
+						Clear
+					</Button>
+				)}
 			</div>
 
 			{/* Advanced Filters - Collapsible */}
@@ -205,7 +230,9 @@ const OrdersFilters: React.FC<OrdersFiltersProps> = ({
 										</button>
 									</Badge>
 								)}
-								{filters.status && filters.status !== 'all' && (
+								{!hideStatusFilter &&
+									filters.status &&
+									filters.status !== 'all' && (
 									<Badge
 										variant='secondary'
 										className='flex items-center gap-1'
@@ -229,7 +256,11 @@ const OrdersFilters: React.FC<OrdersFiltersProps> = ({
 						)}
 
 						{/* Filter Controls */}
-						<div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4'>
+						<div
+							className={`grid grid-cols-1 sm:grid-cols-2 gap-4 ${
+								hideStatusFilter ? 'lg:grid-cols-2' : 'lg:grid-cols-3'
+							}`}
+						>
 							{/* Date Filter with proper date input */}
 							<div className='space-y-2'>
 								<label className='text-sm font-medium text-gray-700'>
@@ -246,7 +277,7 @@ const OrdersFilters: React.FC<OrdersFiltersProps> = ({
 												page: 1,
 											})
 										}
-										className='text-sm'
+										className='h-12 sm:h-10 text-base'
 										disabled={loading}
 									/>
 									<Calendar className='absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none' />
@@ -269,7 +300,7 @@ const OrdersFilters: React.FC<OrdersFiltersProps> = ({
 									}
 									disabled={loading || branchesLoading}
 								>
-									<SelectTrigger className='text-sm'>
+									<SelectTrigger className='h-12 sm:h-10 text-base'>
 										<SelectValue placeholder='Select branch' />
 									</SelectTrigger>
 									<SelectContent>
@@ -283,68 +314,40 @@ const OrdersFilters: React.FC<OrdersFiltersProps> = ({
 								</Select>
 							</div>
 
-							{/* Status Filter */}
-							<div className='space-y-2'>
-								<label className='text-sm font-medium text-gray-700'>
-									Status
-								</label>
-								<Select
-									value={filters.status || 'all'}
-									onValueChange={value =>
-										onFiltersChange({
-											...filters,
-											status: value as OrderStatus | 'all',
-											page: 1,
-										})
-									}
-									disabled={loading}
-								>
-									<SelectTrigger className='text-sm'>
-										<SelectValue placeholder='Select status' />
-									</SelectTrigger>
-									<SelectContent>
-										<SelectItem value='all'>All Status</SelectItem>
-										<SelectItem value='pending'>Pending</SelectItem>
-										<SelectItem value='approved'>Approved</SelectItem>
-										<SelectItem value='rejected'>Rejected</SelectItem>
-										<SelectItem value='completed'>Completed</SelectItem>
-									</SelectContent>
-								</Select>
-							</div>
+							{!hideStatusFilter && (
+								<div className='space-y-2'>
+									<label className='text-sm font-medium text-gray-700'>
+										Status
+									</label>
+									<Select
+										value={filters.status || 'all'}
+										onValueChange={value =>
+											onFiltersChange({
+												...filters,
+												status: value as OrderStatus | 'all',
+												page: 1,
+											})
+										}
+										disabled={loading}
+									>
+										<SelectTrigger className='text-sm'>
+											<SelectValue placeholder='Select status' />
+										</SelectTrigger>
+										<SelectContent>
+											<SelectItem value='all'>All Status</SelectItem>
+											<SelectItem value='pending'>Pending</SelectItem>
+											<SelectItem value='approved'>Approved</SelectItem>
+											<SelectItem value='rejected'>Rejected</SelectItem>
+											<SelectItem value='completed'>Completed</SelectItem>
+										</SelectContent>
+									</Select>
+								</div>
+							)}
 						</div>
 					</div>
 				</Card>
 			)}
 
-			{/* Download Buttons */}
-			<div className='flex flex-col sm:flex-row gap-2 sm:gap-3'>
-				<Button
-					onClick={onDownloadCSV}
-					disabled={loading}
-					className='flex items-center justify-center gap-2 text-sm'
-					size='sm'
-				>
-					<Download className='h-4 w-4' />
-					<span className='hidden sm:inline'>Download CSV</span>
-					<span className='sm:hidden'>CSV</span>
-				</Button>
-				<Button
-					onClick={onDownloadPDF}
-					disabled={loading || !filters.date || filters.date.trim() === ''}
-					className='flex items-center justify-center gap-2 text-sm'
-					variant='outline'
-					size='sm'
-					title={
-						!filters.date || filters.date.trim() === ''
-							? 'Please select a date to download PDF'
-							: 'Download PDF for selected date'
-					}
-				>
-					<FileText className='h-4 w-4' />
-					<span className='hidden sm:inline'>Download PDF</span>
-					<span className='sm:hidden'>PDF</span>
-				</Button>
-			</div>
 		</div>
 	)
 }
