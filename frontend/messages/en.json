@@ -29,6 +29,12 @@
 		"loginFailed": "Login failed. Please try again.",
 		"loginSuccess": "Login successful!"
 	},
+	"worker": {
+		"products": {
+			"outOfStock": "Currently out of stock",
+			"outOfStockToast": "This product is currently out of stock"
+		}
+	},
 	"editor": {
 		"title": "Editor",
 		"nav": {

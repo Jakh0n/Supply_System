@@ -557,8 +557,7 @@ export const productsApi = {
 		if (filters?.category && filters.category !== 'all')
 			params.append('category', filters.category)
 		if (filters?.search) params.append('search', filters.search)
-		if (filters?.active && filters.active !== 'all')
-			params.append('active', filters.active)
+		if (filters?.active) params.append('active', filters.active)
 
 		const response = await api.get(`/products?${params.toString()}`)
 		return response.data

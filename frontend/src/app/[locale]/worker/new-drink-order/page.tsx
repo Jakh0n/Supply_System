@@ -13,6 +13,13 @@ import {
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { ProductThumbnail } from '@/components/ui/ProductImage'
+import {
+	ProductSoldOutRow,
+} from '@/components/worker/ProductSoldOutRow'
+import {
+	isProductAvailable,
+	sortProductsAvailableFirst,
+} from '@/components/worker/productAvailability'
 import { useAuth } from '@/contexts/AuthContext'
 import { drinkOrdersApi, productsApi } from '@/lib/api'
 import { getPrimaryImage } from '@/lib/imageUtils'
@@ -28,6 +35,7 @@ import {
 	Trash2,
 } from 'lucide-react'
 import { useRouter } from '@/i18n/navigation'
+import { useTranslations } from 'next-intl'
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { toast } from 'sonner'
 
@@ -41,6 +49,7 @@ const getTodayDate = (): string => new Date().toISOString().split('T')[0]
 const NewDrinkOrderPage: React.FC = () => {
 	const { user } = useAuth()
 	const router = useRouter()
+	const tp = useTranslations('worker.products')
 	const orderBranch = getWorkerBranch(user)
 
 	const [loading, setLoading] = useState(true)
@@ -55,9 +64,11 @@ const NewDrinkOrderPage: React.FC = () => {
 	const loadDrinkProducts = useCallback(async () => {
 		try {
 			setLoading(true)
-			const response = await productsApi.getProducts({ active: 'true' })
-			const drinkProducts = (response.products || []).filter(product =>
-				['drinks', 'beverages'].includes(product.category)
+			const response = await productsApi.getProducts({ active: 'all' })
+			const drinkProducts = sortProductsAvailableFirst(
+				(response.products || []).filter(product =>
+					['drinks', 'beverages'].includes(product.category)
+				)
 			)
 			setAllDrinkProducts(drinkProducts)
 		} catch (error) {
@@ -73,12 +84,28 @@ const NewDrinkOrderPage: React.FC = () => {
 	}, [loadDrinkProducts])
 
 	useEffect(() => {
-		const onFocus = () => {
-			loadDrinkProducts()
+		const refresh = () => {
+			if (document.visibilityState === 'visible') {
+				loadDrinkProducts()
+			}
 		}
-		window.addEventListener('focus', onFocus)
-		return () => window.removeEventListener('focus', onFocus)
+		window.addEventListener('focus', refresh)
+		document.addEventListener('visibilitychange', refresh)
+		return () => {
+			window.removeEventListener('focus', refresh)
+			document.removeEventListener('visibilitychange', refresh)
+		}
 	}, [loadDrinkProducts])
+
+	useEffect(() => {
+		if (allDrinkProducts.length === 0) return
+		setOrderItems(prev =>
+			prev.filter(item => {
+				const latest = allDrinkProducts.find(p => p._id === item.product._id)
+				return latest ? isProductAvailable(latest) : false
+			})
+		)
+	}, [allDrinkProducts])
 
 	const filteredDrinkProducts = useMemo(() => {
 		if (!searchTerm.trim()) {
@@ -99,6 +126,11 @@ const NewDrinkOrderPage: React.FC = () => {
 	}
 
 	const upsertQuantity = (product: Product, quantity: number) => {
+		if (quantity > 0 && !isProductAvailable(product)) {
+			toast.error(tp('outOfStockToast'))
+			return
+		}
+
 		if (quantity <= 0) {
 			setOrderItems(prev => prev.filter(item => item.product._id !== product._id))
 			return
@@ -208,10 +240,36 @@ const NewDrinkOrderPage: React.FC = () => {
 										<div className='space-y-2 max-h-[55vh] lg:max-h-[560px] overflow-y-auto pr-1'>
 											{filteredDrinkProducts.map(product => {
 												const quantity = getQuantity(product._id)
+												const available = isProductAvailable(product)
 												return (
-													<div
+													<ProductSoldOutRow
 														key={product._id}
+														available={available}
 														className='flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border rounded-lg p-3'
+														controls={
+														<div className='flex items-center justify-end gap-2 w-full sm:w-auto'>
+															<Button
+																variant='outline'
+																size='sm'
+																onClick={() => upsertQuantity(product, quantity - 1)}
+																disabled={quantity <= 0}
+																className='h-9 w-9'
+															>
+																<Minus className='h-3 w-3' />
+															</Button>
+															<span className='w-8 text-center text-base font-semibold'>
+																{quantity}
+															</span>
+															<Button
+																variant='outline'
+																size='sm'
+																onClick={() => upsertQuantity(product, quantity + 1)}
+																className='h-9 w-9'
+															>
+																<Plus className='h-3 w-3' />
+															</Button>
+														</div>
+														}
 													>
 														<div className='flex items-center gap-3 min-w-0 w-full sm:w-auto'>
 															<div className='h-10 w-10 sm:h-11 sm:w-11'>
@@ -229,29 +287,7 @@ const NewDrinkOrderPage: React.FC = () => {
 																<p className='text-xs text-gray-500'>{product.unit}</p>
 															</div>
 														</div>
-
-														<div className='flex items-center justify-end gap-2 w-full sm:w-auto'>
-															<Button
-																variant='outline'
-																size='sm'
-																onClick={() => upsertQuantity(product, quantity - 1)}
-																className='h-9 w-9'
-															>
-																<Minus className='h-3 w-3' />
-															</Button>
-															<span className='w-8 text-center text-base font-semibold'>
-																{quantity}
-															</span>
-															<Button
-																variant='outline'
-																size='sm'
-																onClick={() => upsertQuantity(product, quantity + 1)}
-																className='h-9 w-9'
-															>
-																<Plus className='h-3 w-3' />
-															</Button>
-														</div>
-													</div>
+													</ProductSoldOutRow>
 												)
 											})}
 										</div>

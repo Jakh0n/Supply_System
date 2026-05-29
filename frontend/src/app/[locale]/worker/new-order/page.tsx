@@ -29,6 +29,14 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import HolidayDayNotice from "@/components/worker/HolidayDayNotice";
+import {
+  ProductSoldOutInlineLabel,
+  ProductSoldOutRow,
+} from "@/components/worker/ProductSoldOutRow";
+import {
+  isProductAvailable,
+  sortProductsAvailableFirst,
+} from "@/components/worker/productAvailability";
 import { useAuth } from "@/contexts/AuthContext";
 import { ordersApi, productsApi } from "@/lib/api";
 import { getPrimaryImage } from "@/lib/imageUtils";
@@ -48,6 +56,7 @@ import {
   X,
 } from "lucide-react";
 import { useRouter } from "@/i18n/navigation";
+import { useTranslations } from "next-intl";
 import React, { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 
@@ -73,6 +82,7 @@ interface OrderItem {
 const NewOrder: React.FC = () => {
   const { user } = useAuth();
   const router = useRouter();
+  const tp = useTranslations("worker.products");
   const orderBranch = getWorkerBranch(user);
   const [products, setProducts] = useState<Product[]>([]);
   const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
@@ -97,10 +107,12 @@ const NewOrder: React.FC = () => {
   const fetchProducts = useCallback(async () => {
     try {
       setLoading(true);
-      const response = await productsApi.getProducts({ active: "true" });
+      const response = await productsApi.getProducts({ active: "all" });
       // Filter out products with suppliers (these are for purchase catalog only)
-      const workerProducts = (response.products || []).filter(
-        (product) => !product.supplier || product.supplier.trim() === "",
+      const workerProducts = sortProductsAvailableFirst(
+        (response.products || []).filter(
+          (product) => !product.supplier || product.supplier.trim() === "",
+        ),
       );
       setProducts(workerProducts);
       setFilteredProducts(workerProducts);
@@ -117,12 +129,28 @@ const NewOrder: React.FC = () => {
   }, [fetchProducts]);
 
   useEffect(() => {
-    const onFocus = () => {
-      fetchProducts();
+    const refresh = () => {
+      if (document.visibilityState === "visible") {
+        fetchProducts();
+      }
     };
-    window.addEventListener("focus", onFocus);
-    return () => window.removeEventListener("focus", onFocus);
+    window.addEventListener("focus", refresh);
+    document.addEventListener("visibilitychange", refresh);
+    return () => {
+      window.removeEventListener("focus", refresh);
+      document.removeEventListener("visibilitychange", refresh);
+    };
   }, [fetchProducts]);
+
+  useEffect(() => {
+    if (products.length === 0) return;
+    setOrderItems((prev) =>
+      prev.filter((item) => {
+        const latest = products.find((p) => p._id === item.product._id);
+        return latest ? isProductAvailable(latest) : false;
+      }),
+    );
+  }, [products]);
 
   // Filter products based on search and category
   useEffect(() => {
@@ -152,6 +180,11 @@ const NewOrder: React.FC = () => {
 
   // Add product to order
   const addProductToOrder = (product: Product) => {
+    if (!isProductAvailable(product)) {
+      toast.error(tp("outOfStockToast"));
+      return;
+    }
+
     const existingItem = orderItems.find(
       (item) => item.product._id === product._id,
     );
@@ -209,7 +242,10 @@ const NewOrder: React.FC = () => {
   // Get suggested products (products not yet added to order)
   const getSuggestedProducts = () => {
     const addedProductIds = orderItems.map((item) => item.product._id);
-    return products.filter((product) => !addedProductIds.includes(product._id));
+    return products.filter(
+      (product) =>
+        isProductAvailable(product) && !addedProductIds.includes(product._id),
+    );
   };
 
   // getPrimaryImage function is now imported from imageUtils
@@ -254,6 +290,11 @@ const NewOrder: React.FC = () => {
   };
 
   const addProductFromModal = (product: Product) => {
+    if (!isProductAvailable(product)) {
+      toast.error(tp("outOfStockToast"));
+      return;
+    }
+
     const quantity = modalQuantities[product._id] || 1;
 
     // Add the product with the specified quantity
@@ -368,16 +409,23 @@ const NewOrder: React.FC = () => {
     return grouped;
   };
 
-  // Get category order for display
-  const getCategoryOrder = (): ProductCategory[] => {
-    return [
+  // Get category order for display — include every category that has products
+  const getCategoryOrder = (): string[] => {
+    const predefined: string[] = [
       "frozen-products",
       "main-products",
       "desserts",
       "drinks",
+      "vegetables",
       "packaging-materials",
       "cleaning-materials",
     ];
+    const grouped = getProductsByCategory();
+    const ordered = predefined.filter((category) => grouped[category]?.length);
+    const rest = Object.keys(grouped)
+      .filter((category) => !predefined.includes(category))
+      .sort();
+    return [...ordered, ...rest];
   };
 
   if (loading) {
@@ -555,97 +603,102 @@ const NewOrder: React.FC = () => {
                                 <div className="divide-y divide-gray-100">
                                   {/* Mobile Card View */}
                                   <div className="block sm:hidden">
-                                    {productsInCategory.map((product) => (
-                                      <div
-                                        key={product._id}
-                                        className="p-4 hover:bg-gray-50 transition-colors border-b border-gray-100 last:border-b-0"
-                                      >
-                                        <div className="flex items-start gap-3 mb-2">
-                                          {/* Bigger Product Image */}
-                                          <div className="w-20 h-20 flex-shrink-0 rounded-lg overflow-hidden border border-gray-200">
-                                            <ProductThumbnail
-                                              src={getPrimaryImage(product)}
-                                              alt={product.name}
-                                              category={product.category}
-                                              size="lg"
-                                              priority={false}
-                                            />
-                                          </div>
+                                    {productsInCategory.map((product) => {
+                                      const available =
+                                        isProductAvailable(product);
+                                      return (
+                                        <ProductSoldOutRow
+                                          key={product._id}
+                                          available={available}
+                                          className="p-4 hover:bg-gray-50 transition-colors border-b border-gray-100 last:border-b-0"
+                                          controls={
+                                            <div className="flex items-center justify-center gap-1 w-full">
+                                              {getProductQuantity(product._id) >
+                                              0 ? (
+                                                <>
+                                                  <Button
+                                                    variant="outline"
+                                                    size="sm"
+                                                    onClick={() =>
+                                                      updateItemQuantity(
+                                                        product._id,
+                                                        getProductQuantity(
+                                                          product._id,
+                                                        ) - 1,
+                                                      )
+                                                    }
+                                                    className="h-7 w-7 p-0 rounded-full"
+                                                  >
+                                                    <Minus className="h-3 w-3" />
+                                                  </Button>
+                                                  <span className="text-sm font-bold text-center min-w-[2rem] px-1">
+                                                    {getProductQuantity(
+                                                      product._id,
+                                                    )}
+                                                  </span>
+                                                  <Button
+                                                    variant="outline"
+                                                    size="sm"
+                                                    onClick={() =>
+                                                      updateItemQuantity(
+                                                        product._id,
+                                                        getProductQuantity(
+                                                          product._id,
+                                                        ) + 1,
+                                                      )
+                                                    }
+                                                    className="h-7 w-7 p-0 rounded-full"
+                                                  >
+                                                    <Plus className="h-3 w-3" />
+                                                  </Button>
+                                                </>
+                                              ) : (
+                                                <Button
+                                                  size="sm"
+                                                  onClick={() =>
+                                                    addProductToOrder(product)
+                                                  }
+                                                  className="w-full bg-green-600 hover:bg-green-700 text-white h-7 text-xs"
+                                                >
+                                                  <Plus className="h-3 w-3 mr-1" />
+                                                  Add
+                                                </Button>
+                                              )}
+                                            </div>
+                                          }
+                                        >
+                                          <div className="flex items-start gap-3 mb-2">
+                                            {/* Bigger Product Image */}
+                                            <div className="w-20 h-20 flex-shrink-0 rounded-lg overflow-hidden border border-gray-200">
+                                              <ProductThumbnail
+                                                src={getPrimaryImage(product)}
+                                                alt={product.name}
+                                                category={product.category}
+                                                size="lg"
+                                                priority={false}
+                                              />
+                                            </div>
 
-                                          {/* Product Info */}
-                                          <div className="flex-1 min-w-0">
-                                            <h4 className="font-medium text-sm text-gray-900 mb-1 line-clamp-2">
-                                              {product.name}
-                                            </h4>
-                                            {product.description && (
-                                              <p className="text-xs text-gray-500 line-clamp-2 mb-1">
-                                                {product.description}
-                                              </p>
-                                            )}
-                                            <div className="flex items-center gap-2 mb-1">
-                                              <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                                                {product.unit}
-                                              </span>
+                                            {/* Product Info */}
+                                            <div className="flex-1 min-w-0">
+                                              <h4 className="font-medium text-sm text-gray-900 mb-1 line-clamp-2">
+                                                {product.name}
+                                              </h4>
+                                              {product.description && (
+                                                <p className="text-xs text-gray-500 line-clamp-2 mb-1">
+                                                  {product.description}
+                                                </p>
+                                              )}
+                                              <div className="flex items-center gap-2 mb-1">
+                                                <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                                  {product.unit}
+                                                </span>
+                                              </div>
                                             </div>
                                           </div>
-                                        </div>
-
-                                        {/* Smaller Quantity Controls */}
-                                        <div className="flex items-center justify-center gap-1 w-full">
-                                          {getProductQuantity(product._id) >
-                                          0 ? (
-                                            <>
-                                              <Button
-                                                variant="outline"
-                                                size="sm"
-                                                onClick={() =>
-                                                  updateItemQuantity(
-                                                    product._id,
-                                                    getProductQuantity(
-                                                      product._id,
-                                                    ) - 1,
-                                                  )
-                                                }
-                                                className="h-7 w-7 p-0 rounded-full"
-                                              >
-                                                <Minus className="h-3 w-3" />
-                                              </Button>
-                                              <span className="text-sm font-bold text-center min-w-[2rem] px-1">
-                                                {getProductQuantity(
-                                                  product._id,
-                                                )}
-                                              </span>
-                                              <Button
-                                                variant="outline"
-                                                size="sm"
-                                                onClick={() =>
-                                                  updateItemQuantity(
-                                                    product._id,
-                                                    getProductQuantity(
-                                                      product._id,
-                                                    ) + 1,
-                                                  )
-                                                }
-                                                className="h-7 w-7 p-0 rounded-full"
-                                              >
-                                                <Plus className="h-3 w-3" />
-                                              </Button>
-                                            </>
-                                          ) : (
-                                            <Button
-                                              size="sm"
-                                              onClick={() =>
-                                                addProductToOrder(product)
-                                              }
-                                              className="w-full bg-green-600 hover:bg-green-700 text-white h-7 text-xs"
-                                            >
-                                              <Plus className="h-3 w-3 mr-1" />
-                                              Add
-                                            </Button>
-                                          )}
-                                        </div>
-                                      </div>
-                                    ))}
+                                        </ProductSoldOutRow>
+                                      );
+                                    })}
                                   </div>
 
                                   {/* Desktop Table View */}
@@ -665,107 +718,130 @@ const NewOrder: React.FC = () => {
                                         </tr>
                                       </thead>
                                       <tbody>
-                                        {productsInCategory.map((product) => (
-                                          <tr
-                                            key={product._id}
-                                            className="border-b hover:bg-gray-50 transition-colors"
-                                          >
-                                            <td className="p-3">
-                                              <div className="flex items-start">
-                                                <div className="w-10 h-10 flex-shrink-0 mr-3">
-                                                  <ProductThumbnail
-                                                    src={getPrimaryImage(
-                                                      product,
-                                                    )}
-                                                    alt={product.name}
-                                                    category={product.category}
-                                                    size="sm"
-                                                    priority={false}
-                                                  />
-                                                </div>
-                                                <div className="min-w-0 flex-1">
-                                                  <p className="font-medium text-sm text-gray-900 mb-1 truncate">
-                                                    {product.name}
-                                                  </p>
-                                                  {product.description && (
-                                                    <div className="group relative">
-                                                      <p className="text-xs text-gray-500 line-clamp-2 leading-relaxed">
-                                                        {product.description}
-                                                      </p>
-                                                      {product.description
-                                                        .length > 80 && (
-                                                        <div className="absolute left-0 top-full mt-1 hidden group-hover:block z-10 bg-gray-900 text-white text-xs p-2 rounded-md shadow-lg max-w-xs">
+                                        {productsInCategory.map((product) => {
+                                          const available =
+                                            isProductAvailable(product);
+                                          return (
+                                            <tr
+                                              key={product._id}
+                                              className={`border-b transition-colors ${
+                                                available
+                                                  ? "hover:bg-gray-50"
+                                                  : "bg-gray-50/80"
+                                              }`}
+                                            >
+                                              <td
+                                                className={`p-3 ${!available ? "opacity-80" : ""}`}
+                                              >
+                                                <div className="flex items-start">
+                                                  <div className="w-10 h-10 flex-shrink-0 mr-3">
+                                                    <ProductThumbnail
+                                                      src={getPrimaryImage(
+                                                        product,
+                                                      )}
+                                                      alt={product.name}
+                                                      category={
+                                                        product.category
+                                                      }
+                                                      size="sm"
+                                                      priority={false}
+                                                    />
+                                                  </div>
+                                                  <div className="min-w-0 flex-1">
+                                                    <p className="font-medium text-sm text-gray-900 mb-1 truncate">
+                                                      {product.name}
+                                                    </p>
+                                                    {product.description && (
+                                                      <div className="group relative">
+                                                        <p className="text-xs text-gray-500 line-clamp-2 leading-relaxed">
                                                           {product.description}
-                                                          <div className="absolute -top-1 left-4 w-2 h-2 bg-gray-900 rotate-45"></div>
-                                                        </div>
-                                                      )}
-                                                    </div>
-                                                  )}
+                                                        </p>
+                                                        {product.description
+                                                          .length > 80 && (
+                                                          <div className="absolute left-0 top-full mt-1 hidden group-hover:block z-10 bg-gray-900 text-white text-xs p-2 rounded-md shadow-lg max-w-xs">
+                                                            {
+                                                              product.description
+                                                            }
+                                                            <div className="absolute -top-1 left-4 w-2 h-2 bg-gray-900 rotate-45"></div>
+                                                          </div>
+                                                        )}
+                                                      </div>
+                                                    )}
+                                                  </div>
                                                 </div>
-                                              </div>
-                                            </td>
-                                            <td className="p-3 text-sm text-gray-600 font-medium truncate">
-                                              {product.unit}
-                                            </td>
-                                            <td className="p-3 text-right">
-                                              {/* Inline quantity controls */}
-                                              <div className="flex items-center justify-end gap-1">
-                                                {getProductQuantity(
-                                                  product._id,
-                                                ) > 0 ? (
-                                                  <>
-                                                    <Button
-                                                      variant="outline"
-                                                      size="sm"
-                                                      onClick={() =>
-                                                        updateItemQuantity(
-                                                          product._id,
-                                                          getProductQuantity(
-                                                            product._id,
-                                                          ) - 1,
-                                                        )
-                                                      }
-                                                      className="h-7 w-7 p-0 rounded-full"
-                                                    >
-                                                      <Minus className="h-3 w-3" />
-                                                    </Button>
-                                                    <span className="text-sm font-bold text-center min-w-[2rem] px-1">
-                                                      {getProductQuantity(
-                                                        product._id,
-                                                      )}
-                                                    </span>
-                                                    <Button
-                                                      variant="outline"
-                                                      size="sm"
-                                                      onClick={() =>
-                                                        updateItemQuantity(
-                                                          product._id,
-                                                          getProductQuantity(
-                                                            product._id,
-                                                          ) + 1,
-                                                        )
-                                                      }
-                                                      className="h-7 w-7 p-0 rounded-full"
-                                                    >
-                                                      <Plus className="h-3 w-3" />
-                                                    </Button>
-                                                  </>
+                                              </td>
+                                              <td
+                                                className={`p-3 text-sm text-gray-600 font-medium truncate ${!available ? "opacity-80" : ""}`}
+                                              >
+                                                {product.unit}
+                                              </td>
+                                              <td className="p-3 text-right">
+                                                {!available ? (
+                                                  <div className="flex justify-end">
+                                                    <ProductSoldOutInlineLabel />
+                                                  </div>
                                                 ) : (
-                                                  <Button
-                                                    size="sm"
-                                                    onClick={() =>
-                                                      addProductToOrder(product)
-                                                    }
-                                                    className="bg-green-600 hover:bg-green-700 text-white text-xs h-7"
-                                                  >
-                                                    <Plus className="h-3 w-3 mr-1" />
-                                                    Add
-                                                  </Button>
+                                                  <div className="flex items-center justify-end gap-1">
+                                                    {getProductQuantity(
+                                                      product._id,
+                                                    ) > 0 ? (
+                                                      <>
+                                                        <Button
+                                                          variant="outline"
+                                                          size="sm"
+                                                          onClick={() =>
+                                                            updateItemQuantity(
+                                                              product._id,
+                                                              getProductQuantity(
+                                                                product._id,
+                                                              ) - 1,
+                                                            )
+                                                          }
+                                                          className="h-7 w-7 p-0 rounded-full"
+                                                        >
+                                                          <Minus className="h-3 w-3" />
+                                                        </Button>
+                                                        <span className="text-sm font-bold text-center min-w-[2rem] px-1">
+                                                          {getProductQuantity(
+                                                            product._id,
+                                                          )}
+                                                        </span>
+                                                        <Button
+                                                          variant="outline"
+                                                          size="sm"
+                                                          onClick={() =>
+                                                            updateItemQuantity(
+                                                              product._id,
+                                                              getProductQuantity(
+                                                                product._id,
+                                                              ) + 1,
+                                                            )
+                                                          }
+                                                          className="h-7 w-7 p-0 rounded-full"
+                                                        >
+                                                          <Plus className="h-3 w-3" />
+                                                        </Button>
+                                                      </>
+                                                    ) : (
+                                                      <Button
+                                                        size="sm"
+                                                        onClick={() =>
+                                                          addProductToOrder(
+                                                            product,
+                                                          )
+                                                        }
+                                                        className="bg-green-600 hover:bg-green-700 text-white text-xs h-7"
+                                                      >
+                                                        <Plus className="h-3 w-3 mr-1" />
+                                                        Add
+                                                      </Button>
+                                                    )}
+                                                  </div>
                                                 )}
-                                              </div>
-                                            </td>
-                                          </tr>
-                                        ))}
+                                              </td>
+                                            </tr>
+                                          );
+                                        })}
                                       </tbody>
                                     </table>
                                   </div>

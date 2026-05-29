@@ -29,6 +29,12 @@
 		"loginFailed": "Giriş başarısız. Lütfen tekrar deneyin.",
 		"loginSuccess": "Giriş başarılı!"
 	},
+	"worker": {
+		"products": {
+			"outOfStock": "Şu an stokta yok",
+			"outOfStockToast": "Bu ürün şu an stokta yok"
+		}
+	},
 	"editor": {
 		"title": "Editör",
 		"nav": {
