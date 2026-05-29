@@ -225,9 +225,9 @@ const MyOrders: React.FC = () => {
 								{user?.branch && ` for ${user.branch}`}
 							</p>
 						</div>
-						<div className='flex-shrink-0 hidden sm:block'>
+						<div className='flex-shrink-0 hidden md:block'>
 							<Link href='/worker/new-order'>
-								<Button className='flex items-center justify-center h-9 text-base'>
+								<Button className='flex items-center justify-center h-9 text-sm md:text-base w-full md:w-auto'>
 									<Plus className='h-4 w-4 mr-2' />
 									New Order
 								</Button>
@@ -247,8 +247,8 @@ const MyOrders: React.FC = () => {
 						</div>
 					)}
 
-					{/* Filters */}
-					<Card className='hidden sm:block'>
+					{/* Filters - tablet & desktop */}
+					<Card className='hidden md:block'>
 						<CardHeader className='p-4 sm:p-6'>
 							<CardTitle className='text-base sm:text-lg'>
 								Filter Orders
@@ -335,8 +335,8 @@ const MyOrders: React.FC = () => {
 						</CardContent>
 					</Card>
 
-					{/* Mobile Compact Filters */}
-					<div className='sm:hidden'>
+					{/* Mobile compact filters */}
+					<div className='md:hidden'>
 						<div className='flex gap-2'>
 							<div className='flex-1'>
 								<Select
@@ -443,8 +443,8 @@ const MyOrders: React.FC = () => {
 								</div>
 							) : (
 								<div className='space-y-3 sm:space-y-4'>
-									{/* Desktop Table View - Hidden on Mobile */}
-									<div className='hidden lg:block'>
+									{/* Desktop Table View */}
+									<div className='hidden xl:block'>
 										<div className='overflow-x-auto'>
 											<div className='max-h-[600px] overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100'>
 												<table className='w-full'>
@@ -567,8 +567,8 @@ const MyOrders: React.FC = () => {
 										</div>
 									</div>
 
-									{/* Mobile Card View - Shown on Mobile & Tablet */}
-									<div className='lg:hidden space-y-3'>
+									{/* Card View - mobile & tablet */}
+									<div className='xl:hidden space-y-3'>
 										{orders.map(order => {
 											const statusDisplay = getStatusDisplay(order.status)
 											return (

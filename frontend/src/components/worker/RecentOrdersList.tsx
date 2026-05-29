@@ -168,11 +168,11 @@ const RecentOrdersList: React.FC<RecentOrdersListProps> = ({
 
 	return (
 		<Card className='shadow-lg border-0 bg-gradient-to-br from-white to-gray-50'>
-			<CardHeader className='p-6 sm:p-8 pb-4'>
-				<div className='flex flex-col gap-6'>
-					<div className='flex flex-col sm:flex-row sm:justify-between sm:items-start gap-4'>
-						<div className='text-center sm:text-left'>
-							<CardTitle className='text-xl sm:text-2xl flex items-center justify-center sm:justify-start gap-3 text-gray-900'>
+			<CardHeader className='p-4 sm:p-6 md:p-8 pb-3 sm:pb-4'>
+				<div className='flex flex-col gap-4 sm:gap-6'>
+					<div className='flex flex-col sm:flex-row sm:justify-between sm:items-start gap-3 sm:gap-4'>
+						<div>
+							<CardTitle className='text-lg sm:text-xl md:text-2xl flex items-center gap-2 sm:gap-3 text-gray-900'>
 								<div className='p-2 bg-gradient-to-r from-blue-500 to-blue-600 rounded-xl shadow-lg'>
 									<ShoppingCart className='h-5 w-5 text-white' />
 								</div>
@@ -203,12 +203,12 @@ const RecentOrdersList: React.FC<RecentOrdersListProps> = ({
 
 					{/* Enhanced Quick Filters */}
 					<div className='space-y-4'>
-						<div className='text-center sm:text-left'>
+						<div>
 							<span className='text-sm font-semibold text-gray-700 bg-gray-100 px-3 py-1 rounded-full'>
 								Quick Filters
 							</span>
 						</div>
-						<div className='flex flex-wrap justify-center sm:justify-start items-center gap-3'>
+						<div className='flex flex-wrap items-center gap-2 sm:gap-3'>
 							{quickFilters.map((filter, index) => {
 								const isActive =
 									(filter.label === 'All Time' && dateFilter === 'all') ||
@@ -223,7 +223,7 @@ const RecentOrdersList: React.FC<RecentOrdersListProps> = ({
 										onClick={filter.action}
 										variant={isActive ? 'default' : 'outline'}
 										size='sm'
-										className={`h-9 px-4 text-sm font-medium rounded-full transition-all duration-200 ${
+										className={`h-8 sm:h-9 px-3 sm:px-4 text-xs sm:text-sm font-medium rounded-full transition-all duration-200 ${
 											isActive
 												? `${filter.activeColor} text-white shadow-lg`
 												: 'border-gray-200 sm:hover:border-gray-300 sm:hover:bg-gray-50'
@@ -238,7 +238,7 @@ const RecentOrdersList: React.FC<RecentOrdersListProps> = ({
 
 						{/* Active Filters Display */}
 						{activeFiltersCount > 0 && (
-							<div className='flex items-center justify-center sm:justify-start gap-3 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl border border-blue-100'>
+							<div className='flex flex-wrap items-center gap-2 sm:gap-3 p-3 sm:p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl border border-blue-100'>
 								<span className='text-sm font-semibold text-blue-700'>
 									Active Filter:
 								</span>
@@ -259,7 +259,7 @@ const RecentOrdersList: React.FC<RecentOrdersListProps> = ({
 					</div>
 				</div>
 			</CardHeader>
-			<CardContent className='p-6 sm:p-8 pt-0'>{renderContent()}</CardContent>
+			<CardContent className='p-4 sm:p-6 md:p-8 pt-0'>{renderContent()}</CardContent>
 		</Card>
 	)
 }

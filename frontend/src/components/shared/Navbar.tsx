@@ -16,6 +16,7 @@ import {
 	LogOut,
 	MapPin,
 	Menu,
+	Plus,
 	Package,
 	Settings,
 	ShoppingCart,
@@ -40,6 +41,18 @@ const Navbar: React.FC = () => {
 	const isActiveLink = (href: string) => {
 		return pathname === href
 	}
+
+	const navLinkClass = (href: string) =>
+		`px-2.5 xl:px-3 py-2 rounded-md text-sm font-medium flex items-center transition-colors whitespace-nowrap ${
+			isActiveLink(href)
+				? 'text-blue-600 bg-blue-50'
+				: 'text-gray-700 hover:text-blue-600 hover:bg-gray-50'
+		}`
+
+	const mobileNavLinkClass = (href: string) =>
+		`flex items-center w-full ${
+			isActiveLink(href) ? 'text-blue-600 bg-blue-50' : 'text-gray-700'
+		}`
 
 	if (!user) return null
 
@@ -69,51 +82,36 @@ const Navbar: React.FC = () => {
 						</Link>
 
 						{/* Desktop navigation links */}
-						<div className='hidden md:ml-8 md:flex md:space-x-8'>
+						<div
+							className={`hidden ml-4 lg:ml-6 flex-1 min-w-0 ${
+								isWorker ? 'xl:flex xl:space-x-1' : 'md:flex md:space-x-2'
+							}`}
+						>
 							{isAdmin && (
 								<>
-									<Link
-										href='/admin'
-										className={`px-3 py-2 rounded-md text-sm font-medium flex items-center transition-colors ${
-											isActiveLink('/admin')
-												? 'text-blue-600 bg-blue-50'
-												: 'text-gray-700 hover:text-blue-600 hover:bg-gray-50'
-										}`}
-									>
-										<BarChart3 className='h-4 w-4 mr-2' />
+									<Link href='/admin' className={navLinkClass('/admin')}>
+										<BarChart3 className='h-4 w-4 mr-2 shrink-0' />
 										Dashboard
 									</Link>
 									<Link
 										href='/admin/orders'
-										className={`px-3 py-2 rounded-md text-sm font-medium flex items-center transition-colors ${
-											isActiveLink('/admin/orders')
-												? 'text-blue-600 bg-blue-50'
-												: 'text-gray-700 hover:text-blue-600 hover:bg-gray-50'
-										}`}
+										className={navLinkClass('/admin/orders')}
 									>
-										<ShoppingCart className='h-4 w-4 mr-2' />
+										<ShoppingCart className='h-4 w-4 mr-2 shrink-0' />
 										Orders
 									</Link>
 									<Link
 										href='/admin/products'
-										className={`px-3 py-2 rounded-md text-sm font-medium flex items-center transition-colors ${
-											isActiveLink('/admin/products')
-												? 'text-blue-600 bg-blue-50'
-												: 'text-gray-700 hover:text-blue-600 hover:bg-gray-50'
-										}`}
+										className={navLinkClass('/admin/products')}
 									>
-										<Package className='h-4 w-4 mr-2' />
+										<Package className='h-4 w-4 mr-2 shrink-0' />
 										Products
 									</Link>
 									<Link
 										href='/admin/branches'
-										className={`px-3 py-2 rounded-md text-sm font-medium flex items-center transition-colors ${
-											isActiveLink('/admin/branches')
-												? 'text-blue-600 bg-blue-50'
-												: 'text-gray-700 hover:text-blue-600 hover:bg-gray-50'
-										}`}
+										className={navLinkClass('/admin/branches')}
 									>
-										<MapPin className='h-4 w-4 mr-2' />
+										<MapPin className='h-4 w-4 mr-2 shrink-0' />
 										Branch Analytics
 									</Link>
 								</>
@@ -121,60 +119,37 @@ const Navbar: React.FC = () => {
 
 							{isWorker && (
 								<>
-									<Link
-										href='/worker'
-										className={`px-3 py-2 rounded-md text-sm font-medium flex items-center transition-colors ${
-											isActiveLink('/worker')
-												? 'text-blue-600 bg-blue-50'
-												: 'text-gray-700 hover:text-blue-600 hover:bg-gray-50'
-										}`}
-									>
-										<BarChart3 className='h-4 w-4 mr-2' />
+									<Link href='/worker' className={navLinkClass('/worker')}>
+										<BarChart3 className='h-4 w-4 mr-2 shrink-0' />
 										Dashboard
 									</Link>
 									<Link
 										href='/worker/orders'
-										className={`px-3 py-2 rounded-md text-sm font-medium flex items-center transition-colors ${
-											isActiveLink('/worker/orders')
-												? 'text-blue-600 bg-blue-50'
-												: 'text-gray-700 hover:text-blue-600 hover:bg-gray-50'
-										}`}
+										className={navLinkClass('/worker/orders')}
 									>
-										<ShoppingCart className='h-4 w-4 mr-2' />
+										<ShoppingCart className='h-4 w-4 mr-2 shrink-0' />
 										My Orders
 									</Link>
 									<Link
 										href='/worker/all-orders'
-										className={`px-3 py-2 rounded-md text-sm font-medium flex items-center transition-colors ${
-											isActiveLink('/worker/all-orders')
-												? 'text-blue-600 bg-blue-50'
-												: 'text-gray-700 hover:text-blue-600 hover:bg-gray-50'
-										}`}
+										className={navLinkClass('/worker/all-orders')}
 									>
-										<Users className='h-4 w-4 mr-2' />
-										All Team Orders
+										<Users className='h-4 w-4 mr-2 shrink-0' />
+										Team Orders
 									</Link>
 									<Link
 										href='/worker/new-order'
-										className={`px-3 py-2 rounded-md text-sm font-medium flex items-center transition-colors ${
-											isActiveLink('/worker/new-order')
-												? 'text-blue-600 bg-blue-50'
-												: 'text-gray-700 hover:text-blue-600 hover:bg-gray-50'
-										}`}
+										className={navLinkClass('/worker/new-order')}
 									>
-										<Package className='h-4 w-4 mr-2' />
+										<Package className='h-4 w-4 mr-2 shrink-0' />
 										New Order
 									</Link>
 									<Link
 										href='/worker/drink-orders'
-										className={`px-3 py-2 rounded-md text-sm font-medium flex items-center transition-colors ${
-											isActiveLink('/worker/drink-orders')
-												? 'text-blue-600 bg-blue-50'
-												: 'text-gray-700 hover:text-blue-600 hover:bg-gray-50'
-										}`}
+										className={navLinkClass('/worker/drink-orders')}
 									>
-										<CupSoda className='h-4 w-4 mr-2' />
-										Drink Orders
+										<CupSoda className='h-4 w-4 mr-2 shrink-0' />
+										Drinks
 									</Link>
 								</>
 							)}
@@ -217,8 +192,8 @@ const Navbar: React.FC = () => {
 							</DropdownMenuContent>
 						</DropdownMenu>
 
-						{/* Mobile menu dropdown */}
-						<div className='md:hidden'>
+						{/* Mobile / tablet menu dropdown */}
+						<div className={isWorker ? 'xl:hidden' : 'md:hidden'}>
 							<DropdownMenu>
 								<DropdownMenuTrigger asChild>
 									<Button
@@ -296,54 +271,53 @@ const Navbar: React.FC = () => {
 									{isWorker && (
 										<>
 											<DropdownMenuItem asChild>
-												<Link
-													href='/worker'
-													className={`flex items-center w-full ${
-														isActiveLink('/worker')
-															? 'text-blue-600 bg-blue-50'
-															: 'text-gray-700'
-													}`}
-												>
-													<BarChart3 className='h-4 w-4 mr-3' />
+												<Link href='/worker' className={mobileNavLinkClass('/worker')}>
+													<BarChart3 className='h-4 w-4 mr-3 shrink-0' />
 													Dashboard
 												</Link>
 											</DropdownMenuItem>
 											<DropdownMenuItem asChild>
 												<Link
 													href='/worker/orders'
-													className={`flex items-center w-full ${
-														isActiveLink('/worker/orders')
-															? 'text-blue-600 bg-blue-50'
-															: 'text-gray-700'
-													}`}
+													className={mobileNavLinkClass('/worker/orders')}
 												>
-													<ShoppingCart className='h-4 w-4 mr-3' />
+													<ShoppingCart className='h-4 w-4 mr-3 shrink-0' />
 													My Orders
 												</Link>
 											</DropdownMenuItem>
 											<DropdownMenuItem asChild>
 												<Link
-													href='/worker/new-order'
-													className={`flex items-center w-full ${
-														isActiveLink('/worker/new-order')
-															? 'text-blue-600 bg-blue-50'
-															: 'text-gray-700'
-													}`}
+													href='/worker/all-orders'
+													className={mobileNavLinkClass('/worker/all-orders')}
 												>
-													<Package className='h-4 w-4 mr-3' />
+													<Users className='h-4 w-4 mr-3 shrink-0' />
+													All Team Orders
+												</Link>
+											</DropdownMenuItem>
+											<DropdownMenuItem asChild>
+												<Link
+													href='/worker/new-order'
+													className={mobileNavLinkClass('/worker/new-order')}
+												>
+													<Package className='h-4 w-4 mr-3 shrink-0' />
 													New Order
 												</Link>
 											</DropdownMenuItem>
 											<DropdownMenuItem asChild>
 												<Link
-													href='/worker/drink-orders'
-													className={`flex items-center w-full ${
-														isActiveLink('/worker/drink-orders')
-															? 'text-blue-600 bg-blue-50'
-															: 'text-gray-700'
-													}`}
+													href='/worker/new-drink-order'
+													className={mobileNavLinkClass('/worker/new-drink-order')}
 												>
-													<CupSoda className='h-4 w-4 mr-3' />
+													<Plus className='h-4 w-4 mr-3 shrink-0' />
+													New Drink Order
+												</Link>
+											</DropdownMenuItem>
+											<DropdownMenuItem asChild>
+												<Link
+													href='/worker/drink-orders'
+													className={mobileNavLinkClass('/worker/drink-orders')}
+												>
+													<CupSoda className='h-4 w-4 mr-3 shrink-0' />
 													Drink Orders
 												</Link>
 											</DropdownMenuItem>

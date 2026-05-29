@@ -329,7 +329,7 @@ const WorkerAllOrders: React.FC = () => {
 						<Button
 							onClick={fetchAllOrders}
 							variant='outline'
-							className='flex items-center gap-2'
+							className='flex items-center justify-center gap-2 w-full sm:w-auto shrink-0'
 							disabled={loading}
 						>
 							<RefreshCw
@@ -556,13 +556,15 @@ const WorkerAllOrders: React.FC = () => {
 
 					{/* Orders Table */}
 					<Card>
-						<CardHeader>
-							<CardTitle className='text-lg flex items-center gap-2'>
-								<ShoppingCart className='h-5 w-5 text-blue-600' />
-								Team Orders ({totalOrders} total)
+						<CardHeader className='p-4 sm:p-6'>
+							<CardTitle className='text-base sm:text-lg flex items-center gap-2'>
+								<ShoppingCart className='h-5 w-5 text-blue-600 shrink-0' />
+								<span className='min-w-0'>
+									Team Orders ({totalOrders} total)
+								</span>
 							</CardTitle>
 						</CardHeader>
-						<CardContent>
+						<CardContent className='p-4 sm:p-6 pt-0'>
 							{loading ? (
 								<div className='text-center py-8'>
 									<RefreshCw className='h-8 w-8 animate-spin mx-auto text-gray-400' />
@@ -580,7 +582,8 @@ const WorkerAllOrders: React.FC = () => {
 								</div>
 							) : (
 								<>
-									<div className='overflow-x-auto'>
+									{/* Desktop table */}
+									<div className='hidden xl:block overflow-x-auto'>
 										<Table>
 											<TableHeader>
 												<TableRow>
@@ -605,11 +608,9 @@ const WorkerAllOrders: React.FC = () => {
 																{order.orderNumber}
 															</TableCell>
 															<TableCell>
-																<div>
-																	<p className='font-medium text-sm'>
-																		{order.worker.username}
-																	</p>
-																</div>
+																<p className='font-medium text-sm'>
+																	{order.worker.username}
+																</p>
 															</TableCell>
 															<TableCell>
 																<span className='inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800'>
@@ -650,13 +651,66 @@ const WorkerAllOrders: React.FC = () => {
 										</Table>
 									</div>
 
+									{/* Mobile & tablet cards */}
+									<div className='xl:hidden space-y-3'>
+										{orders.map(order => {
+											const statusDisplay = getStatusDisplay(order.status)
+											return (
+												<Card
+													key={order._id}
+													className='hover:shadow-md transition-shadow'
+												>
+													<CardContent className='p-4 space-y-3'>
+														<div className='flex items-start justify-between gap-3'>
+															<div className='min-w-0 flex-1'>
+																<p className='font-mono text-sm font-semibold truncate'>
+																	{order.orderNumber}
+																</p>
+																<p className='text-sm font-medium text-gray-900 mt-1 truncate'>
+																	{order.worker.username}
+																</p>
+																<p className='text-xs text-gray-500 mt-0.5'>
+																	{formatDate(order.requestedDate)}
+																</p>
+															</div>
+															<span
+																className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium shrink-0 ${statusDisplay.color}`}
+															>
+																{statusDisplay.icon}
+																<span className='ml-1'>{statusDisplay.label}</span>
+															</span>
+														</div>
+														<div className='flex flex-wrap items-center gap-2 text-xs sm:text-sm text-gray-600 pt-2 border-t border-gray-100'>
+															<span className='inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800'>
+																{order.branch}
+															</span>
+															<span>
+																{order.items.length} items •{' '}
+																{getTotalQuantity(order)} total
+															</span>
+														</div>
+														<Button
+															variant='outline'
+															size='sm'
+															onClick={() => openDetailDialog(order)}
+															className='w-full h-9'
+														>
+															<Eye className='h-4 w-4 mr-2' />
+															View Details
+														</Button>
+													</CardContent>
+												</Card>
+											)
+										})}
+									</div>
+
 									{/* Pagination */}
 									{totalPages > 1 && (
-										<div className='flex items-center justify-between px-2 py-4 border-t'>
-											<div className='text-sm text-gray-700'>
-												Showing page {currentPage} of {totalPages}
+										<div className='flex flex-col sm:flex-row items-center justify-between gap-3 px-0 sm:px-2 py-4 border-t mt-4'>
+											<div className='text-xs sm:text-sm text-gray-700 text-center sm:text-left'>
+												Page {currentPage} of {totalPages}
 											</div>
-											<div className='flex items-center space-x-2'>
+											<div className='flex items-center gap-2 w-full sm:w-auto'>
 												<Button
 													variant='outline'
 													size='sm'
@@ -664,6 +718,7 @@ const WorkerAllOrders: React.FC = () => {
 														setCurrentPage(Math.max(1, currentPage - 1))
 													}
 													disabled={currentPage === 1}
+													className='flex-1 sm:flex-none'
 												>
 													Previous
 												</Button>
@@ -676,6 +731,7 @@ const WorkerAllOrders: React.FC = () => {
 														)
 													}
 													disabled={currentPage === totalPages}
+													className='flex-1 sm:flex-none'
 												>
 													Next
 												</Button>
@@ -690,7 +746,7 @@ const WorkerAllOrders: React.FC = () => {
 
 				{/* Order Detail Dialog */}
 				<Dialog open={isDetailDialogOpen} onOpenChange={setIsDetailDialogOpen}>
-					<DialogContent className='max-w-4xl max-h-[80vh] overflow-y-auto'>
+					<DialogContent className='w-[calc(100vw-1.5rem)] sm:max-w-2xl lg:max-w-4xl max-h-[85vh] overflow-y-auto mx-auto'>
 						<DialogHeader>
 							<DialogTitle className='flex items-center gap-2'>
 								<Package className='h-5 w-5 text-blue-600' />
@@ -766,31 +822,55 @@ const WorkerAllOrders: React.FC = () => {
 										Order Items
 									</h3>
 									<div className='border rounded-lg overflow-hidden'>
-										<Table>
-											<TableHeader>
-												<TableRow className='bg-gray-50'>
-													<TableHead>Product</TableHead>
-													<TableHead>Quantity</TableHead>
-												</TableRow>
-											</TableHeader>
-											<TableBody>
-												{selectedOrder.items.map((item, index) => (
-													<TableRow key={index}>
-														<TableCell>
-															<div>
-																<p className='font-medium'>
-																	{item.product.name}
-																</p>
-																<p className='text-sm text-gray-500'>
-																	{item.product.description}
-																</p>
-															</div>
-														</TableCell>
-														<TableCell>{item.quantity}</TableCell>
+										<div className='hidden sm:block overflow-x-auto'>
+											<Table>
+												<TableHeader>
+													<TableRow className='bg-gray-50'>
+														<TableHead>Product</TableHead>
+														<TableHead>Quantity</TableHead>
 													</TableRow>
-												))}
-											</TableBody>
-										</Table>
+												</TableHeader>
+												<TableBody>
+													{selectedOrder.items.map((item, index) => (
+														<TableRow key={index}>
+															<TableCell>
+																<div>
+																	<p className='font-medium'>
+																		{item.product.name}
+																	</p>
+																	<p className='text-sm text-gray-500'>
+																		{item.product.description}
+																	</p>
+																</div>
+															</TableCell>
+															<TableCell>{item.quantity}</TableCell>
+														</TableRow>
+													))}
+												</TableBody>
+											</Table>
+										</div>
+										<div className='sm:hidden divide-y'>
+											{selectedOrder.items.map((item, index) => (
+												<div
+													key={index}
+													className='flex items-center justify-between gap-3 px-3 py-2.5 text-sm'
+												>
+													<div className='min-w-0 flex-1'>
+														<p className='font-medium truncate'>
+															{item.product.name}
+														</p>
+														{item.product.description && (
+															<p className='text-xs text-gray-500 truncate'>
+																{item.product.description}
+															</p>
+														)}
+													</div>
+													<span className='font-medium shrink-0'>
+														×{item.quantity}
+													</span>
+												</div>
+											))}
+										</div>
 									</div>
 								</div>
 

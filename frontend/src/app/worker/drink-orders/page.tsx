@@ -172,18 +172,18 @@ const DrinkOrdersPage: React.FC = () => {
 										return (
 											<div
 												key={order._id}
-												className='border rounded-lg p-3 sm:p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3'
+												className='border rounded-lg p-3 sm:p-4 flex flex-col md:flex-row md:items-center md:justify-between gap-3'
 											>
-												<div className='min-w-0'>
+												<div className='min-w-0 flex-1'>
 													<p className='font-mono text-xs sm:text-sm font-semibold truncate'>
 														{order.orderNumber}
 													</p>
-													<p className='text-xs text-gray-500 mt-1'>
+													<p className='text-xs sm:text-sm text-gray-500 mt-1'>
 														Requested: {formatDate(order.requestedDate)} •{' '}
 														{order.items.length} products
 													</p>
 												</div>
-												<div className='flex flex-wrap items-center gap-2'>
+												<div className='flex flex-wrap items-center gap-2 sm:justify-end'>
 													<span
 														className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${status.color}`}
 													>
@@ -224,7 +224,7 @@ const DrinkOrdersPage: React.FC = () => {
 				</div>
 
 				<Dialog open={isDetailDialogOpen} onOpenChange={setIsDetailDialogOpen}>
-					<DialogContent className='w-[95vw] sm:w-full max-w-xl max-h-[85vh] overflow-y-auto'>
+					<DialogContent className='w-[calc(100vw-1.5rem)] sm:max-w-xl max-h-[85vh] overflow-y-auto mx-auto'>
 						<DialogHeader>
 							<DialogTitle>{selectedOrder?.orderNumber}</DialogTitle>
 							<DialogDescription>Drink order details</DialogDescription>
