@@ -47,7 +47,7 @@ import {
   Trash2,
   X,
 } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { useRouter } from "@/i18n/navigation";
 import React, { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 

@@ -1,4 +1,7 @@
+'use client'
+
 import { Calendar, FileText } from 'lucide-react'
+import { useTranslations } from 'next-intl'
 
 interface DashboardStats {
 	todayOrders: number
@@ -12,34 +15,36 @@ interface StatsCardsProps {
 }
 
 const StatsCards: React.FC<StatsCardsProps> = ({ stats }) => {
+	const t = useTranslations('editor.stats')
+
 	const statsData = [
 		{
-			title: "Today's Orders",
-			shortTitle: 'Today',
+			title: t('todayOrders'),
+			shortTitle: t('todayShort'),
 			value: stats.todayOrders,
 			icon: Calendar,
 			iconColor: 'text-blue-500',
 			bg: 'bg-blue-50/80',
 		},
 		{
-			title: 'Completed Today',
-			shortTitle: 'Done',
+			title: t('completedToday'),
+			shortTitle: t('doneShort'),
 			value: stats.todayCompletedOrders || 0,
 			icon: FileText,
 			iconColor: 'text-green-500',
 			bg: 'bg-green-50/80',
 		},
 		{
-			title: 'Pending Orders',
-			shortTitle: 'Pending',
+			title: t('pendingOrders'),
+			shortTitle: t('pendingShort'),
 			value: stats.pendingOrders,
 			icon: FileText,
 			iconColor: 'text-yellow-600',
 			bg: 'bg-amber-50/80',
 		},
 		{
-			title: 'All Completed',
-			shortTitle: 'All',
+			title: t('allCompleted'),
+			shortTitle: t('allShort'),
 			value: stats.completedOrders || 0,
 			icon: FileText,
 			iconColor: 'text-gray-500',

@@ -1,5 +1,8 @@
+'use client'
+
 import { Button } from '@/components/ui/button'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
+import { useTranslations } from 'next-intl'
 import { editorTouchCompact } from './editorUi'
 
 interface OrdersPaginationProps {
@@ -8,7 +11,7 @@ interface OrdersPaginationProps {
 	totalCount: number
 	loading?: boolean
 	onPageChange: (page: number) => void
-	itemLabel?: string
+	itemLabelKey?: 'orders' | 'drinkOrders'
 }
 
 export default function OrdersPagination({
@@ -17,8 +20,12 @@ export default function OrdersPagination({
 	totalCount,
 	loading = false,
 	onPageChange,
-	itemLabel = 'orders',
+	itemLabelKey = 'orders',
 }: OrdersPaginationProps) {
+	const tc = useTranslations('common')
+	const tp = useTranslations('editor.pagination')
+	const itemLabel = tp(itemLabelKey)
+
 	if (totalCount === 0) return null
 
 	return (
@@ -28,10 +35,10 @@ export default function OrdersPagination({
 				disabled={currentPage <= 1 || loading}
 				onClick={() => onPageChange(currentPage - 1)}
 				className={`${editorTouchCompact} h-8 w-8 sm:w-auto sm:px-3 p-0 shrink-0`}
-				aria-label='Previous page'
+				aria-label={tc('previous')}
 			>
 				<ChevronLeft className='h-4 w-4 sm:mr-1' />
-				<span className='hidden sm:inline'>Previous</span>
+				<span className='hidden sm:inline'>{tc('previous')}</span>
 			</Button>
 
 			<p className='text-xs sm:text-sm text-gray-600 text-center min-w-0 truncate px-1'>
@@ -48,9 +55,9 @@ export default function OrdersPagination({
 				disabled={currentPage >= totalPages || loading}
 				onClick={() => onPageChange(currentPage + 1)}
 				className={`${editorTouchCompact} h-8 w-8 sm:w-auto sm:px-3 p-0 shrink-0`}
-				aria-label='Next page'
+				aria-label={tc('next')}
 			>
-				<span className='hidden sm:inline'>Next</span>
+				<span className='hidden sm:inline'>{tc('next')}</span>
 				<ChevronRight className='h-4 w-4 sm:ml-1' />
 			</Button>
 		</div>

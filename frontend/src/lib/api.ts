@@ -38,6 +38,7 @@ import {
 } from '@/types'
 import axios from 'axios'
 import { handleApiError } from './errorUtils'
+import { getLocalizedPath } from './localePath'
 
 const API_BASE_URL =
 	process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api'
@@ -171,7 +172,7 @@ api.interceptors.response.use(
 				!window.location.pathname.includes('/login')
 			) {
 				localStorage.removeItem('token')
-				window.location.href = '/login'
+				window.location.href = getLocalizedPath('/login')
 			}
 		}
 		return Promise.reject(error)

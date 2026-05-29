@@ -1,3 +1,5 @@
+'use client'
+
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
@@ -20,6 +22,7 @@ import {
 	X,
 } from 'lucide-react'
 import { useCallback, useEffect, useState } from 'react'
+import { useTranslations } from 'next-intl'
 import {
 	editorHorizontalScroll,
 	editorSnapItem,
@@ -43,6 +46,10 @@ const OrdersFilters: React.FC<OrdersFiltersProps> = ({
 	onDownloadPDF,
 	hideStatusFilter = false,
 }) => {
+	const t = useTranslations('editor.filters')
+	const ts = useTranslations('editor.status')
+	const to = useTranslations('editor.orders')
+	const tc = useTranslations('common')
 	const [branches, setBranches] = useState<Array<{ name: string }>>([])
 	const [branchesLoading, setBranchesLoading] = useState(false)
 	const [showFilters, setShowFilters] = useState(false)
@@ -86,9 +93,9 @@ const OrdersFilters: React.FC<OrdersFiltersProps> = ({
 
 	// Quick filter presets
 	const quickFilters = [
-		{ label: 'Today', date: getTodayDate() },
-		{ label: 'Yesterday', date: getYesterdayDate() },
-		{ label: 'This Week', date: getThisWeekStart() },
+		{ labelKey: 'today' as const, date: getTodayDate() },
+		{ labelKey: 'yesterday' as const, date: getYesterdayDate() },
+		{ labelKey: 'thisWeek' as const, date: getThisWeekStart() },
 	]
 
 	// Count active filters
@@ -120,13 +127,13 @@ const OrdersFilters: React.FC<OrdersFiltersProps> = ({
 			<div className={editorHorizontalScroll}>
 				{quickFilters.map(preset => (
 					<Button
-						key={preset.label}
+						key={preset.labelKey}
 						variant={filters.date === preset.date ? 'default' : 'outline'}
 						onClick={() => applyQuickFilter(preset.date)}
 						className={`${editorSnapItem} ${editorTouchCompact} px-3 whitespace-nowrap`}
 						disabled={loading}
 					>
-						{preset.label}
+						{t(preset.labelKey)}
 					</Button>
 				))}
 			</div>
@@ -139,8 +146,8 @@ const OrdersFilters: React.FC<OrdersFiltersProps> = ({
 					className={`${editorTouchCompact} flex items-center justify-center gap-1`}
 				>
 					<Filter className='h-3.5 w-3.5 sm:h-4 sm:w-4 shrink-0' />
-					<span className='hidden sm:inline'>Advanced Filters</span>
-					<span className='sm:hidden'>Filter</span>
+					<span className='hidden sm:inline'>{t('advancedFilters')}</span>
+					<span className='sm:hidden'>{tc('filter')}</span>
 					{activeFiltersCount > 0 && (
 						<Badge variant='secondary' className='ml-0.5 h-4 min-w-4 px-1 text-[10px]'>
 							{activeFiltersCount}
@@ -155,8 +162,8 @@ const OrdersFilters: React.FC<OrdersFiltersProps> = ({
 					className={`${editorTouchCompact} flex items-center justify-center gap-1`}
 				>
 					<Download className='h-3.5 w-3.5 sm:h-4 sm:w-4 shrink-0' />
-					<span className='hidden sm:inline'>Download CSV</span>
-					<span className='sm:hidden'>CSV</span>
+					<span className='hidden sm:inline'>{t('downloadCsv')}</span>
+					<span className='sm:hidden'>{t('csv')}</span>
 				</Button>
 
 				<Button
@@ -165,13 +172,13 @@ const OrdersFilters: React.FC<OrdersFiltersProps> = ({
 					className={`${editorTouchCompact} flex items-center justify-center gap-1 bg-blue-600 hover:bg-blue-700 text-white disabled:opacity-50`}
 					title={
 						!filters.date || filters.date.trim() === ''
-							? 'Please select a date to download PDF'
-							: 'Download PDF for selected date'
+							? t('pdfNeedsDate')
+							: t('pdfForDate')
 					}
 				>
 					<FileText className='h-3.5 w-3.5 sm:h-4 sm:w-4 shrink-0' />
-					<span className='hidden sm:inline'>Download PDF</span>
-					<span className='sm:hidden'>PDF</span>
+					<span className='hidden sm:inline'>{t('downloadPdf')}</span>
+					<span className='sm:hidden'>{t('pdf')}</span>
 				</Button>
 
 				{activeFiltersCount > 0 && (
@@ -182,7 +189,7 @@ const OrdersFilters: React.FC<OrdersFiltersProps> = ({
 						disabled={loading}
 					>
 						<RotateCcw className='h-4 w-4 mr-1' />
-						Clear
+						{tc('clear')}
 					</Button>
 				)}
 			</div>
@@ -195,7 +202,7 @@ const OrdersFilters: React.FC<OrdersFiltersProps> = ({
 						{activeFiltersCount > 0 && (
 							<div className='flex flex-wrap items-center gap-2'>
 								<span className='text-sm text-muted-foreground'>
-									Active filters:
+									{t('activeFilters')}
 								</span>
 								{filters.date && (
 									<Badge
@@ -264,7 +271,7 @@ const OrdersFilters: React.FC<OrdersFiltersProps> = ({
 							{/* Date Filter with proper date input */}
 							<div className='space-y-2'>
 								<label className='text-sm font-medium text-gray-700'>
-									Date
+									{t('date')}
 								</label>
 								<div className='relative'>
 									<Input
@@ -287,7 +294,7 @@ const OrdersFilters: React.FC<OrdersFiltersProps> = ({
 							{/* Branch Filter with dropdown */}
 							<div className='space-y-2'>
 								<label className='text-sm font-medium text-gray-700'>
-									Branch
+									{t('branch')}
 								</label>
 								<Select
 									value={filters.branch || 'all'}
@@ -301,10 +308,10 @@ const OrdersFilters: React.FC<OrdersFiltersProps> = ({
 									disabled={loading || branchesLoading}
 								>
 									<SelectTrigger className='h-12 sm:h-10 text-base'>
-										<SelectValue placeholder='Select branch' />
+										<SelectValue placeholder={t('selectBranch')} />
 									</SelectTrigger>
 									<SelectContent>
-										<SelectItem value='all'>All Branches</SelectItem>
+										<SelectItem value='all'>{t('allBranches')}</SelectItem>
 										{branches.map(branch => (
 											<SelectItem key={branch.name} value={branch.name}>
 												{branch.name}
@@ -317,7 +324,7 @@ const OrdersFilters: React.FC<OrdersFiltersProps> = ({
 							{!hideStatusFilter && (
 								<div className='space-y-2'>
 									<label className='text-sm font-medium text-gray-700'>
-										Status
+										{to('status')}
 									</label>
 									<Select
 										value={filters.status || 'all'}
@@ -331,14 +338,14 @@ const OrdersFilters: React.FC<OrdersFiltersProps> = ({
 										disabled={loading}
 									>
 										<SelectTrigger className='text-sm'>
-											<SelectValue placeholder='Select status' />
+											<SelectValue placeholder={to('selectStatus')} />
 										</SelectTrigger>
 										<SelectContent>
-											<SelectItem value='all'>All Status</SelectItem>
-											<SelectItem value='pending'>Pending</SelectItem>
-											<SelectItem value='approved'>Approved</SelectItem>
-											<SelectItem value='rejected'>Rejected</SelectItem>
-											<SelectItem value='completed'>Completed</SelectItem>
+											<SelectItem value='all'>{t('allStatus')}</SelectItem>
+											<SelectItem value='pending'>{ts('pending')}</SelectItem>
+											<SelectItem value='approved'>{ts('approved')}</SelectItem>
+											<SelectItem value='rejected'>{ts('rejected')}</SelectItem>
+											<SelectItem value='completed'>{ts('completed')}</SelectItem>
 										</SelectContent>
 									</Select>
 								</div>

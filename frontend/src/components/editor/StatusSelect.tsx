@@ -1,3 +1,5 @@
+'use client'
+
 import {
 	Select,
 	SelectContent,
@@ -6,7 +8,8 @@ import {
 	SelectValue,
 } from '@/components/ui/select'
 import { OrderStatus } from '@/types'
-import { ORDER_STATUS_OPTIONS } from './constants'
+import { useTranslations } from 'next-intl'
+import { ORDER_STATUS_OPTIONS } from './orderStatus'
 
 interface StatusSelectProps {
 	value: OrderStatus
@@ -19,15 +22,17 @@ export default function StatusSelect({
 	onValueChange,
 	className,
 }: StatusSelectProps) {
+	const t = useTranslations('editor.status')
+
 	return (
 		<Select value={value} onValueChange={onValueChange}>
 			<SelectTrigger className={className}>
-				<SelectValue placeholder='Select status' />
+				<SelectValue placeholder={t('pending')} />
 			</SelectTrigger>
 			<SelectContent>
 				{ORDER_STATUS_OPTIONS.map(option => (
 					<SelectItem key={option.value} value={option.value}>
-						{option.label}
+						{t(option.value)}
 					</SelectItem>
 				))}
 			</SelectContent>

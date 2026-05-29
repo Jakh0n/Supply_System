@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Order } from '@/types'
 import { AlertCircle, ArrowRight } from 'lucide-react'
+import { useTranslations } from 'next-intl'
 import OrdersTable from './OrdersTable'
 import { editorTouchSm } from './editorUi'
 
@@ -28,6 +29,8 @@ export default function PendingOrdersSection({
 	onViewAllPending,
 	updatingOrderId,
 }: PendingOrdersSectionProps) {
+	const t = useTranslations('editor.pendingSection')
+
 	if (!loading && totalPending === 0) {
 		return null
 	}
@@ -38,10 +41,10 @@ export default function PendingOrdersSection({
 				<div className='flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3'>
 					<CardTitle className='text-base sm:text-lg flex items-center gap-2 text-amber-900'>
 						<AlertCircle className='h-5 w-5 text-amber-600' />
-						Needs action
+						{t('title')}
 						{!loading && (
 							<span className='text-sm font-normal text-amber-700'>
-								({totalPending} pending)
+								{t('pendingCount', { count: totalPending })}
 							</span>
 						)}
 					</CardTitle>
@@ -51,14 +54,12 @@ export default function PendingOrdersSection({
 							className={`${editorTouchSm} w-full sm:w-auto border-amber-300 text-amber-800 hover:bg-amber-100`}
 							onClick={onViewAllPending}
 						>
-							View all pending
+							{t('viewAllPending')}
 							<ArrowRight className='h-4 w-4 ml-1' />
 						</Button>
 					)}
 				</div>
-				<p className='text-sm text-amber-800/80'>
-					Review and update these orders first.
-				</p>
+				<p className='text-sm text-amber-800/80'>{t('description')}</p>
 			</CardHeader>
 			<CardContent className='pt-0'>
 				<OrdersTable

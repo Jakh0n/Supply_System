@@ -1,34 +1,34 @@
 'use client'
 
+import { useRouter } from '@/i18n/navigation'
 import { useAuth } from '@/contexts/AuthContext'
 import { getDashboardPathForRole } from '@/lib/authRouting'
+import { useTranslations } from 'next-intl'
 import Image from 'next/image'
-import { useRouter } from 'next/navigation'
 import { useEffect } from 'react'
 
 export default function HomePage() {
 	const { user, loading } = useAuth()
 	const router = useRouter()
+	const t = useTranslations('common')
 
 	useEffect(() => {
 		if (!loading) {
 			if (user) {
 				router.push(getDashboardPathForRole(user.position))
 			} else {
-				// Redirect unauthenticated users to login
 				router.push('/login')
 			}
 		}
 	}, [user, loading, router])
 
-	// Show loading spinner while checking authentication
 	if (loading) {
 		return (
 			<div className='min-h-screen flex items-center justify-center bg-gray-50'>
 				<div className='text-center'>
 					<Image
 						src='/crown.png'
-						alt='King Kebab Supply'
+						alt={t('appName')}
 						width={48}
 						height={48}
 						className='h-12 w-12 mx-auto animate-pulse'
@@ -36,19 +36,18 @@ export default function HomePage() {
 					<h2 className='mt-4 text-xl font-semibold text-blue-500'>
 						<span className='text-red-600'>King Kebab</span> Supply
 					</h2>
-					<p className='mt-2 text-gray-600'>Loading...</p>
+					<p className='mt-2 text-gray-600'>{t('loading')}</p>
 				</div>
 			</div>
 		)
 	}
 
-	// This will briefly show before redirect
 	return (
 		<div className='min-h-screen flex items-center justify-center bg-gray-50'>
 			<div className='text-center'>
 				<Image
 					src='/crown.png'
-					alt='King Kebab Supply'
+					alt={t('appName')}
 					width={48}
 					height={48}
 					className='h-12 w-12 mx-auto'
@@ -56,7 +55,7 @@ export default function HomePage() {
 				<h2 className='mt-4 text-xl font-semibold text-blue-500'>
 					<span className='text-red-600'>King Kebab</span> Supply
 				</h2>
-				<p className='mt-2 text-gray-600'>Redirecting...</p>
+				<p className='mt-2 text-gray-600'>{t('redirecting')}</p>
 			</div>
 		</div>
 	)

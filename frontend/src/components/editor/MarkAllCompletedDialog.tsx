@@ -14,6 +14,7 @@ import {
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
 import { CheckCheck } from 'lucide-react'
+import { useTranslations } from 'next-intl'
 import { useState } from 'react'
 import { editorTouchCompact, editorTouchSm } from './editorUi'
 
@@ -30,6 +31,9 @@ export default function MarkAllCompletedDialog({
 	hasDateOrBranchFilter = false,
 	onConfirm,
 }: MarkAllCompletedDialogProps) {
+	const t = useTranslations('editor.dialogs')
+	const to = useTranslations('editor.orders')
+	const tc = useTranslations('common')
 	const [scope, setScope] = useState<MarkAllScope>(
 		hasDateOrBranchFilter ? 'filtered' : 'all'
 	)
@@ -50,22 +54,19 @@ export default function MarkAllCompletedDialog({
 					className={`${editorTouchCompact} border-green-300 text-green-800 hover:bg-green-50 w-full sm:w-auto`}
 				>
 					<CheckCheck className='h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1 shrink-0' />
-					<span className='truncate sm:hidden'>Mark all</span>
-					<span className='truncate hidden sm:inline'>Mark all completed</span>
+					<span className='truncate sm:hidden'>{to('markAll')}</span>
+					<span className='truncate hidden sm:inline'>{to('markAllCompleted')}</span>
 				</Button>
 			</AlertDialogTrigger>
 			<AlertDialogContent className='w-[calc(100%-2rem)] max-w-lg max-h-[90vh] overflow-y-auto'>
 				<AlertDialogHeader>
-					<AlertDialogTitle>Mark all orders as completed?</AlertDialogTitle>
+					<AlertDialogTitle>{t('markAllTitle')}</AlertDialogTitle>
 					<AlertDialogDescription asChild>
 						<div className='space-y-4 text-sm text-muted-foreground'>
-							<p>
-								This updates order status in the database. This action cannot
-								be undone easily.
-							</p>
+							<p>{t('markAllDescription')}</p>
 
 							<div className='space-y-2'>
-								<Label className='text-foreground font-medium'>Scope</Label>
+								<Label className='text-foreground font-medium'>{t('scope')}</Label>
 								<div className='flex flex-col gap-2'>
 									<label className='flex items-center gap-2 cursor-pointer'>
 										<input
@@ -75,7 +76,7 @@ export default function MarkAllCompletedDialog({
 											onChange={() => setScope('all')}
 											className='accent-blue-600'
 										/>
-										<span>All orders in the system</span>
+										<span>{t('scopeAll')}</span>
 									</label>
 									<label
 										className={`flex items-center gap-2 ${
@@ -92,9 +93,7 @@ export default function MarkAllCompletedDialog({
 											onChange={() => setScope('filtered')}
 											className='accent-blue-600'
 										/>
-										<span>
-											Only orders matching current date/branch filters
-										</span>
+										<span>{t('scopeFiltered')}</span>
 									</label>
 								</div>
 							</div>
@@ -106,18 +105,18 @@ export default function MarkAllCompletedDialog({
 									onChange={e => setIncludeDrinkOrders(e.target.checked)}
 									className='accent-blue-600 rounded'
 								/>
-								<span>Also mark drink orders as completed</span>
+								<span>{t('includeDrinkOrders')}</span>
 							</label>
 						</div>
 					</AlertDialogDescription>
 				</AlertDialogHeader>
 				<AlertDialogFooter className='flex-col-reverse sm:flex-row gap-2'>
-					<AlertDialogCancel className={editorTouchSm}>Cancel</AlertDialogCancel>
+					<AlertDialogCancel className={editorTouchSm}>{tc('cancel')}</AlertDialogCancel>
 					<AlertDialogAction
 						onClick={handleConfirm}
 						className={`${editorTouchSm} bg-green-600 hover:bg-green-700 w-full sm:w-auto`}
 					>
-						{loading ? 'Updating...' : 'Yes, mark completed'}
+						{loading ? to('updating') : t('yesMarkCompleted')}
 					</AlertDialogAction>
 				</AlertDialogFooter>
 			</AlertDialogContent>

@@ -32,6 +32,7 @@ import { generateOrdersChecklistPdf } from "@/services/orders/ordersChecklistPdf
 import { downloadOrdersCsv } from "@/services/orders/ordersCsv";
 import { openOrderPrintWindow } from "@/services/orders/ordersPrint";
 import { Order, OrderFilters, OrderStatus } from "@/types";
+import { useTranslations } from "next-intl";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 
@@ -48,6 +49,8 @@ const DEFAULT_FILTERS: OrderFilters = {
 
 export default function EditorDashboard() {
   const { user, logout } = useAuth();
+  const t = useTranslations("editor.orders");
+  const tt = useTranslations("editor.toast");
   const [filters, setFilters] = useState<OrderFilters>(DEFAULT_FILTERS);
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [showOrderDialog, setShowOrderDialog] = useState(false);
@@ -204,14 +207,14 @@ export default function EditorDashboard() {
       });
 
       if (response.orders.length === 0) {
-        toast.error("No orders found to download");
+        toast.error(tt("noOrdersDownload"));
         return;
       }
 
       downloadOrdersCsv(response.orders);
-      toast.success(`Downloaded ${response.orders.length} orders`);
+      toast.success(tt("downloadedOrders", { count: response.orders.length }));
     } catch {
-      toast.error("Failed to download orders");
+      toast.error(tt("downloadFailed"));
     } finally {
       setIsExporting(false);
     }
@@ -232,7 +235,7 @@ export default function EditorDashboard() {
 
   const handleDownloadPDF = async () => {
     if (!filters.date?.trim()) {
-      toast.error("Please select a date to download PDF report");
+      toast.error(tt("selectDatePdf"));
       return;
     }
 
@@ -247,16 +250,19 @@ export default function EditorDashboard() {
       });
 
       if (response.orders.length === 0) {
-        toast.error(`No orders found for ${filters.date}`);
+        toast.error(tt("noOrdersForDate", { date: filters.date }));
         return;
       }
 
       await generateOrdersChecklistPdf(response.orders, filters.date);
       toast.success(
-        `PDF report generated with ${response.orders.length} orders from all branches for ${filters.date}`,
+        tt("pdfGenerated", {
+          count: response.orders.length,
+          date: filters.date,
+        }),
       );
     } catch {
-      toast.error("Failed to generate PDF report");
+      toast.error(tt("pdfFailed"));
     } finally {
       setIsExporting(false);
     }
@@ -291,7 +297,7 @@ export default function EditorDashboard() {
               <CardHeader className="px-3 py-3 sm:px-6 sm:py-4 space-y-2 sm:space-y-4">
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-4">
                   <CardTitle className="text-base sm:text-xl">
-                    All Branch Orders
+                    {t("title")}
                   </CardTitle>
                   <div className="grid grid-cols-2 sm:flex sm:flex-row gap-1.5 sm:gap-2 w-full sm:w-auto">
                     <MarkAllCompletedDialog
@@ -305,12 +311,12 @@ export default function EditorDashboard() {
                       className={`${editorTouchCompact} bg-blue-600 hover:bg-blue-700 text-white w-full sm:w-auto`}
                     >
                       {bulkUpdateMutation.isPending ? (
-                        "Updating..."
+                        t("updating")
                       ) : (
                         <>
-                          <span className="truncate sm:hidden">Bulk update</span>
+                          <span className="truncate sm:hidden">{t("bulkUpdate")}</span>
                           <span className="truncate hidden sm:inline">
-                            Bulk Update Status
+                            {t("bulkUpdateStatus")}
                           </span>
                         </>
                       )}

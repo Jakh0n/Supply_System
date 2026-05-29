@@ -1,5 +1,6 @@
 'use client'
 
+import { useRouter } from '@/i18n/navigation'
 import { Button } from '@/components/ui/button'
 import {
 	Card,
@@ -14,13 +15,15 @@ import { useAuth } from '@/contexts/AuthContext'
 import { getDashboardPathForRole } from '@/lib/authRouting'
 import { LoginCredentials } from '@/types'
 import { AlertCircle, Eye, EyeOff } from 'lucide-react'
+import { useTranslations } from 'next-intl'
 import Image from 'next/image'
-import { useRouter } from 'next/navigation'
 import React, { useEffect, useState } from 'react'
 
 const LoginForm: React.FC = () => {
 	const { login, user } = useAuth()
 	const router = useRouter()
+	const t = useTranslations('auth')
+	const tc = useTranslations('common')
 	const [credentials, setCredentials] = useState<LoginCredentials>({
 		username: '',
 		password: '',
@@ -36,19 +39,15 @@ const LoginForm: React.FC = () => {
 
 		try {
 			await login(credentials)
-
-			// The user state will be updated in the context after successful login
-			// We'll handle navigation in a useEffect
 		} catch (err: unknown) {
 			const errorMessage =
-				err instanceof Error ? err.message : 'Login failed. Please try again.'
+				err instanceof Error ? err.message : t('loginFailed')
 			setError(errorMessage)
 		} finally {
 			setLoading(false)
 		}
 	}
 
-	// Handle navigation after user state changes
 	useEffect(() => {
 		if (user) {
 			router.push(getDashboardPathForRole(user.position))
@@ -66,12 +65,11 @@ const LoginForm: React.FC = () => {
 	return (
 		<div className='min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8'>
 			<div className='max-w-md w-full space-y-8'>
-				{/* Logo and title */}
 				<div className='text-center'>
 					<div className='flex justify-center'>
 						<Image
 							src='/crown.png'
-							alt='King Kebab Supply'
+							alt={tc('appName')}
 							width={48}
 							height={48}
 							className='h-12 w-12'
@@ -80,16 +78,13 @@ const LoginForm: React.FC = () => {
 					<h2 className='mt-6 text-3xl font-extrabold text-blue-500'>
 						<span className='text-red-600'>King Kebab</span> Supply
 					</h2>
-					<p className='mt-2 text-sm text-gray-600'>Sign in to your account</p>
+					<p className='mt-2 text-sm text-gray-600'>{t('signInTitle')}</p>
 				</div>
 
-				{/* Login form */}
 				<Card>
 					<CardHeader>
-						<CardTitle>Welcome back</CardTitle>
-						<CardDescription>
-							Enter your credentials to access your account
-						</CardDescription>
+						<CardTitle>{t('welcomeBack')}</CardTitle>
+						<CardDescription>{t('enterCredentials')}</CardDescription>
 					</CardHeader>
 					<CardContent>
 						<form onSubmit={handleSubmit} className='space-y-6'>
@@ -106,7 +101,7 @@ const LoginForm: React.FC = () => {
 
 							<div className='space-y-4'>
 								<div>
-									<Label htmlFor='username'>Username</Label>
+									<Label htmlFor='username'>{t('username')}</Label>
 									<Input
 										id='username'
 										name='username'
@@ -114,13 +109,13 @@ const LoginForm: React.FC = () => {
 										required
 										value={credentials.username}
 										onChange={handleChange}
-										placeholder='Enter your username'
+										placeholder={t('usernamePlaceholder')}
 										className='mt-1'
 									/>
 								</div>
 
 								<div>
-									<Label htmlFor='password'>Password</Label>
+									<Label htmlFor='password'>{t('password')}</Label>
 									<div className='relative mt-1'>
 										<Input
 											id='password'
@@ -129,7 +124,7 @@ const LoginForm: React.FC = () => {
 											required
 											value={credentials.password}
 											onChange={handleChange}
-											placeholder='Enter your password'
+											placeholder={t('passwordPlaceholder')}
 											className='pr-10'
 										/>
 										<button
@@ -148,7 +143,7 @@ const LoginForm: React.FC = () => {
 							</div>
 
 							<Button type='submit' className='w-full' disabled={loading}>
-								{loading ? 'Signing in...' : 'Sign in'}
+								{loading ? t('signingIn') : t('signIn')}
 							</Button>
 						</form>
 					</CardContent>

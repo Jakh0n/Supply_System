@@ -382,7 +382,7 @@ const EditorDrinkOrdersPage = () => {
               totalPages={totalPages}
               totalCount={totalCount}
               loading={loading}
-              itemLabel="drink orders"
+              itemLabelKey="drinkOrders"
               onPageChange={(page) => setFilters({ ...filters, page })}
             />
           </CardContent>

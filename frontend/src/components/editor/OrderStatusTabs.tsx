@@ -11,6 +11,7 @@ import {
 	editorSnapItem,
 	editorTouchCompact,
 } from './editorUi'
+import { useTranslations } from 'next-intl'
 
 interface OrderStatusTabsProps {
 	value: OrderStatusFilter
@@ -25,6 +26,8 @@ export default function OrderStatusTabs({
 	loading = false,
 	onChange,
 }: OrderStatusTabsProps) {
+	const t = useTranslations('editor.status')
+
 	return (
 		<div className={editorHorizontalScroll}>
 			{ORDER_STATUS_FILTER_TABS.map(tab => {
@@ -43,7 +46,7 @@ export default function OrderStatusTabs({
 						}`}
 						onClick={() => onChange(tab.value)}
 					>
-						<span className='whitespace-nowrap'>{tab.label}</span>
+						<span className='whitespace-nowrap'>{t(tab.value)}</span>
 						{loading ? (
 							<Skeleton className='ml-1.5 h-4 w-6 rounded-full inline-block' />
 						) : (
