@@ -100,12 +100,6 @@
 			"pdfNeedsDate": "PDF indirmek için bir tarih seçin",
 			"pdfForDate": "Seçilen tarih için PDF indir"
 		},
-		"pendingSection": {
-			"title": "İşlem gerekli",
-			"pendingCount": "({count} beklemede)",
-			"description": "Önce bu siparişleri inceleyin ve güncelleyin.",
-			"viewAllPending": "Tüm bekleyenleri gör"
-		},
 		"pagination": {
 			"orders": "sipariş",
 			"drinkOrders": "içecek siparişi"

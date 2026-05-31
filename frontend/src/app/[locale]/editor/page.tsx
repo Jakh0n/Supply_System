@@ -13,7 +13,6 @@ import OrderStatusTabs from "@/components/editor/OrderStatusTabs";
 import OrdersFilters from "@/components/editor/OrdersFilters";
 import OrdersPagination from "@/components/editor/OrdersPagination";
 import OrdersTable from "@/components/editor/OrdersTable";
-import PendingOrdersSection from "@/components/editor/PendingOrdersSection";
 import StatsCards from "@/components/editor/StatsCards";
 import StatusUpdateDialog from "@/components/editor/StatusUpdateDialog";
 import { Button } from "@/components/ui/button";
@@ -37,7 +36,6 @@ import { useMemo, useState } from "react";
 import { toast } from "sonner";
 
 const EDITOR_ORDERS_PAGE_SIZE = 10;
-const PENDING_PREVIEW_LIMIT = 5;
 
 const DEFAULT_FILTERS: OrderFilters = {
   date: "",
@@ -83,26 +81,11 @@ export default function EditorDashboard() {
     [countBaseFilters, statusFilter, filters.page, filters.limit],
   );
 
-  const showPendingSection = statusFilter === "all";
-
-  const pendingPreviewFilters = useMemo(
-    () => ({
-      ...countBaseFilters,
-      status: "pending" as const,
-      page: 1,
-      limit: PENDING_PREVIEW_LIMIT,
-    }),
-    [countBaseFilters],
-  );
-
   const {
     data: ordersData,
     isLoading: ordersLoading,
     isFetching: ordersFetching,
   } = useOrdersList(orderListFilters);
-
-  const { data: pendingPreviewData, isLoading: pendingPreviewLoading } =
-    useOrdersList(pendingPreviewFilters, { enabled: showPendingSection });
 
   const { counts: statusCounts, isLoading: statusCountsLoading } =
     useOrderStatusCounts(countBaseFilters);
@@ -116,10 +99,8 @@ export default function EditorDashboard() {
   const hasDateOrBranchFilter = Boolean(filters.date || filters.branch);
 
   const orders = ordersData?.orders ?? [];
-  const pendingPreview = pendingPreviewData?.orders ?? [];
   const totalPages = ordersData?.pagination.pages ?? 1;
   const totalCount = ordersData?.pagination.total ?? 0;
-  const pendingTotal = statusCounts.pending;
   const currentPage = filters.page ?? 1;
   const loading = ordersLoading || ordersFetching || isExporting;
   const initialLoading = ordersLoading && ordersData === undefined;
@@ -279,19 +260,6 @@ export default function EditorDashboard() {
         ) : (
           <>
             {stats && <StatsCards stats={stats} />}
-
-            {showPendingSection && (
-              <PendingOrdersSection
-                orders={pendingPreview}
-                loading={pendingPreviewLoading}
-                totalPending={pendingTotal}
-                updatingOrderId={updatingOrderId}
-                onViewOrder={handleViewOrder}
-                onStatusChange={handleInlineStatusChange}
-                onPrintOrder={handlePrintOrder}
-                onViewAllPending={() => handleStatusTabChange("pending")}
-              />
-            )}
 
             <Card>
               <CardHeader className="px-3 py-3 sm:px-6 sm:py-4 space-y-2 sm:space-y-4">

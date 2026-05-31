@@ -9,7 +9,6 @@ import { OrderStatusFilter } from "@/components/editor/orderStatus";
 import OrderStatusTabs from "@/components/editor/OrderStatusTabs";
 import OrdersPagination from "@/components/editor/OrdersPagination";
 import OrdersTable from "@/components/editor/OrdersTable";
-import PendingOrdersSection from "@/components/editor/PendingOrdersSection";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -94,28 +93,12 @@ const EditorDrinkOrdersPage = () => {
     [countBaseFilters, statusFilter, filters.page, filters.limit],
   );
 
-  const showPendingSection = statusFilter === "all";
-
-  const pendingPreviewFilters = useMemo(
-    () => ({
-      ...countBaseFilters,
-      status: "pending" as const,
-      page: 1,
-      limit: 5,
-      viewAll: "true",
-    }),
-    [countBaseFilters],
-  );
-
   const { data: branches = [] } = useBranchNames();
   const {
     data: drinkOrdersData,
     isLoading,
     isFetching,
   } = useDrinkOrdersList(drinkOrderFilters);
-
-  const { data: pendingPreviewData, isLoading: pendingPreviewLoading } =
-    useDrinkOrdersList(pendingPreviewFilters, { enabled: showPendingSection });
 
   const { counts: statusCounts, isLoading: statusCountsLoading } =
     useDrinkOrderStatusCounts(countBaseFilters);
@@ -125,8 +108,6 @@ const EditorDrinkOrdersPage = () => {
   const hasDateOrBranchFilter = Boolean(filters.date || filters.branch);
 
   const drinkOrders = drinkOrdersData?.drinkOrders ?? [];
-  const pendingPreview =
-    (pendingPreviewData?.drinkOrders as unknown as Order[]) ?? [];
   const totalPages = drinkOrdersData?.pagination.pages ?? 1;
   const totalCount = drinkOrdersData?.pagination.total ?? 0;
   const currentPage = filters.page ?? 1;
@@ -334,19 +315,6 @@ const EditorDrinkOrdersPage = () => {
             </div>
           </CardContent>
         </Card>
-
-        {showPendingSection && (
-          <PendingOrdersSection
-            orders={pendingPreview}
-            loading={pendingPreviewLoading}
-            totalPending={statusCounts.pending}
-            updatingOrderId={updatingOrderId}
-            onViewOrder={handleViewOrder}
-            onStatusChange={handleInlineStatusChange}
-            onPrintOrder={handlePrintOrder}
-            onViewAllPending={() => handleStatusTabChange("pending")}
-          />
-        )}
 
         <Card>
           <CardHeader className="pb-4 space-y-4">

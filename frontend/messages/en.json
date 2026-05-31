@@ -100,12 +100,6 @@
 			"pdfNeedsDate": "Please select a date to download PDF",
 			"pdfForDate": "Download PDF for selected date"
 		},
-		"pendingSection": {
-			"title": "Needs action",
-			"pendingCount": "({count} pending)",
-			"description": "Review and update these orders first.",
-			"viewAllPending": "View all pending"
-		},
 		"pagination": {
 			"orders": "orders",
 			"drinkOrders": "drink orders"
