@@ -627,6 +627,14 @@ export const productsApi = {
 		return response.data
 	},
 
+	addStock: async (
+		id: string,
+		quantity: number
+	): Promise<{ product: Product; message: string }> => {
+		const response = await api.patch(`/products/${id}/stock`, { quantity })
+		return response.data
+	},
+
 	deleteProduct: async (id: string): Promise<void> => {
 		await api.delete(`/products/${id}`)
 	},

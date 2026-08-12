@@ -57,6 +57,7 @@ export function useUpdateOrderStatus() {
 		}) => ordersApi.updateOrderStatus(id, status, adminNotes),
 		onSuccess: () => {
 			queryClient.invalidateQueries({ queryKey: queryKeys.orders.all })
+			queryClient.invalidateQueries({ queryKey: queryKeys.products.all })
 			toast.success('Order status updated successfully')
 		},
 		onError: () => {
@@ -80,6 +81,7 @@ export function useBulkUpdateOrderStatus() {
 		}) => ordersApi.bulkUpdateOrderStatus(orderIds, status, adminNotes),
 		onSuccess: (_data, variables) => {
 			queryClient.invalidateQueries({ queryKey: queryKeys.orders.all })
+			queryClient.invalidateQueries({ queryKey: queryKeys.products.all })
 			toast.success(
 				`Successfully updated ${variables.orderIds.length} orders to ${variables.status}`
 			)
@@ -124,6 +126,7 @@ export function useBulkUpdateAllOrdersStatus() {
 		onSuccess: data => {
 			queryClient.invalidateQueries({ queryKey: queryKeys.orders.all })
 			queryClient.invalidateQueries({ queryKey: queryKeys.drinkOrders.all })
+			queryClient.invalidateQueries({ queryKey: queryKeys.products.all })
 			const ordersCount = data.ordersResult.updatedCount
 			const drinkPart =
 				data.drinkUpdated > 0

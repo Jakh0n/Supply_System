@@ -16,9 +16,9 @@ export default function EditorShell({
 	children,
 }: EditorShellProps) {
 	return (
-		<div className={`min-h-screen bg-gray-50 ${editorMainPadding}`}>
+		<div className={`min-h-screen bg-slate-50 ${editorMainPadding}`}>
 			<EditorHeader username={username} onLogout={onLogout} />
-			<main className='max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-3 sm:py-6 lg:py-8'>
+			<main className='max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-3 sm:py-5 lg:py-6'>
 				{children}
 			</main>
 		</div>

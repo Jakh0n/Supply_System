@@ -1,46 +1,14 @@
 'use client'
 
-import EditorProductAvailability from '@/components/editor/EditorProductAvailability'
 import EditorShell from '@/components/editor/EditorShell'
-import {
-	editorHorizontalScroll,
-	editorSnapItem,
-	editorTouchSm,
-} from '@/components/editor/editorUi'
-import { Button } from '@/components/ui/button'
+import EditorStockList from '@/components/editor/EditorStockList'
 import { useAuth } from '@/contexts/AuthContext'
-import { useDrinkOrdersList, useOrdersList } from '@/hooks/queries'
-import { Order } from '@/types'
 import { Package } from 'lucide-react'
-import { useState } from 'react'
-
-type ProductTab = 'all' | 'drinks'
+import { useTranslations } from 'next-intl'
 
 export default function EditorProductsPage() {
 	const { user, logout } = useAuth()
-	const [tab, setTab] = useState<ProductTab>('all')
-
-	const { data: pendingOrdersData } = useOrdersList({
-		status: 'pending',
-		limit: 500,
-		page: 1,
-	})
-
-	const { data: pendingDrinkOrdersData } = useDrinkOrdersList(
-		{
-			status: 'pending',
-			limit: 500,
-			page: 1,
-			viewAll: 'true',
-		},
-		{ enabled: tab === 'drinks' }
-	)
-
-	const pendingOrders = pendingOrdersData?.orders ?? []
-	const pendingDrinkOrders =
-		(pendingDrinkOrdersData?.drinkOrders as unknown as Order[]) ?? []
-
-	const ordersForPanel = tab === 'drinks' ? pendingDrinkOrders : pendingOrders
+	const t = useTranslations('editor.stock')
 
 	if (!user) {
 		return null
@@ -48,38 +16,16 @@ export default function EditorProductsPage() {
 
 	return (
 		<EditorShell username={user.username} onLogout={logout}>
-			<div className='space-y-6'>
+			<div className='space-y-3 sm:space-y-5'>
 				<div>
-					<h2 className='text-xl sm:text-2xl font-bold text-gray-900 flex items-center gap-2'>
-						<Package className='h-6 w-6 text-amber-600 shrink-0' />
-						Product Availability
+					<h2 className='text-base sm:text-xl font-bold text-gray-900 flex items-center gap-1.5'>
+						<Package className='h-4 w-4 sm:h-5 sm:w-5 text-amber-600 shrink-0' />
+						{t('title')}
 					</h2>
-					<p className='text-sm text-gray-500 mt-1'>
-						Mark sold out products so workers cannot order unavailable stock
-					</p>
+					<p className='text-xs sm:text-sm text-gray-500 mt-0.5'>{t('subtitle')}</p>
 				</div>
 
-				<div className={editorHorizontalScroll}>
-					<Button
-						variant={tab === 'all' ? 'default' : 'outline'}
-						onClick={() => setTab('all')}
-						className={`${editorSnapItem} ${editorTouchSm} px-6`}
-					>
-						All products
-					</Button>
-					<Button
-						variant={tab === 'drinks' ? 'default' : 'outline'}
-						onClick={() => setTab('drinks')}
-						className={`${editorSnapItem} ${editorTouchSm} px-6`}
-					>
-						Drinks only
-					</Button>
-				</div>
-
-				<EditorProductAvailability
-					orders={ordersForPanel}
-					drinkOnly={tab === 'drinks'}
-				/>
+				<EditorStockList />
 			</div>
 		</EditorShell>
 	)

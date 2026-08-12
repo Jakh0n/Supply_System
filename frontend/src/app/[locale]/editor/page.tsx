@@ -1,8 +1,6 @@
 "use client";
 
-import BulkStatusDialog from "@/components/editor/BulkStatusDialog";
 import EditorShell from "@/components/editor/EditorShell";
-import { editorTouchCompact } from "@/components/editor/editorUi";
 import MarkAllCompletedDialog, {
   MarkAllScope,
 } from "@/components/editor/MarkAllCompletedDialog";
@@ -13,15 +11,11 @@ import OrderStatusTabs from "@/components/editor/OrderStatusTabs";
 import OrdersFilters from "@/components/editor/OrdersFilters";
 import OrdersPagination from "@/components/editor/OrdersPagination";
 import OrdersTable from "@/components/editor/OrdersTable";
-import StatsCards from "@/components/editor/StatsCards";
 import StatusUpdateDialog from "@/components/editor/StatusUpdateDialog";
-import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useAuth } from "@/contexts/AuthContext";
 import {
   useBulkUpdateAllOrdersStatus,
-  useBulkUpdateOrderStatus,
-  useDashboardStats,
   useOrderStatusCounts,
   useOrdersList,
   useUpdateOrderStatus,
@@ -53,11 +47,7 @@ export default function EditorDashboard() {
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [showOrderDialog, setShowOrderDialog] = useState(false);
   const [showStatusDialog, setShowStatusDialog] = useState(false);
-  const [showBulkStatusDialog, setShowBulkStatusDialog] = useState(false);
-  const [newStatus, setNewStatus] = useState<OrderStatus>("pending");
   const [adminNotes, setAdminNotes] = useState("");
-  const [bulkStatus, setBulkStatus] = useState<OrderStatus>("completed");
-  const [bulkAdminNotes, setBulkAdminNotes] = useState("");
   const [isExporting, setIsExporting] = useState(false);
   const [updatingOrderId, setUpdatingOrderId] = useState<string | null>(null);
 
@@ -90,10 +80,7 @@ export default function EditorDashboard() {
   const { counts: statusCounts, isLoading: statusCountsLoading } =
     useOrderStatusCounts(countBaseFilters);
 
-  const { data: stats } = useDashboardStats();
-
   const updateStatusMutation = useUpdateOrderStatus();
-  const bulkUpdateMutation = useBulkUpdateOrderStatus();
   const markAllCompletedMutation = useBulkUpdateAllOrdersStatus();
 
   const hasDateOrBranchFilter = Boolean(filters.date || filters.branch);
@@ -124,47 +111,24 @@ export default function EditorDashboard() {
     setShowOrderDialog(true);
   };
 
-  const handleUpdateStatus = (order: Order) => {
+  const handleAddNotes = (order: Order) => {
     setSelectedOrder(order);
-    setNewStatus(order.status);
     setAdminNotes(order.adminNotes || "");
     setShowStatusDialog(true);
   };
 
-  const handleStatusUpdate = () => {
+  const handleNotesSave = () => {
     if (!selectedOrder) return;
 
     updateStatusMutation.mutate(
       {
         id: selectedOrder._id,
-        status: newStatus,
+        status: selectedOrder.status,
         adminNotes: adminNotes || undefined,
       },
       {
         onSuccess: () => {
           setShowStatusDialog(false);
-        },
-      },
-    );
-  };
-
-  const handleBulkStatusUpdate = () => {
-    if (orders.length === 0) {
-      toast.info("No orders to update");
-      setShowBulkStatusDialog(false);
-      return;
-    }
-
-    bulkUpdateMutation.mutate(
-      {
-        orderIds: orders.map((order) => order._id),
-        status: bulkStatus,
-        adminNotes: bulkAdminNotes || undefined,
-      },
-      {
-        onSuccess: () => {
-          setShowBulkStatusDialog(false);
-          setBulkAdminNotes("");
         },
       },
     );
@@ -255,82 +219,69 @@ export default function EditorDashboard() {
 
   return (
     <EditorShell username={user.username} onLogout={logout}>
-        {initialLoading ? (
-          <EditorSkeleton />
-        ) : (
-          <>
-            {stats && <StatsCards stats={stats} />}
+      {initialLoading ? (
+        <EditorSkeleton />
+      ) : (
+        <Card className="shadow-sm border-gray-200">
+          <CardHeader className="px-3 py-3 sm:px-6 sm:py-5 space-y-3 sm:space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-4">
+              <div className="flex items-center gap-2 min-w-0">
+                <CardTitle className="text-base sm:text-xl truncate">
+                  {t("title")}
+                </CardTitle>
+                {!statusCountsLoading && (
+                  <span className="shrink-0 inline-flex items-center rounded-md bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-700 tabular-nums">
+                    {totalCount}
+                  </span>
+                )}
+              </div>
+              <MarkAllCompletedDialog
+                loading={markAllCompletedMutation.isPending}
+                hasDateOrBranchFilter={hasDateOrBranchFilter}
+                onConfirm={handleMarkAllCompleted}
+              />
+            </div>
 
-            <Card>
-              <CardHeader className="px-3 py-3 sm:px-6 sm:py-4 space-y-2 sm:space-y-4">
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-4">
-                  <CardTitle className="text-base sm:text-xl">
-                    {t("title")}
-                  </CardTitle>
-                  <div className="grid grid-cols-2 sm:flex sm:flex-row gap-1.5 sm:gap-2 w-full sm:w-auto">
-                    <MarkAllCompletedDialog
-                      loading={markAllCompletedMutation.isPending}
-                      hasDateOrBranchFilter={hasDateOrBranchFilter}
-                      onConfirm={handleMarkAllCompleted}
-                    />
-                    <Button
-                      onClick={() => setShowBulkStatusDialog(true)}
-                      disabled={loading || orders.length === 0}
-                      className={`${editorTouchCompact} bg-blue-600 hover:bg-blue-700 text-white w-full sm:w-auto`}
-                    >
-                      {bulkUpdateMutation.isPending ? (
-                        t("updating")
-                      ) : (
-                        <>
-                          <span className="truncate sm:hidden">{t("bulkUpdate")}</span>
-                          <span className="truncate hidden sm:inline">
-                            {t("bulkUpdateStatus")}
-                          </span>
-                        </>
-                      )}
-                    </Button>
-                  </div>
-                </div>
+            <OrderStatusTabs
+              value={statusFilter}
+              counts={statusCounts}
+              loading={statusCountsLoading}
+              onChange={handleStatusTabChange}
+            />
 
-                <OrderStatusTabs
-                  value={statusFilter}
-                  counts={statusCounts}
-                  loading={statusCountsLoading}
-                  onChange={handleStatusTabChange}
-                />
+            <div className="border-t border-gray-100 pt-3 sm:pt-4">
+              <OrdersFilters
+                filters={filters}
+                loading={loading}
+                hideStatusFilter
+                onFiltersChange={setFilters}
+                onDownloadCSV={handleDownloadAllOrders}
+                onDownloadPDF={handleDownloadPDF}
+              />
+            </div>
+          </CardHeader>
+          <CardContent className="px-3 sm:px-6 pt-0 pb-3 sm:pb-6">
+            <OrdersTable
+              orders={orders}
+              loading={loading}
+              inlineStatus
+              updatingOrderId={updatingOrderId}
+              onViewOrder={handleViewOrder}
+              onStatusChange={handleInlineStatusChange}
+              onUpdateStatus={handleAddNotes}
+              onPrintOrder={handlePrintOrder}
+            />
 
-                <OrdersFilters
-                  filters={filters}
-                  loading={loading}
-                  hideStatusFilter
-                  onFiltersChange={setFilters}
-                  onDownloadCSV={handleDownloadAllOrders}
-                  onDownloadPDF={handleDownloadPDF}
-                />
-              </CardHeader>
-              <CardContent className="pt-0">
-                <OrdersTable
-                  orders={orders}
-                  loading={loading}
-                  inlineStatus
-                  updatingOrderId={updatingOrderId}
-                  onViewOrder={handleViewOrder}
-                  onStatusChange={handleInlineStatusChange}
-                  onUpdateStatus={handleUpdateStatus}
-                  onPrintOrder={handlePrintOrder}
-                />
-
-                <OrdersPagination
-                  currentPage={currentPage}
-                  totalPages={totalPages}
-                  totalCount={totalCount}
-                  loading={loading}
-                  onPageChange={(page) => setFilters({ ...filters, page })}
-                />
-              </CardContent>
-            </Card>
-          </>
-        )}
+            <OrdersPagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              totalCount={totalCount}
+              loading={loading}
+              onPageChange={(page) => setFilters({ ...filters, page })}
+            />
+          </CardContent>
+        </Card>
+      )}
 
       <OrderDetailsDialog
         order={selectedOrder}
@@ -342,24 +293,10 @@ export default function EditorDashboard() {
         order={selectedOrder}
         open={showStatusDialog}
         onOpenChange={setShowStatusDialog}
-        status={newStatus}
-        onStatusChange={setNewStatus}
         adminNotes={adminNotes}
         onAdminNotesChange={setAdminNotes}
-        onSubmit={handleStatusUpdate}
+        onSubmit={handleNotesSave}
         isSubmitting={updateStatusMutation.isPending}
-      />
-
-      <BulkStatusDialog
-        open={showBulkStatusDialog}
-        onOpenChange={setShowBulkStatusDialog}
-        orderCount={orders.length}
-        status={bulkStatus}
-        onStatusChange={setBulkStatus}
-        adminNotes={bulkAdminNotes}
-        onAdminNotesChange={setBulkAdminNotes}
-        onSubmit={handleBulkStatusUpdate}
-        isSubmitting={bulkUpdateMutation.isPending}
       />
     </EditorShell>
   );

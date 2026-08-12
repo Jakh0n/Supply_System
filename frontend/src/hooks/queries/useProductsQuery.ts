@@ -30,3 +30,21 @@ export function useToggleProductStatus() {
 		},
 	})
 }
+
+export function useAddProductStock() {
+	const queryClient = useQueryClient()
+
+	return useMutation({
+		mutationFn: ({ id, quantity }: { id: string; quantity: number }) =>
+			productsApi.addStock(id, quantity),
+		onSuccess: data => {
+			queryClient.invalidateQueries({ queryKey: queryKeys.products.all })
+			toast.success(
+				`${data.product.name}: ${data.product.amount} ${data.product.unit}`
+			)
+		},
+		onError: () => {
+			toast.error('Failed to add stock')
+		},
+	})
+}

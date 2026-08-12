@@ -28,7 +28,8 @@ interface OrdersTableProps {
 	orders: Order[]
 	loading: boolean
 	onViewOrder: (order: Order) => void
-	onPrintOrder: (order: Order) => void
+	/** Omit when print is not available for this order type */
+	onPrintOrder?: (order: Order) => void
 	/** Opens dialog with admin notes (optional when inline status is enabled) */
 	onUpdateStatus?: (order: Order) => void
 	/** Inline status change without dialog */
@@ -61,9 +62,11 @@ const OrdersTable: React.FC<OrdersTableProps> = ({
 
 	if (orders.length === 0) {
 		return (
-			<div className='text-center py-8 text-gray-500'>
-				<p className='text-lg mb-2'>No orders found</p>
-				<p className='text-sm'>Try adjusting your filters</p>
+			<div className='text-center py-10 sm:py-12 text-gray-500 border border-dashed border-gray-200 rounded-lg bg-gray-50/50'>
+				<p className='text-sm sm:text-base font-medium text-gray-700 mb-1'>
+					No orders found
+				</p>
+				<p className='text-xs sm:text-sm'>Try adjusting your filters</p>
 			</div>
 		)
 	}
@@ -147,7 +150,7 @@ const OrdersTable: React.FC<OrdersTableProps> = ({
 												<Eye className='h-3 w-3 mr-1' />
 												View
 											</Button>
-											{!compact && (
+											{!compact && onPrintOrder && (
 												<Button
 													variant='outline'
 													size='sm'
@@ -178,7 +181,7 @@ const OrdersTable: React.FC<OrdersTableProps> = ({
 																? 'Add admin notes'
 																: 'Update Status'}
 														</DropdownMenuItem>
-														{compact && (
+														{compact && onPrintOrder && (
 															<DropdownMenuItem
 																onClick={() => onPrintOrder(order)}
 															>
@@ -207,7 +210,9 @@ const OrdersTable: React.FC<OrdersTableProps> = ({
 						inlineStatus={inlineStatus}
 						isUpdating={updatingOrderId === order._id}
 						onView={() => onViewOrder(order)}
-						onPrint={() => onPrintOrder(order)}
+						onPrint={
+							onPrintOrder ? () => onPrintOrder(order) : undefined
+						}
 						onStatusChange={
 							onStatusChange
 								? status => onStatusChange(order, status)

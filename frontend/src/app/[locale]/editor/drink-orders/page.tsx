@@ -7,6 +7,7 @@ import MarkAllCompletedDialog, {
 } from "@/components/editor/MarkAllCompletedDialog";
 import { OrderStatusFilter } from "@/components/editor/orderStatus";
 import OrderStatusTabs from "@/components/editor/OrderStatusTabs";
+import OrdersFilters from "@/components/editor/OrdersFilters";
 import OrdersPagination from "@/components/editor/OrdersPagination";
 import OrdersTable from "@/components/editor/OrdersTable";
 import { Button } from "@/components/ui/button";
@@ -17,15 +18,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import {
   Table,
   TableBody,
@@ -36,43 +29,38 @@ import {
 } from "@/components/ui/table";
 import { useAuth } from "@/contexts/AuthContext";
 import {
-  useBranchNames,
   useBulkUpdateAllOrdersStatus,
   useDrinkOrderStatusCounts,
   useDrinkOrdersList,
   useUpdateDrinkOrderStatus,
 } from "@/hooks/queries";
 import { formatDate } from "@/lib/formatDate";
-import { DrinkOrder, Order, OrderStatus } from "@/types";
+import { DrinkOrder, Order, OrderFilters, OrderStatus } from "@/types";
 import { CupSoda } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { useMemo, useState } from "react";
-import { toast } from "sonner";
 
-interface DrinkOrderFilterState {
-  date: string;
-  branch: string;
-  status: OrderStatus | "all";
-  page: number;
-  limit: number;
-}
+const EDITOR_DRINK_ORDERS_PAGE_SIZE = 10;
+
+const DEFAULT_FILTERS: OrderFilters = {
+  date: "",
+  branch: "",
+  status: "all",
+  page: 1,
+  limit: EDITOR_DRINK_ORDERS_PAGE_SIZE,
+};
 
 const EditorDrinkOrdersPage = () => {
   const { user, logout } = useAuth();
+  const t = useTranslations("editor.drinkOrders");
   const [selectedOrder, setSelectedOrder] = useState<DrinkOrder | null>(null);
   const [showOrderDialog, setShowOrderDialog] = useState(false);
-  const [showStatusDialog, setShowStatusDialog] = useState(false);
-  const [newStatus, setNewStatus] = useState<OrderStatus>("pending");
+  const [showNotesDialog, setShowNotesDialog] = useState(false);
   const [adminNotes, setAdminNotes] = useState("");
   const [updatingOrderId, setUpdatingOrderId] = useState<string | null>(null);
-  const [filters, setFilters] = useState<DrinkOrderFilterState>({
-    date: "",
-    branch: "",
-    status: "all",
-    page: 1,
-    limit: 10,
-  });
+  const [filters, setFilters] = useState<OrderFilters>(DEFAULT_FILTERS);
 
-  const statusFilter = filters.status as OrderStatusFilter;
+  const statusFilter = (filters.status ?? "all") as OrderStatusFilter;
 
   const countBaseFilters = useMemo(
     () => ({
@@ -93,7 +81,6 @@ const EditorDrinkOrdersPage = () => {
     [countBaseFilters, statusFilter, filters.page, filters.limit],
   );
 
-  const { data: branches = [] } = useBranchNames();
   const {
     data: drinkOrdersData,
     isLoading,
@@ -128,51 +115,33 @@ const EditorDrinkOrdersPage = () => {
     );
   };
 
-  const stats = useMemo(() => {
-    const pending = statusCounts.pending;
-    const completed = drinkOrders.filter(
-      (o) => o.status === "completed",
-    ).length;
-    const totalQuantity = drinkOrders.reduce(
-      (sum, order) =>
-        sum + order.items.reduce((s, item) => s + item.quantity, 0),
-      0,
-    );
-    return { pending, completed, totalQuantity };
-  }, [drinkOrders, statusCounts.pending]);
-
   const handleViewOrder = (order: Order) => {
     setSelectedOrder(order as DrinkOrder);
     setShowOrderDialog(true);
   };
 
-  const handleUpdateStatus = (order: Order) => {
+  const handleAddNotes = (order: Order) => {
     const drinkOrder = order as DrinkOrder;
     setSelectedOrder(drinkOrder);
-    setNewStatus(drinkOrder.status);
     setAdminNotes(drinkOrder.adminNotes || "");
-    setShowStatusDialog(true);
+    setShowNotesDialog(true);
   };
 
-  const handleStatusUpdate = () => {
+  const handleNotesSave = () => {
     if (!selectedOrder) return;
 
     updateStatusMutation.mutate(
       {
         id: selectedOrder._id,
-        status: newStatus,
+        status: selectedOrder.status,
         adminNotes: adminNotes || undefined,
       },
       {
         onSuccess: () => {
-          setShowStatusDialog(false);
+          setShowNotesDialog(false);
         },
       },
     );
-  };
-
-  const handlePrintOrder = () => {
-    toast.info("Print is not yet available for drink orders");
   };
 
   const handleMarkAllCompleted = (
@@ -188,174 +157,70 @@ const EditorDrinkOrdersPage = () => {
     });
   };
 
-  const handleClearFilters = () => {
-    setFilters({
-      date: "",
-      branch: "",
-      status: "all",
-      page: 1,
-      limit: filters.limit,
-    });
-  };
-
   if (!user) {
     return null;
   }
 
   return (
     <EditorShell username={user.username} onLogout={logout}>
-      <div className="space-y-6">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-          <div>
-            <h2 className="text-xl sm:text-2xl font-bold text-gray-900 flex items-center gap-2">
-              <CupSoda className="h-6 w-6 text-cyan-600" />
-              Drink Orders
-            </h2>
-            <p className="text-sm text-gray-500 mt-1">
-              Review and update drink-only orders from all branches
-            </p>
-          </div>
-          <div className="flex items-center gap-2">
-            <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-cyan-50 text-cyan-700 border border-cyan-200">
-              Total: {totalCount}
-            </span>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-xs sm:text-sm text-gray-600">
-                Pending
+      <Card className="shadow-sm border-gray-200">
+        <CardHeader className="px-3 py-3 sm:px-6 sm:py-5 space-y-3 sm:space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-4">
+            <div className="flex items-center gap-2 min-w-0">
+              <CupSoda className="h-5 w-5 text-cyan-600 shrink-0" />
+              <CardTitle className="text-base sm:text-xl truncate">
+                {t("title")}
               </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-lg sm:text-2xl font-bold text-yellow-600">
-                {stats.pending}
-              </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-xs sm:text-sm text-gray-600">
-                Completed (page)
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-lg sm:text-2xl font-bold text-green-600">
-                {stats.completed}
-              </div>
-            </CardContent>
-          </Card>
-          <Card className="col-span-2 lg:col-span-1">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-xs sm:text-sm text-gray-600">
-                Total Quantity (page)
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-lg sm:text-2xl font-bold text-cyan-600">
-                {stats.totalQuantity}
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-base sm:text-lg">Filters</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-              <div className="space-y-1.5">
-                <Label className="text-xs sm:text-sm">Date</Label>
-                <Input
-                  type="date"
-                  value={filters.date}
-                  onChange={(e) =>
-                    setFilters({ ...filters, date: e.target.value, page: 1 })
-                  }
-                  className="h-12 sm:h-10 text-base"
-                />
-              </div>
-              <div className="space-y-1.5">
-                <Label className="text-xs sm:text-sm">Branch</Label>
-                <Select
-                  value={filters.branch || "all"}
-                  onValueChange={(value) =>
-                    setFilters({
-                      ...filters,
-                      branch: value === "all" ? "" : value,
-                      page: 1,
-                    })
-                  }
-                >
-                  <SelectTrigger className="h-12 sm:h-10 text-base">
-                    <SelectValue placeholder="All branches" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Branches</SelectItem>
-                    {branches.map((branch) => (
-                      <SelectItem key={branch.name} value={branch.name}>
-                        {branch.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="flex items-end sm:col-span-1">
-                <Button
-                  variant="outline"
-                  className={`${editorTouchSm} w-full`}
-                  onClick={handleClearFilters}
-                >
-                  Clear Filters
-                </Button>
-              </div>
+              {!statusCountsLoading && (
+                <span className="shrink-0 inline-flex items-center rounded-md bg-cyan-50 px-2 py-0.5 text-xs font-medium text-cyan-800 tabular-nums border border-cyan-100">
+                  {totalCount}
+                </span>
+              )}
             </div>
-          </CardContent>
-        </Card>
+            <MarkAllCompletedDialog
+              loading={markAllCompletedMutation.isPending}
+              hasDateOrBranchFilter={hasDateOrBranchFilter}
+              onConfirm={handleMarkAllCompleted}
+            />
+          </div>
 
-        <Card>
-          <CardHeader className="pb-4 space-y-4">
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-              <CardTitle className="text-lg sm:text-xl">All Drink Orders</CardTitle>
-              <MarkAllCompletedDialog
-                loading={markAllCompletedMutation.isPending}
-                hasDateOrBranchFilter={hasDateOrBranchFilter}
-                onConfirm={handleMarkAllCompleted}
-              />
-            </div>
-            <OrderStatusTabs
-              value={statusFilter}
-              counts={statusCounts}
-              loading={statusCountsLoading}
-              onChange={handleStatusTabChange}
-            />
-          </CardHeader>
-          <CardContent className="pt-0">
-            <OrdersTable
-              orders={drinkOrders as unknown as Order[]}
-              loading={loading}
-              inlineStatus
-              updatingOrderId={updatingOrderId}
-              onViewOrder={handleViewOrder}
-              onStatusChange={handleInlineStatusChange}
-              onUpdateStatus={handleUpdateStatus}
-              onPrintOrder={handlePrintOrder}
-            />
+          <OrderStatusTabs
+            value={statusFilter}
+            counts={statusCounts}
+            loading={statusCountsLoading}
+            onChange={handleStatusTabChange}
+          />
 
-            <OrdersPagination
-              currentPage={currentPage}
-              totalPages={totalPages}
-              totalCount={totalCount}
+          <div className="border-t border-gray-100 pt-3 sm:pt-4">
+            <OrdersFilters
+              filters={filters}
               loading={loading}
-              itemLabelKey="drinkOrders"
-              onPageChange={(page) => setFilters({ ...filters, page })}
+              hideStatusFilter
+              onFiltersChange={setFilters}
             />
-          </CardContent>
-        </Card>
-      </div>
+          </div>
+        </CardHeader>
+        <CardContent className="px-3 sm:px-6 pt-0 pb-3 sm:pb-6">
+          <OrdersTable
+            orders={drinkOrders as unknown as Order[]}
+            loading={loading}
+            inlineStatus
+            updatingOrderId={updatingOrderId}
+            onViewOrder={handleViewOrder}
+            onStatusChange={handleInlineStatusChange}
+            onUpdateStatus={handleAddNotes}
+          />
+
+          <OrdersPagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            totalCount={totalCount}
+            loading={loading}
+            itemLabelKey="drinkOrders"
+            onPageChange={(page) => setFilters({ ...filters, page })}
+          />
+        </CardContent>
+      </Card>
 
       <Dialog open={showOrderDialog} onOpenChange={setShowOrderDialog}>
         <DialogContent className="w-[95vw] max-w-3xl max-h-[90vh] overflow-y-auto mx-auto">
@@ -440,31 +305,14 @@ const EditorDrinkOrdersPage = () => {
         </DialogContent>
       </Dialog>
 
-      <Dialog open={showStatusDialog} onOpenChange={setShowStatusDialog}>
+      <Dialog open={showNotesDialog} onOpenChange={setShowNotesDialog}>
         <DialogContent className="w-[95vw] max-w-md mx-auto">
           <DialogHeader>
             <DialogTitle className="text-lg">
-              Update Status - {selectedOrder?.orderNumber}
+              Admin notes - {selectedOrder?.orderNumber}
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
-            <div>
-              <Label className="text-sm font-medium">Status</Label>
-              <Select
-                value={newStatus}
-                onValueChange={(value: OrderStatus) => setNewStatus(value)}
-              >
-                <SelectTrigger className="mt-1 h-12 sm:h-10 text-base">
-                  <SelectValue placeholder="Select status" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="pending">Pending</SelectItem>
-                  <SelectItem value="approved">Approved</SelectItem>
-                  <SelectItem value="rejected">Rejected</SelectItem>
-                  <SelectItem value="completed">Completed</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
             <div>
               <Label className="text-sm font-medium">
                 Admin Notes (Optional)
@@ -472,25 +320,25 @@ const EditorDrinkOrdersPage = () => {
               <textarea
                 value={adminNotes}
                 onChange={(e) => setAdminNotes(e.target.value)}
-                placeholder="Add notes about this status update..."
+                placeholder="Add notes about this order..."
                 className="w-full p-2 border rounded-md min-h-[80px] resize-none mt-1 text-sm"
               />
             </div>
             <div className="flex flex-col sm:flex-row justify-end gap-2">
               <Button
                 variant="outline"
-                onClick={() => setShowStatusDialog(false)}
+                onClick={() => setShowNotesDialog(false)}
                 disabled={updateStatusMutation.isPending}
                 className={`${editorTouchSm} w-full sm:w-auto`}
               >
                 Cancel
               </Button>
               <Button
-                onClick={handleStatusUpdate}
+                onClick={handleNotesSave}
                 disabled={updateStatusMutation.isPending}
                 className={`${editorTouchSm} w-full sm:w-auto bg-cyan-600 hover:bg-cyan-700`}
               >
-                {updateStatusMutation.isPending ? "Updating..." : "Update Status"}
+                {updateStatusMutation.isPending ? "Saving..." : "Save Notes"}
               </Button>
             </div>
           </div>

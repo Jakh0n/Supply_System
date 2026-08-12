@@ -61,6 +61,7 @@ export function useUpdateDrinkOrderStatus() {
 		}) => drinkOrdersApi.updateDrinkOrderStatus(id, status, adminNotes),
 		onSuccess: () => {
 			queryClient.invalidateQueries({ queryKey: queryKeys.drinkOrders.all })
+			queryClient.invalidateQueries({ queryKey: queryKeys.products.all })
 			toast.success('Drink order status updated successfully')
 		},
 		onError: () => {

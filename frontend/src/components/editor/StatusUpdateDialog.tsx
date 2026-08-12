@@ -6,16 +6,14 @@ import {
 	DialogTitle,
 } from '@/components/ui/dialog'
 import { Label } from '@/components/ui/label'
-import { Order, OrderStatus } from '@/types'
-import StatusSelect from './StatusSelect'
+import { Order } from '@/types'
+import { useTranslations } from 'next-intl'
 import { editorTouchSm } from './editorUi'
 
 interface StatusUpdateDialogProps {
 	order: Order | null
 	open: boolean
 	onOpenChange: (open: boolean) => void
-	status: OrderStatus
-	onStatusChange: (status: OrderStatus) => void
 	adminNotes: string
 	onAdminNotesChange: (notes: string) => void
 	onSubmit: () => void
@@ -26,41 +24,33 @@ export default function StatusUpdateDialog({
 	order,
 	open,
 	onOpenChange,
-	status,
-	onStatusChange,
 	adminNotes,
 	onAdminNotesChange,
 	onSubmit,
 	isSubmitting,
 }: StatusUpdateDialogProps) {
+	const t = useTranslations('editor.dialogs')
+	const to = useTranslations('editor.orders')
+	const tc = useTranslations('common')
+
 	return (
 		<Dialog open={open} onOpenChange={onOpenChange}>
 			<DialogContent className='w-[calc(100%-2rem)] max-w-md max-h-[90vh] overflow-y-auto'>
 				<DialogHeader>
 					<DialogTitle className='text-lg'>
-						Update Order Status - {order?.orderNumber}
+						{to('adminNotes')} - {order?.orderNumber}
 					</DialogTitle>
 				</DialogHeader>
 				<div className='space-y-4'>
 					<div>
-						<Label htmlFor='status' className='text-sm font-medium'>
-							Status
-						</Label>
-						<StatusSelect
-							value={status}
-							onValueChange={onStatusChange}
-							className='mt-1 h-12 sm:h-10 text-base'
-						/>
-					</div>
-					<div>
 						<Label htmlFor='adminNotes' className='text-sm font-medium'>
-							Admin Notes (Optional)
+							{t('adminNotesOptional')}
 						</Label>
 						<textarea
 							id='adminNotes'
 							value={adminNotes}
 							onChange={e => onAdminNotesChange(e.target.value)}
-							placeholder='Add notes about this status update...'
+							placeholder={t('adminNotesPlaceholder')}
 							className='w-full p-2 border rounded-md min-h-[80px] resize-none mt-1 text-sm'
 						/>
 					</div>
@@ -71,14 +61,14 @@ export default function StatusUpdateDialog({
 							disabled={isSubmitting}
 							className={`${editorTouchSm} w-full sm:w-auto`}
 						>
-							Cancel
+							{tc('cancel')}
 						</Button>
 						<Button
 							onClick={onSubmit}
 							disabled={isSubmitting}
 							className={`${editorTouchSm} w-full sm:w-auto`}
 						>
-							{isSubmitting ? 'Updating...' : 'Update Status'}
+							{isSubmitting ? t('savingNotes') : t('saveNotes')}
 						</Button>
 					</div>
 				</div>

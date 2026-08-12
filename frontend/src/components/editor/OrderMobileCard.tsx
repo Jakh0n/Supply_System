@@ -27,7 +27,7 @@ interface OrderMobileCardProps {
   inlineStatus?: boolean;
   isUpdating?: boolean;
   onView: () => void;
-  onPrint: () => void;
+  onPrint?: () => void;
   onStatusChange?: (status: OrderStatus) => void;
   onAddNotes?: () => void;
 }
@@ -134,10 +134,12 @@ export default function OrderMobileCard({
                   <Eye className="h-4 w-4 mr-2" />
                   {tc("view")}
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={onPrint}>
-                  <Printer className="h-4 w-4 mr-2" />
-                  {tc("print")}
-                </DropdownMenuItem>
+                {onPrint && (
+                  <DropdownMenuItem onClick={onPrint}>
+                    <Printer className="h-4 w-4 mr-2" />
+                    {tc("print")}
+                  </DropdownMenuItem>
+                )}
                 {onAddNotes && (
                   <DropdownMenuItem onClick={onAddNotes}>
                     <Edit className="h-4 w-4 mr-2" />

@@ -1,5 +1,9 @@
 export { useBranchNames } from './useBranchesQuery'
-export { useProductsList, useToggleProductStatus } from './useProductsQuery'
+export {
+	useAddProductStock,
+	useProductsList,
+	useToggleProductStatus,
+} from './useProductsQuery'
 export {
 	useCreateDrinkOrder,
 	useDeleteDrinkOrder,
