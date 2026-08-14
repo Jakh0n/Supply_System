@@ -1,14 +1,14 @@
 'use client'
 
+import EditorProductAvailability from '@/components/editor/EditorProductAvailability'
 import EditorShell from '@/components/editor/EditorShell'
-import EditorStockList from '@/components/editor/EditorStockList'
 import { useAuth } from '@/contexts/AuthContext'
 import { Package } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 
 export default function EditorProductsPage() {
 	const { user, logout } = useAuth()
-	const t = useTranslations('editor.stock')
+	const t = useTranslations('editor.products')
 
 	if (!user) {
 		return null
@@ -25,7 +25,7 @@ export default function EditorProductsPage() {
 					<p className='text-xs sm:text-sm text-gray-500 mt-0.5'>{t('subtitle')}</p>
 				</div>
 
-				<EditorStockList />
+				<EditorProductAvailability />
 			</div>
 		</EditorShell>
 	)
